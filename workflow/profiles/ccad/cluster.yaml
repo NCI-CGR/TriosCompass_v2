@@ -1,0 +1,18 @@
+__resources__:
+  gpu: 
+    - "gpu"
+    - "nvidia_gpu"
+
+__options__:
+  jc:
+    - "jc"
+    - "jclass"
+    - "job_class"
+
+__default__:
+  queue: "long.q"
+  join: "yes"
+  export_env: ""
+  pe: "by_node 8"
+  output: logs/sge/snakejob.{rulename}.{jobid}.log
+  error: logs/sge/snakejob.{rulename}.{jobid}.log
