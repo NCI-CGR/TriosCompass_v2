@@ -5,6 +5,8 @@ This is a revision of the workflow to process 8 Chernobyl trios, with the follow
 
 There is no separate configure file for this workflow and all the settings have been coded directly within the file *Snakefile*.  The workflow has been run under the folder ***/data/DCEG_Chernobyl/NP0436-HE5/Chernobyl_data*** at Biowulf, where you may find all the details.
 
+The diagram of the snakemake workflow is available [here](https://github.com/NCI-CGR/TriosCompass_v2/blob/8trios/Chernobyl_strelka_workflow_dag.pdf).
+
 ## Installation
 
 The workflow has been tested under biowulf with snakemake version 7.3.7.  Snakemake can be installed under conda.
