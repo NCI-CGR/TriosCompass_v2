@@ -5,15 +5,23 @@ import uuid
 
 # bam/SC501095.recal.bam
 bam_files = glob.glob("bam/**/*.bam", recursive=True)
-_,ids,_= glob_wildcards("{path}/{id,SC[0-9]+}.{any}.bam", bam_files)
+_,ids,_= glob_wildcards("{path}/{id,SC[0-9]+}.{any,.*}bam", bam_files)
 
 
 BAM_DICT=dict(zip(ids,bam_files))
+# print(bam_files)
+# print(BAM_DICT)
+# exit(0)
 
 ### Define trios
 ped_files = glob.glob("ped_files/*.ped")
 
-
+### It seems order of the family member is as the order of entries in the pedigree file
+# see https://github.com/jeremymcrae/peds/blob/master/peds/ped.py
+# Therefore, it is likely to be the order: father, mother and kid
+# t0334   SC074198        0       0       1       1
+# t0334   SC074199        0       0       2       1
+# t0334   SC074201        SC074198        SC074199        1       1
 families = {}
 for fn in ped_files:
     f=peds.open_ped(fn)[0]
@@ -50,7 +58,7 @@ rule all:
         expand(output_dir +"/glnexus/{fam}.dv_combined.vcf.gz", fam=fam_ids),
         expand(output_dir +"/slivar/{caller}_{fam}.dnm.vcf.gz", fam=fam_ids, caller=callers),
         expand(output_dir + "/fixed-rg/{id}.bam", id=ids),
-        expand(output_dir +"/call_JIGV/{caller}_{fam}.JIGV.html", fam=fam_ids, caller=callers)
+        expand(output_dir +"/call_JIGV/{caller}_{fam}.JIGV.html", fam=fam_ids, caller=["strelka", "D_and_G","truth"])
 
 rule replace_rg:
     input: lambda w: BAM_DICT[w.id]
@@ -278,7 +286,7 @@ rule glnexus_dv:
         rm -fr {params.tempdir}
     """
 
-
+### fix DP (for strelka) and AD
 rule call_dnm_dv: 
     input: 
         vcf = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz",
@@ -294,28 +302,49 @@ rule call_dnm_dv:
     resources: 
         mem_mb = 20*1000,
         runtime= "1d"
-    params: min_gq=20, min_dp=30
+    params: min_gq=10, min_dp=20
     envmodules: "bcftools"
     conda:
         "workflow/envs/slivar.yaml"
     shell: """
-        bcftools norm -f ref/Homo_sapiens_assembly38.fasta -m - -O z -o {output.norm_vcf} {input.vcf}
+        zcat {input.vcf} | sed -e 's/ID=AD,Number=\./ID=AD,Number=R/' |bcftools norm -f ref/Homo_sapiens_assembly38.fasta -m - -O z -o {output.norm_vcf} 
         tabix {output.norm_vcf}
         slivar expr  \
             --vcf {output.norm_vcf} \
             --ped  {input.ped} \
             --pass-only \
             --out-vcf {output.vcf} \
-            --trio "denovo:kid.het && mom.hom_ref && dad.hom_ref \
-                    && kid.AB > 0.25 && kid.AB < 0.75 \
+            --trio "denovo:( \
+                ( \
+                    (variant.CHROM == 'chrX' && kid.sex=='male') && \
+                    kid.hom_alt && kid.AB > 0.98  \
+                ) || \
+                ( \
+                    (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
+                    kid.het && kid.AB > 0.25 && kid.AB < 0.75 \
+                ) \
+                ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+                mom.hom_ref && dad.hom_ref \
                     && (mom.AD[1] + dad.AD[1]) <= 5 \
                     && kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq} \
-                    && kid.DP >= {params.min_dp} && mom.DP >= {params.min_dp} && dad.DP >= {params.min_dp}"
+                    && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0))"
         bgzip -c {output.vcf} > {output.tmp}
         tabix {output.tmp}
         bcftools view -R {input.interval} {output.tmp} -O z -o {output.gz}
         tabix {output.gz}
     """
+
+
+# use rule call_dnm_dv as call_dnm_dv2 with: 
+#     output:
+#         vcf= output_dir +"/slivar/DV2_{fam}.dnm.vcf",
+#         norm_vcf= temp(output_dir +"/slivar/DV2_{fam}.tmp0.vcf.gz"),
+#         tmp = temp(output_dir +"/slivar/DV2_{fam}.tmp.vcf.gz"),
+#         gz = output_dir +"/slivar/DV2_{fam}.dnm.vcf.gz"
+#     benchmark:
+#         output_dir +"/benchmark/slivar/DV2_{fam}.tsv"
+#     params: min_gq=10, min_dp=20
+
 
 ### Call dnm from gatk
 use rule  call_dnm_dv as call_dnm_gatk with:
@@ -334,29 +363,47 @@ use rule  call_dnm_dv as call_dnm_gatk with:
     benchmark:
         output_dir +"/benchmark/slivar/GATK_{fam}.tsv"
 
+rule merge_DV_GATK:
+    input: 
+        DV=output_dir +"/slivar/DV_{fam}.dnm.vcf.gz",
+        GATK=output_dir +"/slivar/GATK_{fam}.dnm.vcf.gz"
+    output:
+        gz=output_dir +"/GATK_DV/{fam}.merge.dnm.vcf.gz",
+        tbi=output_dir +"/GATK_DV/{fam}.merge.dnm.vcf.gz.tbi",
+        both=output_dir +"/GATK_DV/D_and_G.{fam}.dnm.vcf.gz",
+        one=output_dir +"/GATK_DV/D_or_G.{fam}.dnm.vcf.gz"
+    envmodules: "bcftools"
+    shell: """
+        bcftools merge --force-samples --threads 2 -m none {input.DV} {input.GATK} -Oz -o {output.gz}
+        tabix {output.gz}
+        bcftools filter -i "N_MISSING == 0" -Oz -o {output.both} {output.gz}
+        bcftools filter -i "N_MISSING > 0" -Oz -o {output.one} {output.gz}
+        tabix {output.both}
+        tabix {output.one}
+    """
 
 
 
 ### prepare the bed regions cover dnm calls from both GATK and DV for each trio
 rule get_dnm_regions:
     input: 
-        gatk=output_dir +"/slivar/GATK_{fam}.dnm.vcf.gz",
-        dv= output_dir +"/slivar/DV_{fam}.dnm.vcf.gz"
+        output_dir +"/GATK_DV/D_or_G.{fam}.dnm.vcf.gz",
     output:
         bed=output_dir +"/strelka/call_regioins.{fam}.bed.gz"
     envmodules: "bedtools", "bcftools"
     shell: """
-        multiIntersectBed -i {input.gatk} {input.dv} | mergeBed -i stdin | bgzip -c - > {output.bed}
+        mergeBed -i {input} | bgzip -c - > {output.bed}
         tabix {output.bed}
     """
 
+
+### Use call_regioins2 and DV2_{fam}.dnm.vcf.gz instead
 rule config_strelka:
     input: 
         bams= lambda w: expand(output_dir + "/fixed-rg/{id}.bam", id= [person.id for person in families[w.fam]]),
         bed= output_dir +"/strelka/call_regioins.{fam}.bed.gz",
         ref=hg38_ref,
-        gatk=output_dir +"/slivar/GATK_{fam}.dnm.vcf.gz",
-        dv=output_dir +"/slivar/DV_{fam}.dnm.vcf.gz"
+        vcf=output_dir +"/GATK_DV/D_or_G.{fam}.dnm.vcf.gz"
     output:
         conf=output_dir + "/strelka/{fam}/runWorkflow.py"
     envmodules: "strelka"
@@ -366,8 +413,7 @@ rule config_strelka:
     resources: mem_mb=10000 
     shell: """
         configureStrelkaGermlineWorkflow.py \
-        --forcedGT {input.gatk} \
-        --forcedGT {input.dv} \
+        --forcedGT {input.vcf} \
         --bam {params.bams} \
         --referenceFasta {input.ref} \
         --runDir {params.runDir} \
@@ -429,3 +475,30 @@ rule call_JIGV:
             --sites {input.sites} \
             {input.bam} > {output.html}
     """
+
+### Call JIGV for DV&GATK
+use rule call_JIGV as call_JIGV_for_DG with:
+    input:
+        bam=lambda w: expand(output_dir +"/fixed-rg/{id}.bam", id=[person.id for person in families[w.fam]]),
+        ped="ped_files/{fam}.ped",
+        ref=hg38_ref,
+        sites= output_dir +"/GATK_DV/{caller}.{fam}.dnm.vcf.gz"
+  
+# Escape certain characters, such as \t by \\t, $ by \$, and { by {{.
+rule true_sites_bed:
+    input: "ChernobylTriosTruth/all_clean/{fam}c1.csv"
+    output:
+        output_dir + "true_sites_bed/truth_{fam}c1.bed"
+    shell: """
+         awk -v FS=',' -v OFS='\t' "{{ if(NR>1) print \$1,\$2-1,\$2}}" {input} | sort -u > {output}
+    """
+
+
+### Call JIGV for true sites
+use rule call_JIGV as call_JIGV_for_truth with:
+    input:
+        bam=lambda w: expand(output_dir +"/fixed-rg/{id}.bam", id=[person.id for person in families[w.fam]]),
+        ped="ped_files/{fam}.ped",
+        ref=hg38_ref,
+        sites= output_dir + "true_sites_bed/{caller}_{fam}c1.bed"
+  
