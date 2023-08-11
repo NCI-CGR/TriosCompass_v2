@@ -19,7 +19,7 @@ The manifest file is a csv file with typical NCI-CGR sample sheet format, with a
 
 The format of the manifest file is specified by schemas/cgr_manifest_schema.yaml. The manifest file will be automatically validated at the beginning of the Snakemake workflow via the new Snakemake feature of PEP (protable encapsulated project).  Users may vist [here](https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#configuring-scientific-experiments-via-peps) to learn more about this PEP feature. 
 
-:bookmark: Note that one sample is allowed multiple fastq files from different flow cells.  This workflow will combine those fastq files and generate one bam file for each sample.
+:bookmark: Note that one sample is allowed to have multiple fastq files from different flow cells.  The workflow will combine those fastq files and generate single bam file for each sample.
 
 
 
