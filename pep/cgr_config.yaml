@@ -1,0 +1,20 @@
+name: CGR_Trios_Data1
+
+pep_version: 2.0.0
+sample_table: manifest_fastq.csv
+output_dir: "output"
+input_bam_dir: "bam"
+
+hg38_ref: "ref/Homo_sapiens_assembly38.fasta"
+wgs_interval: "ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list"
+ped_dir: "new_cgr_pedfiles"
+
+# In CGR manifest file, CGF_ID + Flowcell should be unique
+sample_modifiers:
+  append:
+    sample_name: "sn"
+  derive:
+    attributes: [sample_name]
+    sources:
+      sn: "{CGF_ID}_{FLOWCELL}"
+
