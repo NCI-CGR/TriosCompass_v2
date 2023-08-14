@@ -61,7 +61,7 @@ Hg38 reference genome is used here, and it was indexed by bwa, samtools (.fai) a
 The interval file is to include the selected regions only to call DNMs (via bcftools).  We used the file hg38.wgs_interval.bed in this study, which was converted from *resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list*. The latter is part of [resource bundle hosted by the Broad Institute](https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle). There are severals way to retrieve the interval file, for example, ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/wgs_calling_regions.hg38.interval_list.
 
 
-+ Below is the bash command to the interval list to the bed format using *picard*.
++ Below is the bash command to convert the interval list to the bed format using *picard*.
 ```bash
 picard IntervalListToBed -I ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list -O ref/hg38.wgs_interval.bed
 ```
@@ -80,9 +80,8 @@ DATABASE        Adapters        /data/DCEG_Trios/new_cgr_data/TriosCompass_v2/re
 DATABASE        Cow     /data/DCEG_Trios/new_cgr_data/TriosCompass_v2/ref/fasta_nonhuman/Cow/GCF_002263795.1_ARS-UCD1.2_genomic.fna
 DATABASE        Pig     /data/DCEG_Trios/new_cgr_data/TriosCompass_v2/ref/fasta_nonhuman/Pig/GCF_000003025.6_Sscrofa11.1_genomic.fna
 BWA     /usr/local/apps/bwa/0.7.17/bwa
-
-Accordingly, we need to provide non_human fasta sequence files a specified, so is the bwa binary file.
 ```     
+Accordingly, we need to provide non_human fasta sequence files a specified, so is the bwa binary file.
 
 ### Configure file for Snakemake workflow
 Lastly but also importantly, a configure file for the Snakemake workflow is required.  The yaml file listed below serves as a both example and template.
