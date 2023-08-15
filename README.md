@@ -3,7 +3,21 @@ This is a trios analysis workflow written in Snakemake.
 
 ## Introduction
 
-This workflow takes fastq files and pedigree files as inupt and generate lists of de novo mutations for each tios in the end. Three variant callers are used here: DeepVariant, GATK HaplotypeCaller and Strelka.  
+This workflow takes fastq files and pedigree files as inupt and generate lists of de novo mutations (DNMs) for each tios in the end. Three variant callers are used here: DeepVariant, GATK HaplotypeCaller and Strelka.  The workflow is as described in [this diagram](./Trios_workflow_dag_CGR.pdf), and the details is availale in [this Snakefile](./Snakefile).
+
+Briefly, there are 4 major steps in the workflow:
+1. flastp: trim FASTQ reads;
+2. fq2bam: align one or multipe pair FASTQ files (with trimed reads) to the reference genome;
+3. gatk_markdup: mark duplicate reads;
+4. Call DNMs
+  a. Variants called by deepvariant and merged by glnexus_dv by trios and then DNMs are called by slivar;
+  b. DNMs called by the GATK pipeline: haplotypecaller, CombineGVCFs, genotypegvcf, CalculateGenotypePosteriors and finally followed by slivar filtering.
+  c. Classify DNMs from Deepvariant and GATK in two groups: ones called by bother callers, and the others (i.e., called by only one of the two callers).
+  d. Use those DNMs called by only one caller as the candidates to run Strelka and slivar.  
+5. In the end, we have two sets of DNM candidates: 1) DNMs called by both DeepVariant and GATK; 2) DNMs called by (DeepVariant or GATK) and Strelka.  JIGV are utilized to generate IGV snapshots for bother of the two candidate sets.
+
+
+---
 
 ## Installation
 
@@ -134,3 +148,7 @@ export TMPDIR=/data/DCEG_Trios/new_cgr_data/TriosCompass_v2/TMP
 
 snakemake --skip-script-cleanup -k  --keep-incomplete --rerun-incomplete --profile workflow/profiles/biowulf --verbose -p --use-conda --jobs 400 --use-envmodules --latency-wait 600 -T 0 -s Snakefile
 ```
+
+---
+
+## Output 
