@@ -202,4 +202,4 @@ multiqc --title QC --filename multiqc_report.html --outdir output_multiqc output
 
 
 ```
-:bookmark: The json output from fastp needs to be nameed as "*fastp.json" to be recoganized by MultiQC.  We have modified the workflow accordingly.
+:bookmark: The json output from fastp needs to be named as "*fastp.json" to be recoganized by MultiQC.  We have modified the workflow accordingly.
