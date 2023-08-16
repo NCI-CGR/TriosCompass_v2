@@ -83,8 +83,8 @@ rule fastp:
     output: 
         R1=pep.config.output_dir+"/fastp/{sample_name}.R1.fastp.fastq.gz",
         R2=pep.config.output_dir+"/fastp/{sample_name}.R2.fastp.fastq.gz",
-        html=pep.config.output_dir+"/fastp/{sample_name}.html",
-        json=pep.config.output_dir+"/fastp/{sample_name}.json"
+        html=pep.config.output_dir+"/fastp/{sample_name}.fastp.html",
+        json=pep.config.output_dir+"/fastp/{sample_name}.fastp.json"
     benchmark:
         pep.config.output_dir + "/benchmark/fastp/{sample_name}.tsv"
     threads: 8
