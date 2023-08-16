@@ -151,6 +151,44 @@ snakemake --skip-script-cleanup -k  --keep-incomplete --rerun-incomplete --profi
 
 ---
 
+## Some details about the DNM calling
+### Slivar expression to select DNMs
+```bash
+ "denovo:( \
+      ( \
+          (variant.CHROM == 'chrX' && kid.sex=='male') && \
+          kid.hom_alt && kid.AB > 0.98  \
+      ) || \
+      ( \
+          (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
+          kid.het && kid.AB > 0.25 && kid.AB < 0.75 \
+      ) \
+      ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+      mom.hom_ref && dad.hom_ref \
+          && (mom.AD[1] + dad.AD[1]) <= 5 \
+          && kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq} \
+          && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0))"
+```
++ (variant.CHROM == 'chrX' && kid.sex=='male') && alt && kid.AB > 0.98
+  + Select variants in chrX in boys with the genotype of "1/1" and allele balance > 0.98
++ (!(variant.CHROM == 'chrX' && kid.sex=='male')) && kid.het && kid.AB > 0.25 && kid.AB < 0.75
+  + In the normal cases, select variants with genotype of "0/1" and allele balance in the range of 0.25 and 0.75.
++ (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0))
+  + The kid variant should have depth over {params.min_dp}. If the variant is on chrX and the kid's gender is male, the minimum depth requirement is reduced to half.
++ (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0))
+  + Similar depth requirement for parents.
++ mom.hom_ref && dad.hom_ref
+  + The genotypeos of the parents should both be "0/0";
++ (mom.AD[1] + dad.AD[1]) <= 5
+  + The total read support of the DNM should be not bigger than 5 in parents.
++ kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq}
+  + GQ score of the variants should be no lessn than {params.min_gq} in all the members of the trio.
+
+In the workflow, different settings of {params.min_dp} and {params.min_gq} are assigned for the callers, based on our benchmarking:
++ min_gq=10, min_dp=20 for DeepVariant;
++ min_gq=20, min_dp=30 for GATK and Strelka.
+
+---
 ## Output 
 ### DNM candidates
 As mentioined in the introduction, there are two sets of DNM candidates: 
