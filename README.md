@@ -257,6 +257,8 @@ scripts/generate_summary_report.pl cgr_summary.xlsx ped.lst
 ```
 
 + [Summary table](./cgr_summary.xlsx)
+
+
 | FamilyID | ID      | SampleID | FatherSampleID | MotherSampleID | Gender | DNM_Count_DG | DNM_Count_Strelka | JIGV_DG   | JIGV_Strelka |
 | -------- | ------- | -------- | -------------- | -------------- | ------ | ------------ | ----------------- | --------- | ------------ |
 | t0666    | t0666c1 | SC502245 | SC502256       | SC502234       | F      | 54           | 20                | JIGV HTML | JIGV HTML    |
