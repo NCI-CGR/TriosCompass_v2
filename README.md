@@ -190,7 +190,10 @@ snakemake --skip-script-cleanup -k  --keep-incomplete --rerun-incomplete --profi
 + min_gq=20, min_dp=30 for GATK and Strelka.
 
 ---
-## Output 
+## Output
+### Location of output files
+The workflow processed the NGS data of Chernobyl Trios-Additional Families (see the details about the study in the [fogbugz: 31945: SR0436-012 Chernobyl Trios-Additional Families for 80x Germline WGS-ANALYSIS](https://cgr-bugz.nci.nih.gov/login?dest=%2ff%2fcases%2f31945)).  Both the Snakemake workflow and the output directory is under ***/data/DCEG_Trios/new_cgr_data/TriosCompass_v2*** at biowulf.
+
 ### DNM candidates
 As mentioined in the introduction, there are two sets of DNM candidates: 
 + Called by DeepVariant and GATK.
