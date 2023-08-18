@@ -246,7 +246,20 @@ multiqc --title QC --filename multiqc_report.html --outdir output_multiqc output
 ```
 :bookmark: The json output from fastp needs to be named as "*fastp.json" to be recoganized by MultiQC.  We have modified the workflow accordingly.
 
-### Summary report of new CGR run
+
+#### Output of MultiQC
+We have generated two sets of MultiQC report files under the folder output_multiqc/: 
++ multiqc_report.html (static mode)
++ multiqc_report_1.html (interactive mode)
+
+#### Problematic samples
++ SC074219 (t0450c2) is a singleton in this analysis and the data of its parents are processed in the previous study.
++ ***SC736795*** has coverage about 28X, which is much lower than the others.
++	SC108472 has many unmapped reads, origin from bateria and viruses commonly found in the upper respiratory tractor.  It is confimred that the sample was procured from saliva.
++ In the trio t0588c1 (kid: SC109409; father: SC109418; mother: SC109419), the sample ***SC109418*** lacks of the expected relatedness with SC109409.
+
+---
+### Summary report of new CGR run 
 In our latest trios analysis, 107 CGR samples from 40 trios were processed. We developed a Perl script [generate_summary_report.pl](./scripts/generate_summary_report.pl) to generate summary table in Xlxs format.
 
 ```bash
