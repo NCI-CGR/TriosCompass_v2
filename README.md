@@ -371,6 +371,87 @@ Alternatively, users may choose to modify scripts/generate_summary_report.pl to 
   + Restrict to “pass” only.
   + Use percentage in filters to address those variants with lower depth.
   + Add new IGV snapshots.
-+ Updated summary Excel file.
-+ New output files
-  + 
+    + New perl script [prepare_yml_from_vcf.pl](./scripts/prepare_yml_from_vcf.pl) to prepare YAML file required by igv_snapshot_maker.
+    + Install igv-snapshot-maker to run the updated workflow.
+      + pip install -i https://test.pypi.org/simple/ igv-snapshot-maker==1.0.0
++ Updated [summary Excel file](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/cgr_summary.xlsx).
++ New output files under output/call_ism/strelka
+  + Users may copy the files (output/call_ism/strelka) to local and start with the Excel files, for example, like output/call_ism/strelka/t0007c1.xlsx
+```bash
+### The overall fold struture
+tree -L 4  output/call_ism/strelka/t0007c1.xlsx
+output/call_ism/
+└── strelka
+    ├── IGV_Snapshots
+    │   ├── t0007c1
+    │   │   ├── t0007c1.bat
+    │   │   ├── t0007c1_MIE_00001.bat
+    │   │   ├── t0007c1_MIE_00001.png
+    │   │   ├── t0007c1_MIE_00002.bat
+    │   │   ├── t0007c1_MIE_00002.png
+    │   │   ├── t0007c1_MIE_00003.bat
+    │   │   ├── t0007c1_MIE_00003.png
+    │   │   ├── t0007c1_MIE_00004.bat
+    │   │   ├── t0007c1_MIE_00004.png
+    │   │   ├── t0007c1_MIE_00005.bat
+    │   │   ├── t0007c1_MIE_00005.png
+    │   │   ├── t0007c1_MIE_00006.bat
+    │   │   ├── t0007c1_MIE_00006.png
+    │   │   └── t0007c1_ROIs.bat
+    │   ├── t0022c1
+    │   │   ├── t0022c1.bat
+    │   │   ├── t0022c1_MIE_00001.bat
+    │   │   ├── t0022c1_MIE_00001.png
+    │   │   ├── t0022c1_MIE_00002.bat
+    │   │   ├── t0022c1_MIE_00002.png
+    │   │   ├── t0022c1_MIE_00003.bat
+    │   │   ├── t0022c1_MIE_00003.png
+    │   │   ├── t0022c1_MIE_00004.bat
+    │   │   ├── t0022c1_MIE_00004.png
+    │   │   ├── t0022c1_MIE_00005.bat
+    │   │   ├── t0022c1_MIE_00005.png
+    │   │   └── t0022c1_ROIs.bat
+    │   ├── t0042c1
+    │   │   ├── t0042c1.bat
+    │   │   ├── t0042c1_MIE_00001.bat
+    │   │   ├── t0042c1_MIE_00001.png
+    │   │   ├── t0042c1_MIE_00002.bat
+    │   │   ├── t0042c1_MIE_00002.png
+    │   │   ├── t0042c1_MIE_00003.bat
+    │   │   ├── t0042c1_MIE_00003.png
+    │   │   ├── t0042c1_MIE_00004.bat
+    │   │   ├── t0042c1_MIE_00004.png
+    │   │   ├── t0042c1_MIE_00005.bat
+    │   │   ├── t0042c1_MIE_00005.png
+    │   │   ├── t0042c1_MIE_00006.bat
+    │   │   ├── t0042c1_MIE_00006.png
+    │   │   ├── t0042c1_MIE_00007.bat
+    │   │   ├── t0042c1_MIE_00007.png
+    │   │   ├── t0042c1_MIE_00008.bat
+    │   │   ├── t0042c1_MIE_00008.png
+    │   │   ├── t0042c1_MIE_00009.bat
+    │   │   ├── t0042c1_MIE_00009.png
+    │   │   ├── t0042c1_MIE_00010.bat
+    │   │   ├── t0042c1_MIE_00010.png
+    │   │   ├── t0042c1_MIE_00011.bat
+    │   │   ├── t0042c1_MIE_00011.png
+    │   │   ├── t0042c1_MIE_00012.bat
+    │   │   ├── t0042c1_MIE_00012.png
+    │   │   └── t0042c1_ROIs.bat
+    │   ├── t0058c1
+    │   │   ├── t0058c1.bat
+...
+    ├── t0007c1.xlsx
+    ├── t0007c1.yaml
+    ├── t0022c1.xlsx
+...
+    └── t0766c2.yaml
+
+41 directories, 938 files
+
+
+### Example of the command to transfer data to local (run it at your laptop)
+scp -r helix:/data/DCEG_Trios/new_cgr_data/TriosCompass_v2/output/call_ism/strelka ~/Downloads/strelka
+
+### Then open ~/Downloads/strelka/t0007c1.xlsx to review the snapshots
+```
