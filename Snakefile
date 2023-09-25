@@ -55,6 +55,7 @@ for fn in ped_files:
 
 fam_ids = list(families.keys()) 
 
+fam_ids2=  [f for f in fam_ids if f != 't0588c1' ]
 # print(fam_ids)
 
 
@@ -70,7 +71,8 @@ rule all:
        expand(pep.config.output_dir + "/collectwgsmetrics/{subj}.collect_wgs_metrics.txt", subj=subjs),
        expand(pep.config.output_dir +"/call_JIGV/{caller}_{fam}.JIGV.html", fam=fam_ids, caller=["strelka", "D_and_G"]),
        expand(pep.config.output_dir +"/deepvariant_pb/SC074219.deepvariant.g.vcf.gz.tbi"),
-       expand(output_dir +"/gatkhc_pb/SC074219.gatk.g.vcf.gz.tbi")
+       expand(output_dir +"/gatkhc_pb/SC074219.gatk.g.vcf.gz.tbi"),
+       expand(output_dir+"/call_ism/{caller}/IGV_Snapshots/{fam}/{fam}.bat", fam=fam_ids2, caller=["strelka"])
        
 
 
@@ -601,21 +603,73 @@ rule run_strelka:
         {input.cmd} -m local -j {threads} 
     """
 
-use rule  call_dnm_dv as call_dnm_strelka with:
+# use rule  call_dnm_dv as call_dnm_strelka with:
+#     input: 
+#         vcf=output_dir+"/strelka/{fam}/results/variants/variants.vcf.gz",
+#         ped=pep.config.ped_dir + "/{fam}.ped",
+#         interval="ref/hg38.wgs_interval.bed"
+#     output: 
+    #    vcf= output_dir +"/slivar/strelka_{fam}.dnm.vcf",
+    #    norm_vcf= temp(output_dir +"/slivar/strelka_{fam}.tmp0.vcf.gz"),
+    #    tmp = temp(output_dir +"/slivar/strelka_{fam}.tmp.vcf.gz"),
+    #    gz = output_dir +"/slivar/strelka_{fam}.dnm.vcf.gz"
+#     params: 
+#        min_gq=20, 
+#        min_dp=30
+#     benchmark:
+#         output_dir +"/benchmark/slivar/strelka_{fam}.tsv"
+
+### Modify filter: variant.FILTER == "PASS"
+# (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < 0.05
+# (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < 0.05
+rule call_dnm_strelka: 
     input: 
-        vcf=output_dir+"/strelka/{fam}/results/variants/variants.vcf.gz",
-        ped=pep.config.ped_dir + "/{fam}.ped",
+        vcf = output_dir+"/strelka/{fam}/results/variants/variants.vcf.gz",
+        ped=pep.config.ped_dir+"/{fam}.ped",
         interval="ref/hg38.wgs_interval.bed"
-    output: 
-       vcf= output_dir +"/slivar/strelka_{fam}.dnm.vcf",
-       norm_vcf= temp(output_dir +"/slivar/strelka_{fam}.tmp0.vcf.gz"),
-       tmp = temp(output_dir +"/slivar/strelka_{fam}.tmp.vcf.gz"),
-       gz = output_dir +"/slivar/strelka_{fam}.dnm.vcf.gz"
-    params: 
-       min_gq=20, 
-       min_dp=30
+    output:
+        vcf= output_dir +"/slivar/strelka_{fam}.dnm.vcf",
+        norm_vcf= temp(output_dir +"/slivar/strelka_{fam}.tmp0.vcf.gz"),
+        tmp = temp(output_dir +"/slivar/strelka_{fam}.tmp.vcf.gz"),
+        gz = output_dir +"/slivar/strelka_{fam}.dnm.vcf.gz"
     benchmark:
-        output_dir +"/benchmark/slivar/strelka_{fam}.tsv"
+        output_dir +"/benchmark/slivar/DV_{fam}.tsv"
+    resources: 
+        mem_mb = 20*1000,
+        runtime= "1d"
+    params: min_gq=20, min_dp=30
+    envmodules: "bcftools"
+    conda:
+        "workflow/envs/slivar.yaml"
+    shell: """
+        zcat {input.vcf} | sed -e 's/ID=AD,Number=\./ID=AD,Number=R/' |bcftools norm -f ref/Homo_sapiens_assembly38.fasta -m - -O z -o {output.norm_vcf} 
+        tabix {output.norm_vcf}
+        slivar expr  \
+            --vcf {output.norm_vcf} \
+            --ped  {input.ped} \
+            --pass-only \
+            --out-vcf {output.vcf} \
+            --trio "denovo:( \
+                ( \
+                    (variant.CHROM == 'chrX' && kid.sex=='male') && \
+                    kid.hom_alt && kid.AB > 0.98  \
+                ) || \
+                ( \
+                    (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
+                    kid.het && kid.AB > 0.25 && kid.AB < 0.75 \
+                ) \
+                ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+                variant.FILTER == 'PASS' && \
+                mom.hom_ref && dad.hom_ref \
+                    &&  (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < 0.05 \
+                    &&  (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < 0.05 \
+                    && kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq} \
+                    && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0))"
+        bgzip -c {output.vcf} > {output.tmp}
+        tabix {output.tmp}
+        bcftools view -R {input.interval} {output.tmp} -O z -o {output.gz}
+        tabix {output.gz}
+    """
 
 ### Call JIGV
 rule call_JIGV:
@@ -650,6 +704,33 @@ use rule call_JIGV as call_JIGV_for_DG with:
         ref=pep.config.hg38_ref,
         sites= output_dir +"/GATK_DV/{caller}.{fam}.dnm.vcf.gz"
   
+### Call  igv_snapshot_maker
+rule call_ism:
+    input:
+        bam=lambda w: expand(pep.config.output_dir +"/gatk_markdup/{subj}.dedup.bam", subj=[person.id for person in families[w.fam]]),
+        ped=pep.config.ped_dir + "/{fam}.ped",
+        sites= output_dir +"/slivar/{caller}_{fam}.dnm.vcf.gz"
+    output:
+        yaml= output_dir +"/call_ism/{caller}/{fam}.yaml",
+        xlsx= output_dir +"/call_ism/{caller}/{fam}.xlsx",
+        batch=output_dir+"/call_ism/{caller}/IGV_Snapshots/{fam}/{fam}.bat"
+    benchmark:
+        output_dir +"/benchmark/call_ism/{caller}_{fam}.tsv"
+    resources: 
+        mem_mb = 10*1000,
+        runtime= "6h",
+        tmpdir=pep.config.output_dir + "/TMP"
+    params: 
+        snapshot_dir=output_dir + "/call_ism/{caller}/IGV_Snapshots"
+    log:
+        "logs/ism/{caller}_{fam}.log"
+    envmodules: "igv", "perl"
+    shell: """
+        # mkdir -p {params.snapshot_dir}
+        scripts/prepare_yml_from_vcf.pl {input.sites} {input.ped} `realpath {input.bam[0]} | xargs dirname ` {output.yaml} {output.xlsx} IGV_Snapshots
+        igv_snapshot_maker  -g hg38  -i {output.yaml} -o {params.snapshot_dir} -c IGV_config.yaml -b Mac '^/data'  '/Volumes' --igv 'igv -m 8g '
+    """    
+
 # # Escape certain characters, such as \t by \\t, $ by \$, and { by {{.
 # rule true_sites_bed:
 #     input: "ChernobylTriosTruth/all_clean/{fam}c1.csv"

@@ -1,5 +1,33 @@
+<!-- omit in toc -->
 # TriosCompass_v2
 This is a trios analysis workflow written in Snakemake.
+
+---
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Prepare input files](#prepare-input-files)
+  - [Manifest file and its schema specification](#manifest-file-and-its-schema-specification)
+  - [Pedigree files](#pedigree-files)
+- [Resource files](#resource-files)
+  - [The reference genome hg38](#the-reference-genome-hg38)
+  - [Interval file](#interval-file)
+  - [Configure file for fastq\_screen](#configure-file-for-fastq_screen)
+  - [Configure file for Snakemake workflow](#configure-file-for-snakemake-workflow)
+- [Get started](#get-started)
+- [Some details about the DNM calling](#some-details-about-the-dnm-calling)
+  - [Slivar expression to select DNMs](#slivar-expression-to-select-dnms)
+- [Output](#output)
+  - [Location of output files](#location-of-output-files)
+  - [DNM candidates](#dnm-candidates)
+  - [JIGV html pages](#jigv-html-pages)
+  - [QC metrics](#qc-metrics)
+    - [Output of MultiQC](#output-of-multiqc)
+    - [Problematic samples](#problematic-samples)
+  - [Summary report of new CGR run](#summary-report-of-new-cgr-run)
+- [New improvement for Strelka DNM calls](#new-improvement-for-strelka-dnm-calls)
+
+
+---
 
 ## Introduction
 
@@ -335,3 +363,13 @@ output/call_JIGV/
 ```
 
 Alternatively, users may choose to modify scripts/generate_summary_report.pl to generate HTTP links in different ways. 
+
+--- 
+
+## New improvement for Strelka DNM calls
++ New changes in the Snakefile:
+  + Restrict to “pass” only.
+  + Use percentage in filters to address those variants with lower depth.
+  + Add new IGV snapshots.
++ New output files
+  + 
