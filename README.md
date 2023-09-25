@@ -367,9 +367,10 @@ Alternatively, users may choose to modify scripts/generate_summary_report.pl to 
 --- 
 
 ## New improvement for Strelka DNM calls
-+ New changes in the Snakefile:
++ [New changes in the Snakefile](https://github.com/NCI-CGR/TriosCompass_v2/commit/36a6726943af9f0473edfc3150e1121bc2c994ee#diff-47959dfd378b3cd1d39b5515418ee8e4444ab7a6036d5197a5bea82814f928a3):
   + Restrict to “pass” only.
   + Use percentage in filters to address those variants with lower depth.
   + Add new IGV snapshots.
++ Updated summary Excel file.
 + New output files
   + 
