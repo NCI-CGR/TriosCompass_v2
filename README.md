@@ -377,6 +377,7 @@ Alternatively, users may choose to modify scripts/generate_summary_report.pl to 
 + Updated [summary Excel file](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/cgr_summary.xlsx).
 + New output files under output/call_ism/strelka
   + Users may copy the files (output/call_ism/strelka) to local and start with the Excel files, for example, like output/call_ism/strelka/t0007c1.xlsx
+  + The updated DNM calls from Strelka and JIGV should remain in the same location as before under /data/DCEG_Trios/new_cgr_data/TriosCompass_v2.
 ```bash
 ### The overall fold struture
 tree -L 4  output/call_ism/strelka/t0007c1.xlsx
