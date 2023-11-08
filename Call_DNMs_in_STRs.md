@@ -4,6 +4,12 @@
 
 --- 
 
+- [Introduction](#introduction)
+- [Results](#results)
+  - [Working space at Biowulf](#working-space-at-biowulf)
+  - [VizAln output](#vizaln-output)
+    - [Example of VisAln realignment](#example-of-visaln-realignment)
+
 
 --- 
 
@@ -96,7 +102,4 @@ output/vizaln/
 
 #### Example of VisAln realignment
 
-<div class="embed">
-    <iframe src="./data/chr6_38571975.html" height="315" width="560" allowfullscreen="" frameborder="0">
-    </iframe>
-</div>
+An example of VisAln realignment is available [here](./data/chr6_38571975.html).
