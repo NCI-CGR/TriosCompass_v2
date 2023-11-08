@@ -102,9 +102,4 @@ output/vizaln/
 
 #### Example of VisAln realignment
 
-
-
-<div class="embed">
-    <iframe src="https://htmlpreview.github.io/?https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/chr6_38571975.html" height="1000" width="800" allowfullscreen="" frameborder="0">
-    </iframe>
-</div>
+An example of VisAln realignment is available [here](https://htmlpreview.github.io/?https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/chr6_38571975.html).
