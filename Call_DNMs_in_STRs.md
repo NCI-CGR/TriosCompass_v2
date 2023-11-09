@@ -5,10 +5,11 @@
 --- 
 
 - [Introduction](#introduction)
+- [Launch the Snakemake workflow](#launch-the-snakemake-workflow)
 - [Results](#results)
   - [Working space at Biowulf](#working-space-at-biowulf)
   - [VizAln output](#vizaln-output)
-    - [Example of VisAln realignment](#example-of-visaln-realignment)
+    - [Example of VisAln realignment of the DNM (started at chr6:38571975) in the family *t0612*](#example-of-visaln-realignment-of-the-dnm-started-at-chr638571975-in-the-family-t0612)
 
 
 --- 
@@ -36,13 +37,35 @@ In particular, there are several features in this workflow:
 
 --- 
 
+## Launch the Snakemake workflow
+
+Users may launch workflow with the wrapper bash script [run_str3.sh](./data/run_str3.sh) at biowulf:
+
+```bash
+### Assume you have already installed Snakemake at conda env snakemake 
+conda activate snakemake
+
+snakemake --version
+7.3.7
+
+### Singularity is required to call MonSTR container
+module load singularity
+
+cd /data/DCEG_Chernobyl/NP0436-HE5/Chernobyl_data/STR_DNM2
+sbatch -J STR3 -t 200:00:00 --export=ALL --mem=12g -p norm  --wrap='./run_str3.sh '
+```
+---
+
 ## Results
 ### Working space at Biowulf
 + /data/DCEG_Chernobyl/NP0436-HE5/Chernobyl_data/STR_DNM2
-  + Snakefile_STR3 (Snakemake workflow)
+  + [Snakefile_STR3](./data/Snakefile_STR3) (Snakemake workflow)
+  + [run_str3.sh](./data/run_str3.sh) (the wrapper bash script to launch Snakefile_STR3 at biowulf)
   + STR/
     + hg38_ver13.le9.bed
     + hg38_ver13.hipstr_9.bed
+  + ped_files/
+    + {family_id}.ped
   + output/ (output of the workflow)
     + merge_monstr/
       + gangstr.all_mutations.tab ([merged calls of GangSTR+MonSTR](https://github.com/gymreklab/STRDenovoTools#outprefixall_mutationstab))
@@ -50,7 +73,7 @@ In particular, there are several features in this workflow:
       + hipstr.all_mutations.tab ([merged calls of HipSTR+MonSTR](https://github.com/gymreklab/STRDenovoTools#outprefixall_mutationstab))
       + hipstr.locus_summary.tab ([merged calls of HipSTR+MonSTR](https://github.com/gymreklab/STRDenovoTools#outprefixlocus_summarytab))
     + joint_STR/
-      + gangstr_hipstsr.final.tab (DNMs called by both HipSTR & GangSTR + MonSTR).
+      + [gangstr_hipstsr.final.tab](./data/gangstr_hipstsr.final.tab) (DNMs called by both HipSTR & GangSTR + MonSTR).
     + call_JIGV
       + both_{family_id}.JIGV.html
     + vizaln/
@@ -100,6 +123,27 @@ output/vizaln/
 
 ```
 
-#### Example of VisAln realignment
+#### Example of VisAln realignment of the DNM (started at chr6:38571975) in the family *t0612*
 
 An example of VisAln realignment is available [here](https://htmlpreview.github.io/?https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/chr6_38571975.html).
+
+In the family *t0612*, the identifiers of child, father and mother are SC260721, SC260720 and SC260670, respectively.
+```bash
+cat ped_files/t0612.ped 
+t0612   SC260720        0       0       1       1
+t0612   SC260670        0       0       2       1
+t0612   SC260721        SC260720        SC260670        2       1
+```
+
+From the file [*gangstr_hipstsr.final.tab*](./data/gangstr_hipstsr.final.tab), we have: 
+| chrom | pos      | period | child    | newallele | mutsize | child_gt | mat_gt | pat_gt |
+| ----- | -------- | ------ | -------- | --------- | ------- | -------- | ------ | ------ |
+| 6     | 38571975 | 2      | SC260721 | 13        | 2       | 13,13    | 11,13  | 11,11  |
+
+
+It suggests there is an de novo tandem repeat mutation started at the position chr6:38571975 in the subject SC260721.  The unit length of repeat (period) is 2, and has 13 repeat units (newallele) in the child *SC260721*, which is 2 more than the reference genome (mutsize; i.e., the wild type genotype is [11,11]).  The MonSTR prediction indicated that the genotypes of child, father and mother are [13,13], [11,11] and [11,13], respectively. 
+
+In the VizAln html page, we have genotypes of the family members marked in different ways.  For example, "SC260670: 0|4" means one allele is wild type and another is 4 bp insertion. Negative values stands for deletion (read [this](https://github.com/tfwillems/HipSTR/tree/master#alignment-visualization) for some details).  Therefore, "SC260721: 4|4", "SC260720: 0|0" and  "SC260670: 0|4" well match with the MonSTR predictions: [13,13], [11,11] and [11,13] for child, father and mother respectively.
+
+
+:bookmark: Please note that the alignments from VizAln were arranged by the alphabet order of the sample identifiers.  
