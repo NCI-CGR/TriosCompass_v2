@@ -33,3 +33,17 @@ mkdir -p TMP logs bam ped_files ref
 ```bash
 sbatch -J 8trios -t 200:00:00 --export=ALL --mem=12g -p norm  --wrap='./run_it_8trios.sh '
 ```
+
+--- 
+## Recent changes
+
+A revised workflow [*Snakefile_samtools*](./Snakefile_samtools) is just added, together with the corresponding rulegraph of the workflow: [*Chernobyl_samtools_workflow_dag.pdf*](./Chernobyl_samtools_workflow_dag.pdf).  The major changes are to be highlighted, compared to [the original one](./Snakefile):
++ *samtools* is used to fix read group in the bam files and also save the output files in the cram format.
++ The downstream rules were also modifiled to use cram as inputs. 
++ The steps of *fix_dv_vcf* and *fix_gatk_vcf* in the original workflow is not needed any more.
++ The DNMs called by *DeepVariant* & *GATK HaplotypeCaller* are further phased by *unfazed*.
++ Besides, we had explored differet *slivar* filters in rule *call_dnm_strelka2*:
+  + Add new PASS filter for *strelka* specifically
+    + variant.FILTER == 'PASS'
+  + Replace *(mom.AD[1] + dad.AD[1]) <= 5* with  <mark><i>(mom.AD[1]/(mom.AD[0]+mom.AD[1])) < 0.05 &&  (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < 0.05</i></mark> for general improvement.
+    + New rule is better to exclude low quality DNM candidates, for example, reads supports for the alternate allele present in parents with low read depth. 
