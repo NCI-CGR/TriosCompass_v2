@@ -96,6 +96,9 @@ The perl script extracts the haplotype block containing the DNMs from the output
 | chr4:29657055:GC:G               | ND              | 0/1  | 0                | 0                   | 0        | 0        | ND        | ND=>ND               |
 
 
+---
+
++ Descriptions for each output column.
 
 | Column position | Column Header          | Description                                                   | Notes                                                                                                                |
 | --------------- | ---------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
