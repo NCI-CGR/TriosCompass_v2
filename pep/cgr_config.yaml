@@ -6,8 +6,19 @@ output_dir: "output"
 input_bam_dir: "bam"
 
 hg38_ref: "ref/Homo_sapiens_assembly38.fasta"
-wgs_interval: "ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list"
+wgs_interval: "ref/hg38.wgs_interval.bed"
 ped_dir: "new_cgr_pedfiles"
+
+### Settings for dnSTR calling
+split_total: 400
+gangstr_panel: "STR/hg38_ver13.le9.bed"
+hipstr_panel: "STR/hg38_ver13.hipstr_9.bed"
+hipstr_filters: " --min-span-coverage 3 --min-supp-reads 3 "
+gangstr_filters: " --max-perc-encl-parent 0.05 --min-encl-match 0.9 --min-total-encl 10 --gangstr "
+dup_reg: "STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
+
+### WhatsHap
+phase_window: 10000
 
 # In CGR manifest file, CGF_ID + Flowcell should be unique
 sample_modifiers:
