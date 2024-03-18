@@ -35,12 +35,14 @@ my @hdr=("FamilyID", "ID", "SampleID","FatherSampleID", "MotherSampleID", "Gende
 &write_line_excel($worksheet, 0, \@hdr);
 ### print out hash
 my $row_id=1;
+my $output_dir = "old_output";
+
 for my $k (keys(%{$trio_hash})){
     # We got indel/snp type from the truth file before. Here, we may just have the variant counts instead.
-    my $DG_DNM_fn=sprintf("output/GATK_DV/D_and_G.%s.dnm.vcf.gz", $k);
-    my $Strelka_DNM_fn=sprintf("output/slivar/strelka_%s.dnm.vcf.gz", $k); 
-    my $DG_JIGV_link=sprintf("./output/call_JIGV/D_and_G_%s.JIGV.html", $k);
-    my $Strelka_JIGV_link=sprintf("./output/call_JIGV/strelka_%s.JIGV.html", $k);
+    my $DG_DNM_fn=sprintf("%s/GATK_DV/D_and_G.%s.dnm.vcf.gz", $output_dir, $k);
+    my $Strelka_DNM_fn=sprintf("%s/slivar/strelka_%s.dnm.vcf.gz", $output_dir, $k); 
+    my $DG_JIGV_link=sprintf("./%s/call_JIGV/D_and_G_%s.JIGV.html", $output_dir, $k);
+    my $Strelka_JIGV_link=sprintf("./%s/call_JIGV/strelka_%s.JIGV.html", $output_dir, $k);
 
     ### ref: 38M.process_new_CGR_data.md
     my $DG_DNM_cnt = `zgrep -v -c "^#" $DG_DNM_fn`;
