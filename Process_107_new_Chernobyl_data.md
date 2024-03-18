@@ -18,7 +18,6 @@
   - [QC metrics](#qc-metrics)
     - [Output of MultiQC](#output-of-multiqc)
     - [Problematic samples](#problematic-samples)
-  - [Summary report of new CGR run](#summary-report-of-new-cgr-run)
 
 
 ---
@@ -279,82 +278,6 @@ We have generated two sets of MultiQC report files under the folder output_multi
 +	SC108472 has many unmapped reads, origin from bateria and viruses commonly found in the upper respiratory tractor.  It is confimred that the sample was procured from saliva.
 + In the trio t0588c1 (kid: SC109409; father: SC109418; mother: SC109419), the sample ***SC109418*** lacks of the expected relatedness with SC109409.
 
----
-### Summary report of new CGR run 
-In our latest trios analysis, 107 CGR samples from 40 trios were processed. We developed a Perl script [generate_summary_report.pl](./scripts/generate_summary_report.pl) to generate summary table in Xlxs format.
 
-```bash
-### remove the problematic trio t0588c1
-ls new_cgr_pedfiles/*.ped  | grep -v t0588c1 > ped.lst
-
-wc -l ped.lst
-39 ped.lst
-
-scripts/generate_summary_report.pl cgr_summary.xlsx ped.lst
-```
-
-+ [Summary table](./cgr_summary.xlsx)
-
-
-| FamilyID | ID      | SampleID | FatherSampleID | MotherSampleID | Gender | DNM_Count_DG | DNM_Count_Strelka | JIGV_DG   | JIGV_Strelka |
-| -------- | ------- | -------- | -------------- | -------------- | ------ | ------------ | ----------------- | --------- | ------------ |
-| t0666    | t0666c1 | SC502245 | SC502256       | SC502234       | F      | 54           | 20                | JIGV HTML | JIGV HTML    |
-| t0315    | t0315c1 | SC260714 | SC260727       | SC260729       | F      | 74           | 18                | JIGV HTML | JIGV HTML    |
-| t0140    | t0140c1 | SC742196 | SC742286       | SC742197       | F      | 88           | 26                | JIGV HTML | JIGV HTML    |
-| t0565    | t0565c2 | SC109437 | SC109373       | SC109368       | F      | 79           | 24                | JIGV HTML | JIGV HTML    |
-| t0575    | t0575c1 | SC109390 | SC109395       | SC109405       | M      | 67           | 19                | JIGV HTML | JIGV HTML    |
-| t0712    | t0712c1 | SC742313 | SC742314       | SC742315       | F      | 114          | 18                | JIGV HTML | JIGV HTML    |
-| t0600    | t0600c2 | SC109495 | SC109514       | SC109500       | F      | 93           | 14                | JIGV HTML | JIGV HTML    |
-| t0565    | t0565c1 | SC109438 | SC109373       | SC109368       | F      | 68           | 14                | JIGV HTML | JIGV HTML    |
-| t0705    | t0705c1 | SC742298 | SC742301       | SC742299       | F      | 101          | 15                | JIGV HTML | JIGV HTML    |
-| t0750    | t0750c1 | SC736755 | SC736760       | SC736736       | F      | 93           | 27                | JIGV HTML | JIGV HTML    |
-| t0707    | t0707c1 | SC742305 | SC742306       | SC742307       | F      | 61           | 11                | JIGV HTML | JIGV HTML    |
-| t0592    | t0592c1 | SC109501 | SC109499       | SC109498       | F      | 62           | 31                | JIGV HTML | JIGV HTML    |
-| t0679    | t0679c1 | SC742275 | SC742188       | SC742277       | M      | 76           | 20                | JIGV HTML | JIGV HTML    |
-| t0007    | t0007c1 | SC499427 | SC499423       | SC499428       | M      | 67           | 14                | JIGV HTML | JIGV HTML    |
-| t0739    | t0739c1 | SC736720 | SC736795       | SC736726       | M      | 64           | 16                | JIGV HTML | JIGV HTML    |
-| t0575    | t0575c2 | SC109406 | SC109395       | SC109405       | M      | 60           | 12                | JIGV HTML | JIGV HTML    |
-| t0243    | t0243c1 | SC736787 | SC736702       | SC736772       | F      | 99           | 28                | JIGV HTML | JIGV HTML    |
-| t0058    | t0058c2 | SC108472 | SC109353       | SC109336       | M      | 86           | 58                | JIGV HTML | JIGV HTML    |
-| t0042    | t0042c1 | SC253873 | SC253877       | SC253872       | M      | 97           | 27                | JIGV HTML | JIGV HTML    |
-| t0766    | t0766c2 | SC736756 | SC736703       | SC730933       | F      | 113          | 31                | JIGV HTML | JIGV HTML    |
-| t0765    | t0765c1 | SC736700 | SC736738       | SC736739       | M      | 115          | 19                | JIGV HTML | JIGV HTML    |
-| t0766    | t0766c1 | SC742179 | SC736703       | SC730933       | M      | 82           | 12                | JIGV HTML | JIGV HTML    |
-| t0315    | t0315c2 | SC260715 | SC260727       | SC260729       | M      | 80           | 18                | JIGV HTML | JIGV HTML    |
-| t0483    | t0483c2 | SC742320 | SC742219       | SC742321       | F      | 125          | 19                | JIGV HTML | JIGV HTML    |
-| t0623    | t0623c1 | SC253881 | SC253893       | SC253894       | F      | 52           | 20                | JIGV HTML | JIGV HTML    |
-| t0760    | t0760c1 | SC736729 | SC736824       | SC736803       | F      | 106          | 26                | JIGV HTML | JIGV HTML    |
-| t0703    | t0703c1 | SC742295 | SC742296       | SC742297       | F      | 77           | 18                | JIGV HTML | JIGV HTML    |
-| t0271    | t0271c1 | SC109417 | SC109426       | SC109450       | M      | 144          | 25                | JIGV HTML | JIGV HTML    |
-| t0679    | t0679c2 | SC742276 | SC742188       | SC742277       | F      | 105          | 19                | JIGV HTML | JIGV HTML    |
-| t0693    | t0693c2 | SC742220 | SC742221       | SC742222       | F      | 90           | 25                | JIGV HTML | JIGV HTML    |
-| t0599    | t0599c1 | SC736788 | SC736742       | SC736743       | M      | 106          | 20                | JIGV HTML | JIGV HTML    |
-| t0617    | t0617c1 | SC260701 | SC260705       | SC260697       | M      | 131          | 33                | JIGV HTML | JIGV HTML    |
-| t0600    | t0600c1 | SC109494 | SC109514       | SC109500       | M      | 58           | 9                 | JIGV HTML | JIGV HTML    |
-| t0749    | t0749c1 | SC736820 | SC736759       | SC736701       | F      | 90           | 21                | JIGV HTML | JIGV HTML    |
-| t0022    | t0022c1 | SC742290 | SC742217       | SC742218       | M      | 64           | 12                | JIGV HTML | JIGV HTML    |
-| t0280    | t0280c1 | SC109512 | SC109516       | SC109507       | M      | 89           | 12                | JIGV HTML | JIGV HTML    |
-| t0594    | t0594c1 | SC736817 | SC736753       | SC736754       | F      | 110          | 17                | JIGV HTML | JIGV HTML    |
-| t0058    | t0058c1 | SC109341 | SC109353       | SC109336       | F      | 73           | 42                | JIGV HTML | JIGV HTML    |
-| t0209    | t0209c1 | SC742216 | SC742271       | SC742272       | F      | 87           | 21                | JIGV HTML | JIGV HTML    |
-
-
-:bookmark: In the Excel file, the last two columns of "JIGV HTML" are built in with HTTP links to the local HTML pages under output/call_JIGV.  Therefore, the HTTP links will not work properly unless the report file is located in the right position. 
-```bash
-cgr_summary.xlsx
-output/call_JIGV/
-├── D_and_G_t0007c1.JIGV.html
-├── D_and_G_t0022c1.JIGV.html
-...
-├── D_and_G_t0766c1.JIGV.html
-├── D_and_G_t0766c2.JIGV.html
-├── strelka_t0007c1.JIGV.html
-├── strelka_t0022c1.JIGV.html
-...
-├── strelka_t0766c1.JIGV.html
-└── strelka_t0766c2.JIGV.html
-```
-
----
 
 

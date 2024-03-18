@@ -7,9 +7,9 @@ This is a trios analysis workflow written in Snakemake.
 - [Installation](#installation)
   - [Preparation of the calling regions of DNMs](#preparation-of-the-calling-regions-of-dnms)
   - [The reference genome hg38](#the-reference-genome-hg38)
+  - [The reference panels for GangSTR and HipSTR](#the-reference-panels-for-gangstr-and-hipstr)
 - [Some details about the DNM calling](#some-details-about-the-dnm-calling)
   - [Slivar expression to select DNMs](#slivar-expression-to-select-dnms)
-- [New improvement for Strelka DNM calls](#new-improvement-for-strelka-dnm-calls)
 - [Development and benchmark of TriosCompass](#development-and-benchmark-of-trioscompass)
   - [Benchmark on the GIAB trios](#benchmark-on-the-giab-trios)
   - [Development and benchmark on the 8 trios from the Chernobyl data set](#development-and-benchmark-on-the-8-trios-from-the-chernobyl-data-set)
@@ -68,7 +68,10 @@ There are other dependencies required by the workflow, most of which are availab
 Besides, some resources files are also needed:
 + The reference genome
   + Homo_sapiens_assembly38.fasta
-  + Specify calling regions of DNMs
++ Calling regions of DNMs
++ The reference panels for GangSTR and HipSTR
++ GRCh38GenomicSuperDup.bed.gz
+  + Obtained from the UCSC Table Browser (hg38.genomicSuperDups table)
     
 
 ### Preparation of the calling regions of DNMs
@@ -101,6 +104,29 @@ Hg38 reference genome is used here, and it was indexed by bwa, samtools (.fai) a
 -rw-r----- 1 zhuw10 DCEG_Trios  804336731 Jul  3 08:39 Homo_sapiens_assembly38.fasta.64.pac
 -rw-r----- 1 zhuw10 DCEG_Trios 1608673512 Jul  3 08:39 Homo_sapiens_assembly38.fasta.64.sa
 -rw-r----- 1 zhuw10 DCEG_Trios     160928 Jul  3 08:39 Homo_sapiens_assembly38.fasta.fai
+```
+
+### The reference panels for GangSTR and HipSTR
+Both GangSTR and HipSTR use STRs specified in one reference panel, but with the different format.  One paper suggested that there is good consistence between HpSTR and GangSTR.
+>Oketch, J. W., Wain, L. V, Hollox, E. J., & Hollox, E. (2022). A comparison of software for analysis of rare and common short tandem repeat (STR) variation using human genome sequences from clinical and population-based samples. 1–22. https://doi.org/10.1101/2022.05.25.493473
+
+
+We would like to have the STR genotypes predicted jointly by both of the two progarm, therefore we need create one common reference panel file for both of GangSTR and HipSTR. 
+
+```bash
+### Get the GengSTR reference panel
+wget https://s3.amazonaws.com/gangstr/hg38/genomewide/hg38_ver13.bed.gz -O STR/hg38_ver13.bed.gz
+
+gzip -d STR/hg38_ver13.bed.gz
+
+### reformat for HipSTR
+awk -v OFS='\t' '{print $1,$2,$3,$4,($3-$2+1)/$4,"GangSTR_STR_"NR,$5}' STR/hg38_ver13.bed  >  STR/hg38_ver13.hipstr.bed
+
+### HipSTR cannot take STR with unit length > 9 bp
+awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.hipstr.bed > STR/hg38_ver13.hipstr_9.bed
+
+### We put the same length restrict to hg38_ver13.bed.gz, so that both of the two reference panels are consistent.
+awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.bed
 ```
 
 ---
@@ -143,99 +169,7 @@ Hg38 reference genome is used here, and it was indexed by bwa, samtools (.fai) a
 + min_gq=10, min_dp=20 for DeepVariant;
 + min_gq=20, min_dp=30 for GATK and Strelka.
 
----
 
-## New improvement for Strelka DNM calls
-We had explored to use Strelka to call DNMs, together with DeepVariant and HaplotypeCaller, as demonstrated in the file [Snakefile](./Snakefile).
-+ [New changes in the Snakefile](https://github.com/NCI-CGR/TriosCompass_v2/commit/36a6726943af9f0473edfc3150e1121bc2c994ee#diff-47959dfd378b3cd1d39b5515418ee8e4444ab7a6036d5197a5bea82814f928a3):
-  + Restrict to “pass” only.
-  + Use percentage in filters to address those variants with lower depth.
-  + Add new IGV snapshots.
-    + New perl script [prepare_yml_from_vcf.pl](./scripts/prepare_yml_from_vcf.pl) to prepare YAML file required by igv_snapshot_maker.
-    + Install igv-snapshot-maker to run the updated workflow.
-      + pip install -i https://test.pypi.org/simple/ igv-snapshot-maker==1.0.0
-+ Updated [summary Excel file](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/cgr_summary.xlsx).
-+ New output files under output/call_ism/strelka
-  + Users may copy the files (output/call_ism/strelka) to local and start with the Excel files, for example, like output/call_ism/strelka/t0007c1.xlsx
-  + The updated DNM calls from Strelka and JIGV should remain in the same location as before under /data/DCEG_Trios/new_cgr_data/TriosCompass_v2.
-```bash
-### The overall fold struture
-tree -L 4  output/call_ism/strelka/t0007c1.xlsx
-output/call_ism/
-└── strelka
-    ├── IGV_Snapshots
-    │   ├── t0007c1
-    │   │   ├── t0007c1.bat
-    │   │   ├── t0007c1_MIE_00001.bat
-    │   │   ├── t0007c1_MIE_00001.png
-    │   │   ├── t0007c1_MIE_00002.bat
-    │   │   ├── t0007c1_MIE_00002.png
-    │   │   ├── t0007c1_MIE_00003.bat
-    │   │   ├── t0007c1_MIE_00003.png
-    │   │   ├── t0007c1_MIE_00004.bat
-    │   │   ├── t0007c1_MIE_00004.png
-    │   │   ├── t0007c1_MIE_00005.bat
-    │   │   ├── t0007c1_MIE_00005.png
-    │   │   ├── t0007c1_MIE_00006.bat
-    │   │   ├── t0007c1_MIE_00006.png
-    │   │   └── t0007c1_ROIs.bat
-    │   ├── t0022c1
-    │   │   ├── t0022c1.bat
-    │   │   ├── t0022c1_MIE_00001.bat
-    │   │   ├── t0022c1_MIE_00001.png
-    │   │   ├── t0022c1_MIE_00002.bat
-    │   │   ├── t0022c1_MIE_00002.png
-    │   │   ├── t0022c1_MIE_00003.bat
-    │   │   ├── t0022c1_MIE_00003.png
-    │   │   ├── t0022c1_MIE_00004.bat
-    │   │   ├── t0022c1_MIE_00004.png
-    │   │   ├── t0022c1_MIE_00005.bat
-    │   │   ├── t0022c1_MIE_00005.png
-    │   │   └── t0022c1_ROIs.bat
-    │   ├── t0042c1
-    │   │   ├── t0042c1.bat
-    │   │   ├── t0042c1_MIE_00001.bat
-    │   │   ├── t0042c1_MIE_00001.png
-    │   │   ├── t0042c1_MIE_00002.bat
-    │   │   ├── t0042c1_MIE_00002.png
-    │   │   ├── t0042c1_MIE_00003.bat
-    │   │   ├── t0042c1_MIE_00003.png
-    │   │   ├── t0042c1_MIE_00004.bat
-    │   │   ├── t0042c1_MIE_00004.png
-    │   │   ├── t0042c1_MIE_00005.bat
-    │   │   ├── t0042c1_MIE_00005.png
-    │   │   ├── t0042c1_MIE_00006.bat
-    │   │   ├── t0042c1_MIE_00006.png
-    │   │   ├── t0042c1_MIE_00007.bat
-    │   │   ├── t0042c1_MIE_00007.png
-    │   │   ├── t0042c1_MIE_00008.bat
-    │   │   ├── t0042c1_MIE_00008.png
-    │   │   ├── t0042c1_MIE_00009.bat
-    │   │   ├── t0042c1_MIE_00009.png
-    │   │   ├── t0042c1_MIE_00010.bat
-    │   │   ├── t0042c1_MIE_00010.png
-    │   │   ├── t0042c1_MIE_00011.bat
-    │   │   ├── t0042c1_MIE_00011.png
-    │   │   ├── t0042c1_MIE_00012.bat
-    │   │   ├── t0042c1_MIE_00012.png
-    │   │   └── t0042c1_ROIs.bat
-    │   ├── t0058c1
-    │   │   ├── t0058c1.bat
-...
-    ├── t0007c1.xlsx
-    ├── t0007c1.yaml
-    ├── t0022c1.xlsx
-...
-    └── t0766c2.yaml
-
-41 directories, 938 files
-
-
-### Example of the command to transfer data to local (run it at your laptop)
-scp -r helix:/data/DCEG_Trios/new_cgr_data/TriosCompass_v2/output/call_ism/strelka ~/Downloads/strelka
-
-### Then open ~/Downloads/strelka/t0007c1.xlsx to review the snapshots
-```
 ---
 
 ## Development and benchmark of TriosCompass
@@ -248,5 +182,5 @@ We selected 8 trios from the 340 Chernobyl samples, which had been published in 
 ---
 
 ## Applications of TriosCompass on the real data
-+ Processing 107 new CGR samples
++ [Processing 107 new CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/qProcess_107_new_Chernobyl_data.md)
 + Re-processing 340 old Chernobyl samples
