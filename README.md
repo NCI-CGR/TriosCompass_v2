@@ -5,12 +5,12 @@
 - [Introduction](#introduction)
 - [Get started](#get-started)
   - [Set up the workspace](#set-up-the-workspace)
-  - [Run the wrapper script launch the workflow at the slurm cluster at Biowulf.](#run-the-wrapper-script-launch-the-workflow-at-the-slurm-cluster-at-biowulf)
-- [Prepare 341 bam files](#prepare-341-bam-files)
-  - [Transfer existing bam files of Set 1-3 from Object Store at Biowulf](#transfer-existing-bam-files-of-set-1-3-from-object-store-at-biowulf)
+  - [Run the wrapper script to launch at Biowulf.](#run-the-wrapper-script-to-launch-at-biowulf)
+- [Compile 341 bam files](#compile-341-bam-files)
+  - [Transfer existing bam files of Set 1-3 from Object Store to Biowulf](#transfer-existing-bam-files-of-set-1-3-from-object-store-to-biowulf)
   - [Transfer Set4 bam files from T drive at nci-cgr to biowulf](#transfer-set4-bam-files-from-t-drive-at-nci-cgr-to-biowulf)
   - [Check integrity of the transferred bam files](#check-integrity-of-the-transferred-bam-files)
-  - [Remove redundant copies of the bam files](#remove-redundant-copies-of-the-bam-files)
+  - [Remove redundant copies within the downloaded bam files](#remove-redundant-copies-within-the-downloaded-bam-files)
   - [Identify 15 bam files missed (340-325=15)](#identify-15-bam-files-missed-340-32515)
   - [Transfer 12 bam files (aligned to hg19) from T-drive at nci-cgr to biowufl](#transfer-12-bam-files-aligned-to-hg19-from-t-drive-at-nci-cgr-to-biowufl)
   - [Realign 12 bam files to hg38](#realign-12-bam-files-to-hg38)
@@ -25,7 +25,7 @@
 
 We applied TriosCompass on the 340 old Chernobyl data, together with one new sample SC074219 (t0450c2) from recently sequenced at the CGR lab.
 
-The pipeline is almost idential to the one to process the 107 new CGR sample, and we highlighted major differences in the following sections. 
+The pipeline is almost idential to [the one to process 107 new CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md), and we highlighted major differences in the following sections. 
 
 ---
 
@@ -51,14 +51,14 @@ mkdir -p logs bchernobyl_ped2/ ref/ STR/
 # ref/Homo_sapiens_assembly38.fasta
 ```
 
-### Run the wrapper script launch the workflow at the slurm cluster at Biowulf.
+### Run the wrapper script to launch at Biowulf.
 ```bash
 sbatch -J chernobyl -t 200:00:00 --export=ALL --mem=12g -p norm  --wrap='./run_it_chernobyl.sh '
 ```
 
 --- 
-## Prepare 341 bam files
-### Transfer existing bam files of Set 1-3 from Object Store at Biowulf
+## Compile 341 bam files
+### Transfer existing bam files of Set 1-3 from Object Store to Biowulf
 ```bash
 cd /data/DCEG_Trios/ChernobylTrios
 
@@ -156,7 +156,7 @@ find bams -name "*.bam" | parallel -j 2  "samtools quickcheck -v {} > quickcheck
 e files failed check, see quickcheck/{/.}.bad_bams.fofn' "
 ```
 
-### Remove redundant copies of the bam files
+### Remove redundant copies within the downloaded bam files
 ```bash
 cd /data/DCEG_Trios/ChernobylTrios/bams
 
@@ -249,6 +249,9 @@ rsync -av --progress  --files-from=12bams_location.txt  /DCEG/Projects/Exome/Seq
 ```
 
 ### Realign 12 bam files to hg38
++ [realign12bams.snakefile](./data/realign12bams.snakefile)
++ [run_12bams.sh](./data/run_12bams.sh)
+  
 ```bash
 ### @biowulf
 cd /data/DCEG_Trios/ChernobylTrios/
@@ -310,9 +313,9 @@ csvtk concat -E -t gangstr_call/000292_*.tab > output/gangstr/00292.samplestats.
 
 ```
 
-In the future, it would be recommended to use change *split_total* from 400 to 2000, or to call GangSTR by families.   
+In the future, it would be recommended to change *split_total* from 400 to 2000, or to call GangSTR by families (not with all samples).   
 
-Lastly, we got "memory overflow" issue in *DumperSTR*.  In turns out that GangSTR predicted very complicated variants in the "alt" column in certain location, which crashed *DumperSTR* in the subsequent filtering.  We had to manually removed those variants from the GangSTR output.
+Lastly, we got "memory overflow" issue in *DumperSTR*.  In turns out that GangSTR predicted very complicated variants in the "alt" column in certain locations, which crashed *DumperSTR* in the subsequent computation.  We had to manually removed those two variants from the GangSTR output.
 ```bash
 ###  Issue found in the chunks 00000.vcf and 00175.vcf
 awk '{if( length($5)>3000) print $1,$2,length($5)}' output/gangstr/00000.vcf
