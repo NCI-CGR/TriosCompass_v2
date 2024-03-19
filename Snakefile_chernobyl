@@ -1,10 +1,11 @@
-
+import os
 import glob
 import peds 
 import uuid
 
 
-### configure
+
+###### set configuration directly below #######
 output_dir="output"
 wgs_interval= "ref/hg38.wgs_interval.bed"
 hg38_ref="ref/Homo_sapiens_assembly38.fasta"
@@ -23,11 +24,11 @@ bam_files=[]
 with open(bam_list, 'r') as f:
     bam_files=[line.rstrip('\n') for line in f]
 
-_,ids,_= glob_wildcards("{path}/{id,SC[0-9]+}.{any,.*}bam", bam_files)
+_,subjs,_= glob_wildcards("{path}/{id,SC[0-9]+}.{any,.*}bam", bam_files)
 
 
-BAM_DICT=dict(zip(ids,bam_files))
-# print(ids)
+BAM_DICT=dict(zip(subjs,bam_files))
+# print(subjs)
 # print(BAM_DICT)
 # exit(0)
 
@@ -39,9 +40,12 @@ BAM_DICT=dict(zip(ids,bam_files))
 # t0334   SC074199        0       0       2       1
 # t0334   SC074201        SC074198        SC074199        1       1
 families = {}
+SEX_DICT={}
 for fn in ped_files:
     f=peds.open_ped(fn)[0]
     families[f.id]=f
+    for person in f:
+        SEX_DICT[person.id] = 'M' if person.is_male() else 'F'
 
 fam_ids = [f for f in families]
 # print(fam_ids)
@@ -49,14 +53,33 @@ fam_ids = [f for f in families]
 
 callers=['DV', 'GATK', "D_and_G"]
 
-### 
+### for dnSTR calling
+gangstr_panel = "STR/hg38_ver13.le9.bed"
+hipstr_panel = "STR/hg38_ver13.hipstr_9.bed"
+hipstr_filters= " --min-span-coverage 3 --min-supp-reads 3 "
+gangstr_filters= " --max-perc-encl-parent 0.05 --min-encl-match 0.9 --min-total-encl 10 --gangstr "
+dup_reg = "STR/GRCh38GenomicSuperDup.bed.gz" 
+STR_CALLERS=["hipstr", "gangstr"]
+split_total = 400
+
+CHUNKS =[str(x).zfill(5) for x in range(split_total)]
+final_subjs = subjs
+
+child_ids = [[person.id for person in families[fid] if families[fid].get_father(person) ][0] for fid in fam_ids]
+CHILD_DICT=dict(zip(fam_ids,child_ids))
+PHASE_WIN = 10000
+
+### hot fix for ganstr call: https://github.com/gymreklab/GangSTR/issues/86 (empty string by default)
+gangstr_extra = " --insertmean 382.6 --insertsdev 135.1 "
 
 rule all: 
     input: 
-        expand(output_dir +"/collectmultiplemetrics/{id}/sequencingArtifact.pre_adapter_summary_metrics.txt", id=ids),
-        expand(output_dir + "/collectwgsmetrics/{id}.collect_wgs_metrics.txt", id=ids),
+        expand(output_dir +"/collectmultiplemetrics/{id}/sequencingArtifact.pre_adapter_summary_metrics.txt", id=subjs),
+        expand(output_dir + "/collectwgsmetrics/{id}.collect_wgs_metrics.txt", id=subjs),
         expand(output_dir +"/call_JIGV/{caller}_{fam}.JIGV.html", fam=fam_ids, caller=callers),
-        expand(output_dir + "/unfazed/{fam}.DG.unfazed.vcf", fam=fam_ids)
+        expand(output_dir + "/vizaln/{fam}/{set}/DONE", fam=fam_ids, set=["both", "hipstr_only"]),
+        expand("output/merge_monstr/{caller}.all_mutations.tab", caller = STR_CALLERS),
+        expand(output_dir + "/phase_DNMs/{fam}.parental_origin.tab", fam=fam_ids)
 
 
 
@@ -75,7 +98,7 @@ rule cram:
         runtime='8h'
     benchmark:
         output_dir +"/benchmark/cram/{id}.tsv"
-    envmodules: "samtools"
+    envmodules: "samtools/1.19"
     params: rg="-r 'LB:lib1' -r 'PU:{id}' -r 'SM:{id}' -r 'PL:illumina' -r 'ID:{id}' "
     shell: '''
         samtools addreplacerg -w {params.rg} -O CRAM --reference {input.ref} -@ {threads} -o {output.cram} --write-index {input.bam}
@@ -88,7 +111,7 @@ rule collectmultiplemetrics:
         ref=hg38_ref
     resources :
         threads=32,
-        mem_mb= 120000,
+        mem_mb= 180000,
         runtime=1800,
         partition="gpu",
         slurm="gres=gpu:v100x:2"
@@ -133,7 +156,8 @@ rule gatkhc_pb:
     output:
         gvcf=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf",
         gz=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf.gz",
-        tbi=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf.gz.tbi"
+        tbi=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf.gz.tbi",
+        idx=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf.idx"
     threads: 24
     benchmark:
         output_dir +"/benchmark/gatkhc_pb/{id}.tsv"
@@ -168,7 +192,7 @@ rule deepvariant_pb:
         output_dir +"/benchmark/deepvariant_pb/{id}.tsv"
     envmodules: "parabricks/4.0.0", "bcftools"
     resources: 
-        mem_mb = 180000,
+        mem_mb = 240000,
         runtime= "1d",
         partition="gpu",
         slurm="gres=gpu:v100x:2",
@@ -190,6 +214,7 @@ rule gatk_combine_gvcf:
     input: 
         vcfs=lambda w: expand(output_dir + "/gatkhc_pb/{id}.gatk.g.vcf.gz", id= [person.id for person in families[w.fam]]),
         tbis=lambda w: expand(output_dir + "/gatkhc_pb/{id}.gatk.g.vcf.gz.tbi", id= [person.id for person in families[w.fam]]),
+        idx=lambda w: expand(output_dir + "/gatkhc_pb/{id}.gatk.g.vcf.idx", id= [person.id for person in families[w.fam]]),
         ref=hg38_ref
     output: output_dir+"/gatk_combine_gvcf/{fam}.combine_gvcf.g.vcf.gz"
     threads: 16
@@ -410,31 +435,475 @@ use rule call_JIGV as call_JIGV_for_DG with:
         sites= output_dir +"/GATK_DV/{caller}.{fam}.dnm.vcf.gz"
   
 
-rule unfazed:
+########################################################
+# append rules for dnSTR calling
+########################################################
+### split bed files first
+# skip chrX for the time being
+rule split_bed: 
     input: 
-        dnm = output_dir +"/GATK_DV/D_and_G.{fam}.dnm.vcf.gz",
-        vcf = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz",
-        csi = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz.csi",
-        ped=ped_dir + "/{fam}.ped",
-        ref=hg38_ref
+        hipstr_panel
+    output: 
+        expand(output_dir+"/splitted_panel/hipstr_{chunk}.bed", chunk=CHUNKS)
+    params: 
+        split_total = split_total,
+        prefix=output_dir+"/splitted_panel/hipstr_"
+    resources :
+        mem_mb=10000
+    shell: '''
+        # split cannot take piped input, leading to the error of "cannot determine file size"
+        # so we use tmpfile here to get around the issue
+        tmpfile=$(mktemp /tmp/abc-script.XXXXXX); grep -v -e "^chrX" -e "chrY" {input} > $tmpfile; split --numeric-suffixes=0 -n l/{params.split_total} --suffix-length=5  --additional-suffix=".bed" $tmpfile {params.prefix}
+    '''
+
+use rule split_bed as split_bed_gangstr with: 
+    input: 
+        gangstr_panel
+    output: 
+        expand(output_dir+"/splitted_panel/gangstr_{chunk}.bed", chunk=CHUNKS)
+    params: 
+        split_total = split_total,
+        prefix=output_dir+"/splitted_panel/gangstr_"
+
+
+### As gangstr infor tag GRID will get lost during mergeSTR, we have to run gastr as trios
+# --bam-samps sample1,sample2 --samp-sex M,F as input option.
+rule gangstr:
+    input: 
+        bams = expand(output_dir+"/cram/{id}.cram", id= final_subjs),
+        ref = hg38_ref,
+        reg = output_dir+"/splitted_panel/gangstr_{chunk}.bed"
     output:
-        output_dir + "/unfazed/{fam}.DG.unfazed.vcf"
-    benchmark:
-        output_dir +"/benchmark/unfazed/{fam}.tsv"
-    resources: 
-        threads=10,
-        mem_mb = 20*1000,
-        runtime= "1d"
+        multiext(output_dir+ "/gangstr/{chunk}", ".vcf", ".samplestats.tab")
     params:
-        bam_dir = output_dir + "/cram"
+        prefix = output_dir+ "/gangstr/{chunk}", 
+        bams=lambda w, input: ",".join(input.bams),
+        sexes=  ",".join(SEX_DICT[id] for id in final_subjs),
+        ids= ",".join(final_subjs),
+        gangstr_extra = gangstr_extra
+    benchmark:
+        output_dir + "/benchmark/gangstr/{chunk}.tsv"
+    resources:
+        runtime="4d",
+        mem_mb=800000,
+        threads=8,
+        partition="largemem"
     shell: """
-         unfazed \
-            -d {input.dnm} \
-            -s {input.vcf} \
-            -p {input.ped} \
-            -g 38 \
-            -b {params.bam_dir} \
-            -t {threads} \
-            -r {input.ref} \
-            -o vcf --outfile {output}
+        GangSTR --bam {params.bams} \
+            --ref {input.ref} \
+            --regions {input.reg} \
+            --include-ggl \
+            --bam-samps {params.ids} \
+            --samp-sex {params.sexes} \
+            {params.gangstr_extra} \
+            --out {params.prefix} 
     """
+
+# Hollox/Code_availability_manuscript-07-02-2023.pdf
+rule dumpstr_call:
+    input: output_dir+"/gangstr/{chunk}.vcf"
+    output:
+        multiext(output_dir+ "/dumpstr_call/gangstr_{chunk}", ".vcf", ".loclog.tab", ".samplog.tab")
+    params:
+        prefix = output_dir+"/dumpstr_call/gangstr_{chunk}", 
+        # min_dp = lambda w: 20 if (SEX_DICT[w.id] == 'M' and w.chrom=='chrX') else 40
+        # min_dp = lambda w: 15 if (w.chrom=='chrX') else 30
+    resources:
+        runtime="10h",
+        mem_mb=120000
+    shell: """
+        dumpSTR --vcf {input} --out {params.prefix} --gangstr-min-call-DP 15 \
+            --gangstr-max-call-DP 1000 --gangstr-filter-spanbound-only \
+            --gangstr-filter-badCI --vcftype gangstr --gangstr-min-call-Q 0.9 --drop-filtered
+    """
+    
+
+rule hipstr:
+    input: 
+        bams = expand(output_dir + "/cram/{id}.cram", id= final_subjs),
+        ref=hg38_ref,
+        # bam_list=bam_list,
+        reg = output_dir+"/splitted_panel/hipstr_{chunk}.bed"
+    output:
+        vcf= output_dir + "/hipstr/{chunk}.vcf.gz",
+        viz= output_dir + "/hipstr/{chunk}.aln.viz.gz",
+    log: output_dir + "/hipstr/{chunk}.log"
+    benchmark:
+        output_dir + "/benchmark/hipstr/{chunk}.tsv"
+    resources:
+        runtime="200h",
+        mem_mb=40000
+    envmodules: "hipstr", "bcftools"
+    params: 
+        bams=lambda w, input: ",".join(input.bams)
+    shell: """
+        HipSTR  --output-gls --bams {params.bams} --fasta {input.ref}  --regions  {input.reg} --str-vcf  {output.vcf} --viz-out {output.viz} --def-stutter-model  --log  {log}
+        tabix -p bed {output.viz}
+        tabix -p vcf {output.vcf}
+    """
+
+rule dumpstr_hipstr: 
+    input: output_dir + "/hipstr/{chunk}.vcf.gz"
+    output:
+        multiext(output_dir + "/dumpstr_call/hipstr_{chunk}", ".vcf", ".loclog.tab", ".samplog.tab")
+    params:
+        prefix = output_dir + "/dumpstr_call/hipstr_{chunk}", 
+        # min_dp = lambda w: 20 if (SEX_DICT[w.id] == 'M' and w.chrom=='chrX') else 40
+        # min_dp = lambda w: 15 if (w.chrom=='chrX') else 30
+    resources:
+        runtime="10h",
+        mem_mb=120000
+    shell: """
+        dumpSTR --vcf {input} --out {params.prefix} --hipstr-min-call-DP 15 \
+            --hipstr-max-call-DP 1000 --hipstr-min-call-Q 0.9 --drop-filtered \
+            --vcftype hipstr --hipstr-min-supp-reads 1 --hipstr-max-call-flank-indel 0.15 \
+            --hipstr-max-call-stutter 0.15 
+    """
+    
+# For chromosome X, the Hardy–Weinberg equilibrium filter
+# ref: 39M
+rule dumpstr_locus:
+    input: 
+        vcf= output_dir + "/dumpstr_call/{caller}_{chunk}.vcf",
+        dup_reg = dup_reg
+    output:
+        multiext(output_dir + "/dumpstr_locus/{caller}_{chunk}", ".vcf", ".loclog.tab", ".samplog.tab")
+    params:
+        prefix = output_dir + "/dumpstr_locus/{caller}_{chunk}"
+    resources:
+        runtime="20h",
+        mem_mb=40000
+    shell: """
+        dumpSTR --min-locus-hwep 0.00001 --min-locus-callrate 0.8 \
+            --filter-regions {input.dup_reg} \
+                --filter-regions-names SEGDUP \
+                --vcf {input.vcf} \
+                --out {params.prefix}
+    """
+
+
+rule vcf_index: 
+    input: output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf"
+    output: 
+        gz= output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf.gz",
+        tbi= output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf.gz.tbi"
+    resources:
+        runtime="20h",
+        mem_mb=10000    
+    envmodules: "bcftools"
+    shell: """
+        bcftools sort {input} | bgzip -c  > {output.gz}
+        tabix -p vcf {output.gz}
+    """
+
+
+### fix all.ped 
+
+rule merge_ped:
+    input:
+        expand(ped_dir + "/{fam}.ped", fam=fam_ids)
+    output:
+        output_dir + "/merge_ped/all.ped"
+    shell: """
+        cat {input} | awk '{{if($3!=0 && $4!=0) print $0}}'   | sed -e 's/^\(t....\)c./\\1/' > {output}
+    """
+
+### ignore chrX for the time being.
+
+rule monstr:
+    input: 
+        vcf = output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf.gz",
+        ped = output_dir + "/merge_ped/all.ped"
+    output: 
+        multiext( output_dir + "/monstr/{caller}_{chunk}", ".all_mutations.tab", ".locus_summary.tab")
+    benchmark:
+        output_dir + "/benchmark/monstr/{caller}_{chunk}.tsv"
+    container: "docker://gymreklab/monstr"
+    params:
+        prefix=output_dir + "/monstr/{caller}_{chunk}",
+        arg = lambda w: gangstr_filters if (w.caller=='gangstr') else hipstr_filters,
+        # chrX = lambda w: " --chrX " if (w.chrom=='chrX') else ""
+    # envmodules: "singularity"
+    resources:
+        runtime="20h",
+        mem_mb=40000 
+    shell: """
+        MonSTR  \
+            --strvcf {input.vcf} \
+            --fam {input.ped} \
+            --out {params.prefix} \
+            --min-score 0.8 \
+            --min-coverage 10 \
+            {params.arg} 
+            
+    """
+
+rule merge_monstr:
+    input: 
+        mutation=expand(output_dir + "/monstr/{{caller}}_{chunk}.all_mutations.tab", chunk=CHUNKS),
+        summary=expand(output_dir + "/monstr/{{caller}}_{chunk}.locus_summary.tab", chunk=CHUNKS)
+    output: 
+        mutation=output_dir + "/merge_monstr/{caller}.all_mutations.tab",
+        summary=output_dir + "/merge_monstr/{caller}.locus_summary.tab"
+    conda:
+        "workflow/envs/csvtk.yaml"
+    resources:
+        runtime="20h",
+        mem_mb=40000 
+    shell: """
+        csvtk concat -E -t {input.mutation} | csvtk sort -t -k chrom:N -k pos:n -k child -E - | csvtk filter -t -f "poocase>1" > {output.mutation}
+        csvtk concat -E -t {input.summary} | csvtk sort -t -k chrom:N -k pos:n  -E - | csvtk filter -t -f "total_mutations>0" > {output.summary}
+    """
+
+
+rule monstr_filter:
+    input: output_dir + "/merge_monstr/{caller}.all_mutations.tab"
+    output: 
+        filtered=output_dir + "/monstr_filter/{caller}.filtered.tab",
+        log=output_dir + "/monstr_filter/{caller}.filtered.log"
+    container: "docker://gymreklab/monstr"
+    resources:
+        runtime="2h",
+        mem_mb=20000 
+    shell: """
+        python3 /STRDenovoTools/scripts/qc_denovos.py --all-mutations-file {input} \
+                  --filtered-mutations-file {output.filtered} \
+                  --log-file {output.log} \
+                  --filter-denovos-child 5 \
+                  --filter-loc-denovos 5 \
+                  --filter-posterior 0.8 
+    """
+
+rule joint_STR: 
+    input: expand(output_dir + "/monstr_filter/{caller}.filtered.tab", caller=['hipstr','gangstr'])
+    output: output_dir + "/joint_STR/gangstr_hipstsr.final.tab"
+    conda:
+        "workflow/envs/csvtk.yaml"
+    shell: """
+        csvtk join -t -f "chrom,pos,child,child_gt,mat_gt,pat_gt" -p {input} > {output}
+    """
+        
+
+
+
+### extract bed file from the reference panel by chr, pos from MonSTR output
+rule bedfile_for_hipstr_call:
+    input: 
+        tab=output_dir +"/joint_STR/gangstr_hipstsr.final.tab",
+        ref_panel = hipstr_panel
+    output: 
+        tmp = temp(output_dir + "/vizaln/{fam}/{fam}_recall.both.tmp"),
+        bed = output_dir + "/vizaln/{fam}/{fam}_recall.both.bed"
+    params:
+        cmd = "sed 's/^/chr/'",
+        id = lambda w: CHILD_DICT[w.fam]
+    shell: """
+        awk -v FS='\\t' -v OFS='\\t' '{{if(NR>1 && $6=="{params.id}") print $1, $2}}' {input.tab} | {params.cmd} > {output.tmp}
+        if [ -s {output.tmp} ]; then 
+            grep -f {output.tmp} {input.ref_panel} > {output.bed}
+        else
+            echo -n > {output.bed}
+        fi
+    """
+
+### use monster filtered results instead
+# chr from filtered.tab has no "chr" prefix.
+use rule bedfile_for_hipstr_call as bedfile_for_hipstr_all with:
+    input: 
+        tab=output_dir +"/monstr_filter/hipstr.filtered.tab",
+        ref_panel = hipstr_panel
+    output: 
+        tmp = temp(output_dir + "/vizaln/{fam}/{fam}_recall.all.tmp"),
+        bed = output_dir + "/vizaln/{fam}/{fam}_recall.all.bed"
+    params:
+        cmd = "sed 's/^/chr/'",
+        id = lambda w: CHILD_DICT[w.fam]
+
+### We may skip all and focus on both and hipstr_only
+rule bedfile_for_hipstr_only:
+    input:
+        both = output_dir + "/vizaln/{fam}/{fam}_recall.both.bed",
+        hipstr_all = output_dir + "/vizaln/{fam}/{fam}_recall.all.bed"
+    output:
+        hipstr_only = output_dir + "/vizaln/{fam}/{fam}_recall.hipstr_only.bed"
+    resources:
+        runtime="2h",
+        mem_mb=2000
+    shell: """
+        ### it is possible that hipstr_all is empty
+        if [ -s {input.hipstr_all} ]; then 
+            grep -v -f  {input.both} {input.hipstr_all} > {output.hipstr_only}
+        else
+            echo -n > {output.hipstr_only}
+        fi
+        
+    """
+
+rule hipstr_recall:
+    input: 
+        bams = lambda w: expand(output_dir + "/cram/{id}.cram", id= [person.id for person in families[w.fam]]),
+        ref=hg38_ref,
+        reg = output_dir + "/vizaln/{fam}/{fam}_recall.{set}.bed"
+    output:
+        vcf = output_dir + "/vizaln/{fam}/{fam}.{set}.vcf.gz",
+        viz = output_dir + "/vizaln/{fam}/{fam}.{set}.aln.viz.gz"
+    resources:
+        runtime="2h",
+        mem_mb=10000
+    log: output_dir + "/vizaln/{fam}/{fam}.{set}.hipstr.log"
+    params:
+        bams=lambda w, input: ",".join(input.bams)
+    envmodules: "hipstr", "bcftools"
+    benchmark:
+        output_dir +"/benchmark/hipstr_recall/{fam}_{set}.tsv"
+    shell: """
+        HipSTR  --output-gls --bams  {params.bams} --fasta {input.ref} --regions  {input.reg} --str-vcf  {output.vcf} --viz-out {output.viz} --def-stutter-model  --min-reads 6 --log  {log}
+        tabix -p bed {output.viz}
+        tabix -p vcf {output.vcf}
+    """
+
+checkpoint scatter_chr_pos:
+    input: 
+        output_dir + "/vizaln/{fam}/{fam}.{set}.vcf.gz"
+    output:
+        directory(output_dir + "/vizaln/{fam}/{set}/variants/")
+    shell: """
+        ### to deal with (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+        set +o pipefail
+        mkdir -p {output}
+        zgrep -v "^#" {input}  | awk -v FS='\\t' '{{if($1 != "") system("touch {output}/"$1"_"$2".dnm")}}' || true
+    """
+
+rule vizaln:
+    input: 
+        dummy=output_dir + "/vizaln/{fam}/{set}/variants/{chr}_{pos}.dnm",
+        viz=output_dir + "/vizaln/{fam}/{fam}.{set}.aln.viz.gz"
+    output: 
+        output_dir + "/vizaln/{fam}/{set}/variants/{chr}_{pos}.html"
+    benchmark:
+        output_dir +"/benchmark/vizaln/{fam}_{set}.{chr}_{pos}.tsv"
+    shell: """
+        ./HipSTR/VizAln_rev {input.viz} {output} {wildcards.chr} {wildcards.pos}
+    """
+
+def aggregate_input(wildcards):
+    checkpoint_output = checkpoints.scatter_chr_pos.get(**wildcards).output[0]
+    return expand(output_dir + "/vizaln/{fam}/{{set}}/variants/{chr_pos}.html",
+           fam=wildcards.fam,
+           chr_pos=glob_wildcards(os.path.join(checkpoint_output, "{chr_pos}.dnm")).chr_pos)
+
+
+rule aggregate_visaln:
+    input: aggregate_input
+    output: 
+        output_dir + "/vizaln/{fam}/{set}/DONE"
+    shell: """
+        touch {output}
+    """
+
+
+#############################################
+# rules for phase DNMs
+#############################################
+checkpoint scatter_dnms:
+    input: output_dir +"/GATK_DV/D_and_G.{fam}.dnm.vcf.gz"
+    output:
+        directory(output_dir + "/phase_DNMs/{fam}/variants")
+    shell: """
+        mkdir -p {output}
+        zgrep -v "^#" {input}  | awk -v FS='\\t' -v OFS=':' '{{out="{output}/"$1"_"$2".dnm"; print $1,$2,$4,$5 >out}}'
+    """
+
+rule vcf4phase:
+    input:
+        dnm = output_dir + "/phase_DNMs/{fam}/variants/{chr}_{pos}.dnm",
+        vcf=output_dir +"/glnexus/{fam}.dv_combined.vcf.gz"
+    output:
+        vcf=output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz",
+        tbi=output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz.tbi"
+    envmodules: "bcftools"
+    resources: 
+        mem_mb = 20000,
+        runtime= "2h"
+    benchmark:
+        output_dir +"/benchmark/vcf4phase/{fam}.{chr}_{pos}.tsv"
+    params: 
+        reg= lambda w: '%s:%d-%d' % (w.chr, int(w.pos)-PHASE_WIN, int(w.pos)+PHASE_WIN)
+    shell: """
+        bcftools view -r {params.reg} {input.vcf} | bcftools annotate -Oz -x ID -I +"%CHROM:%POS:%REF:%ALT" -Oz -o {output.vcf};
+        tabix {output.vcf};
+    """
+
+rule phase_child:
+    input: 
+        bams=lambda w: expand(output_dir +"/cram/{id}.cram", id=[CHILD_DICT[w.fam]]),
+        bais=lambda w: expand(output_dir +"/cram/{id}.cram.crai", id=[CHILD_DICT[w.fam]]),
+        ref=hg38_ref,
+        vcf = output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz"
+    output: 
+        vcf= output_dir +"/phase_DNMs/{fam}/variants/{fam}.{chr}_{pos}.phase_child.vcf.gz"
+    params:
+        id = lambda w: CHILD_DICT[w.fam]
+    benchmark:
+        output_dir +"/benchmark/phase_child/{fam}.{chr}_{pos}.tsv"
+    resources: 
+        threads=4,
+        mem_mb = 40*1000,
+        runtime= "4h"
+    shell: """
+        whatshap phase -o {output.vcf} --tag=PS --indels --reference={input.ref} --sample {params.id} {input.vcf} {input.bams}
+    """
+
+rule phase_trios:
+    input: 
+        bams=lambda w: expand(output_dir +"/cram/{id}.cram", id=[person.id for person in families[w.fam]]),
+        bais=lambda w: expand(output_dir +"/cram/{id}.cram.crai", id=[person.id for person in families[w.fam]]),
+        ped=ped_dir + "/{fam}.ped",
+        ref=hg38_ref,
+        vcf = output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz"
+    output: 
+        vcf= output_dir +"/phase_DNMs/{fam}/variants/{fam}.{chr}_{pos}.phase_trios.vcf.gz"
+    benchmark:
+        output_dir +"/benchmark/phase_trios/{fam}.{chr}_{pos}.tsv"
+    resources: 
+        threads=4,
+        mem_mb = 40*1000,
+        runtime= "8h"
+    shell: """
+        whatshap phase -o {output.vcf} --tag=PS --indels --ped {input.ped} --reference={input.ref} {input.vcf} {input.bams} 
+    """
+
+rule extract_parental_origin:
+    input:
+        dnm = output_dir + "/phase_DNMs/{fam}/variants/{chr}_{pos}.dnm",
+        ped = ped_dir + "/{fam}.ped",
+        phase_child = output_dir +"/phase_DNMs/{fam}/variants/{fam}.{chr}_{pos}.phase_child.vcf.gz",
+        phase_trios = output_dir +"/phase_DNMs/{fam}/variants/{fam}.{chr}_{pos}.phase_trios.vcf.gz"
+    output:
+        output_dir + "/phase_DNMs/{fam}/variants/{chr}_{pos}.parental_origin.txt"
+    benchmark:
+        output_dir +"/benchmark/extract_parental_origin/{fam}.{chr}_{pos}.tsv"
+    resources: 
+        mem_mb = 4*1000,
+        runtime= "2h"
+    shell: """
+        perl scripts/extract_parental_origin.pl  {input.dnm} {input.ped} {input.phase_child} {input.phase_trios} {output}
+    """
+
+def aggregate_input(wildcards):
+    checkpoint_output = checkpoints.scatter_dnms.get(**wildcards).output[0]
+    return expand(output_dir + "/phase_DNMs/{fam}/variants/{chr_pos}.parental_origin.txt",
+           fam=wildcards.fam,
+           chr_pos=glob_wildcards(os.path.join(checkpoint_output, "{chr_pos}.dnm")).chr_pos)
+
+
+### should be replace "_" with ":" after VID is fixed
+rule aggregate_phase:
+    input: aggregate_input
+    output: 
+        output_dir + "/phase_DNMs/{fam}.parental_origin.tab"
+    shell: """
+        cat {input} | sort -t ":"  -Vs -k1,1 -k2,2n > {output}
+    """
+
+
