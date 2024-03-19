@@ -182,5 +182,5 @@ We selected 8 trios from the 340 Chernobyl samples, which had been published in 
 ---
 
 ## Applications of TriosCompass on the real data
-+ [Processing 107 new CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/qProcess_107_new_Chernobyl_data.md)
++ [Processing 107 new CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md)
 + Re-processing 340 old Chernobyl samples
