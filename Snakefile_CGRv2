@@ -1,0 +1,1052 @@
+import os
+import uuid
+import peds
+import glob
+from itertools import compress
+
+pepfile: "pep/cgr_config.yaml"
+pepschema: "schemas/cgr_manifest_schema.yaml"
+
+samples = pep.sample_table
+# samples = samples.loc[ samples['CGF_ID'].isin( ['SC108472','SC730933'])]
+
+# print(samples)
+# print(pep.config.output_dir)
+
+
+# get unique value of a list
+# print(list(set(samples["FLOWCELL"].tolist())))
+
+flowcells = list(set(samples["FLOWCELL"].tolist()))
+subjs = list(set(samples["CGF_ID"].tolist()))
+ids = samples["sample_name"].tolist()
+# print(len(ids))
+# print(subjs)
+# print(len(list(set(ids))))
+# exit()
+
+# print (samples)
+
+
+# 'SC742296': ['BH2HYTDSX5', 'BH2JN2DSX5']
+subj_flowcell_dict=samples[['CGF_ID','FLOWCELL']].drop_duplicates().groupby('CGF_ID')['FLOWCELL'].apply(list).to_dict()
+
+ref_dict=os.path.splitext(pep.config.hg38_ref)[0]+'.dict'
+
+# print (subj_flowcell_dict)
+
+
+### Define trios
+ped_files = glob.glob(pep.config.ped_dir + "/*.ped")
+
+### make more compatible
+output_dir = pep.config.output_dir
+
+### It seems order of the family member is as the order of entries in the pedigree file
+# see https://github.com/jeremymcrae/peds/blob/master/peds/ped.py
+# Therefore, it is likely to be the order: father, mother and kid
+# t0334   SC074198        0       0       1       1
+# t0334   SC074199        0       0       2       1
+# t0334   SC074201        SC074198        SC074199        1       1
+families = {}
+SEX_DICT={}
+for fn in ped_files:
+    f=peds.open_ped(fn)[0]
+    families[f.id]=f
+    for person in f:
+        SEX_DICT[person.id] = 'M' if person.is_male() else 'F'
+
+fam_ids = list(families.keys()) 
+
+fam_ids2=  [f for f in fam_ids if f != 't0588c1' ]
+# print(fam_ids)
+
+
+### to link with the section of rules from the workflow Snakefile_chernobyl
+output_dir = pep.config.output_dir
+callers=['DV', 'GATK', "D_and_G"]
+fam_ids=fam_ids2 # remove the subject t0588c1
+hg38_ref = pep.config.hg38_ref
+ref_dict=os.path.splitext(hg38_ref)[0]+'.dict'
+wgs_interval= pep.config.wgs_interval
+ped_dir = pep.config.ped_dir
+
+### for dnSTR calling
+gangstr_panel = pep.config.gangstr_panel
+hipstr_panel = pep.config.hipstr_panel
+hipstr_filters= pep.config.hipstr_filters
+gangstr_filters= pep.config.gangstr_filters
+dup_reg = pep.config.dup_reg
+STR_CALLERS=["hipstr", "gangstr"]
+split_total = pep.config.split_total
+CHUNKS =[str(x).zfill(5) for x in range(split_total)]
+final_subjs = list(set([p.id for f in fam_ids2 for p  in families[f] ]))
+
+### Settings for dnSTR
+# ref_fai = hg38_ref +'.fai'
+child_ids = [[person.id for person in families[fid] if families[fid].get_father(person) ][0] for fid in fam_ids2]
+CHILD_DICT=dict(zip(fam_ids2,child_ids))
+PHASE_WIN = pep.config.phase_window
+
+# print(subjs)
+
+rule all:
+    input: 
+       expand(output_dir +"/collectmultiplemetrics/{id}/sequencingArtifact.pre_adapter_summary_metrics.txt", id=subjs),
+       expand(pep.config.output_dir+"/fastqc/{id}.{reads}.html", id=ids, reads=['R1','R2']),
+       expand(pep.config.output_dir+"/fastq_screen/{id}.fastq_screen.png", id= ids),
+       expand(output_dir + "/collectwgsmetrics/{id}.collect_wgs_metrics.txt", id=subjs),
+       expand(output_dir +"/call_JIGV/{caller}_{fam}.JIGV.html", fam=fam_ids2, caller=callers),
+       expand(output_dir + "/vizaln/{fam}/{set}/DONE", fam=fam_ids2, set=["both", "hipstr_only"]),
+       expand("output/merge_monstr/{caller}.all_mutations.tab", caller = STR_CALLERS),
+       expand(output_dir + "/phase_DNMs/{fam}.parental_origin.tab", fam=fam_ids2)
+       
+
+
+
+# ./HG002_NA24385_son/NIST_HiSeq_HG002_Homogeneity-10953946/HG002_HiSeq300x_fastq/140528_D00360_0018_AH8VC6ADXX/Project_RM8391_RM8392/Sample_2A1/2A1_CGATGT_L001_R1.fq.gz
+rule fastp: 
+    input: 
+        R1= lambda w:  samples.loc[w.sample_name]["R1"],
+        R2= lambda w:  samples.loc[w.sample_name]["R2"]
+    output: 
+        R1=pep.config.output_dir+"/fastp/{sample_name}.R1.fastp.fastq.gz",
+        R2=pep.config.output_dir+"/fastp/{sample_name}.R2.fastp.fastq.gz",
+        html=pep.config.output_dir+"/fastp/{sample_name}.fastp.html",
+        json=pep.config.output_dir+"/fastp/{sample_name}.fastp.json"
+    benchmark:
+        pep.config.output_dir + "/benchmark/fastp/{sample_name}.tsv"
+    threads: 8
+    resources:
+        mem_mb=40000,
+        runtime=600
+    envmodules: "fastp"
+    shell: """
+        fastp \
+                --in1 {input.R1} \
+                --in2 {input.R2} \
+                --out1 {output.R1} \
+                --out2 {output.R2} \
+                --report_title {wildcards.sample_name} \
+                --json {output.json} \
+                --html {output.html} \
+                --thread {threads} \
+                --qualified_quality_phred 25 --n_base_limit 10 --average_qual 25 \
+                --length_required 50 --low_complexity_filter
+    """
+
+### fastqc on fastp output
+# https://snakemake-wrappers.readthedocs.io/en/stable/wrappers/fastqc.html
+# pep.config.output_dir+"/fastp/{sample_name}.R1.fastp.fastq.gz
+rule fastqc:
+    input: pep.config.output_dir+"/fastp/{id}.fastp.fastq.gz"
+    output:
+        html=pep.config.output_dir+"/fastqc/{id}.html",
+        zip=pep.config.output_dir+"/fastqc/{id}_fastqc.zip" 
+    params:
+        extra = "--quiet"
+    log:
+        "logs/fastqc/{id}.log"
+    threads: 1
+    resources:
+        mem_mb=10000,
+        runtime=600
+    wrapper:
+        "v2.1.1/bio/fastqc"
+
+### fastqscreen on fastp R1 output
+# https://snakemake-wrappers.readthedocs.io/en/stable/wrappers/fastq_screen.html
+rule fastq_screen:
+    input:
+        pep.config.output_dir+"/fastp/{id}.R1.fastp.fastq.gz"
+    output:
+        txt=pep.config.output_dir+"/fastq_screen/{id}.fastq_screen.txt",
+        png=pep.config.output_dir+"/fastq_screen/{id}.fastq_screen.png"
+    params:
+        fastq_screen_config="ref/fastq_screen.abs.conf",
+        subset=100000,
+        aligner='bwa'
+    threads: 8
+    resources:
+        mem_mb=50000,
+        runtime=600
+    wrapper:
+        "v2.1.1/bio/fastq_screen"
+
+# https://docs.nvidia.com/clara/parabricks/4.0.1/documentation/tooldocs/man_fq2bam.html#man-fq2bam
+# For the same sample, Read Groups should have the same sample name (SM) and a different ID and PU. (default: None)
+rule fq2bam:
+    input: 
+        R1s=lambda w: expand(pep.config.output_dir+"/fastp/{id}.R1.fastp.fastq.gz", id=[ w.CGF_ID + '_'+ flowcell for flowcell in subj_flowcell_dict[w.CGF_ID] ]),
+        R2s=lambda w: expand(pep.config.output_dir+"/fastp/{id}.R2.fastp.fastq.gz", id=[ w.CGF_ID + '_'+ flowcell for flowcell in subj_flowcell_dict[w.CGF_ID] ]),
+        ref=pep.config.hg38_ref
+    output: pep.config.output_dir + "/fq2bam/{CGF_ID}.bam"
+    params: 
+       fqs=lambda w, input: " --in-fq ".join([r1+' '+r2+' ' + rg for r1,r2, rg in zip(input.R1s, input.R2s, ["'@RG\\tPL:ILLUMINA\\tID:{FLOWCELL}_{LANE}\\tSM:{CGF_ID}\\tPU:{CGF_ID}_{FLOWCELL}\\tLB:{CGF_ID}_{INDEX}'" .format (**samples.loc[id]) for id in list(compress(ids, [ id == w.CGF_ID for id in samples['CGF_ID']]))  ])])
+    benchmark: 
+        pep.config.output_dir + "/benchmark/fq2bam/{CGF_ID}.tsv"
+    threads: 48
+    resources: 
+        threads=48,
+        mem_mb = 360000,
+        disk_mb = 1000000,
+        runtime= "8h",
+        partition="gpu",
+        slurm="gres=gpu:v100x:2",
+        tmpdir=pep.config.output_dir + "/TMP"
+    envmodules: "parabricks/4.0.0"
+    shell: """
+        pbrun fq2bam \
+            --ref {input.ref} \
+            --in-fq {params.fqs} \
+            --out-bam {output} 
+    """
+
+### subj === CGF_ID
+rule gatk_markdup: 
+    input: pep.config.output_dir + "/fq2bam/{subj}.bam"
+    output: 
+        bam=pep.config.output_dir +"/gatk_markdup/{subj}.dedup.bam",
+        metrics=pep.config.output_dir +"/gatk_markdup/{subj}.dedup.metrics"
+    threads: 4
+    resources :
+        mem_mb=80000,
+        runtime="24h"
+    envmodules: "GATK/4.2.1.0", "samtools"
+    shell: """
+        gatk MarkDuplicates -I {input} -O {output.bam} -M {output.metrics}
+        samtools index -@ {threads} {output.bam}
+    """
+
+
+### index made by replace_rg is not proper .cram.bai
+# and index is required by JIGV and run_strelka at least
+
+### get segmentation fault (core dumped) from samtools addreplacerg
+# rule cram:
+#     input: 
+#         bam = pep.config.output_dir +"/gatk_markdup/{id}.dedup.bam",
+#         ref = hg38_ref
+#     output: 
+#         cram=output_dir + "/cram/{id}.cram",
+#         crai=output_dir + "/cram/{id}.cram.crai"
+#     threads: 10
+#     resources :
+#         mem_mb= 40000,
+#         runtime='8h'
+#     benchmark:
+#         output_dir +"/benchmark/cram/{id}.tsv"
+#     envmodules: "samtools"
+#     params: rg="-r 'LB:lib1' -r 'PU:{id}' -r 'SM:{id}' -r 'PL:illumina' -r 'ID:{id}' "
+#     shell: '''
+#         samtools addreplacerg -w {params.rg} -O CRAM --reference {input.ref} -@ {threads} -o {output.cram} --write-index {input.bam}
+#     '''
+
+
+rule cram:
+    input: 
+        bam = pep.config.output_dir +"/gatk_markdup/{id}.dedup.bam",
+        ref = hg38_ref
+    output: 
+        cram=output_dir + "/cram/{id}.cram",
+        crai=output_dir + "/cram/{id}.cram.crai"
+    threads: 10
+    resources :
+        mem_mb= 40000,
+        runtime='8h'
+    benchmark:
+        output_dir +"/benchmark/cram/{id}.tsv"
+    envmodules: "samtools/1.19"
+    shell: '''
+        samtools view  --no-PG -C --reference {input.ref} -@ {threads} -o {output.cram} --write-index {input.bam}
+    '''
+
+rule collectmultiplemetrics:
+    input: output_dir + "/cram/{id}.cram"
+    output: output_dir +"/collectmultiplemetrics/{id}/sequencingArtifact.pre_adapter_summary_metrics.txt"
+    params: 
+        ref=hg38_ref
+    resources :
+        threads=32,
+        mem_mb= 180000,
+        runtime=1800,
+        partition="gpu",
+        slurm="gres=gpu:v100x:2"
+    envmodules: "parabricks/4.0.0"
+    benchmark:
+        output_dir +"/benchmark/collectmultiplemetrics/{id}.tsv"
+    shell: '''
+        pbrun collectmultiplemetrics \
+        --ref {params.ref} \
+        --bam {input} \
+        --out-qc-metrics-dir "$(dirname {output[0]})" \
+        --gen-all-metrics 
+    '''
+
+# picard/gatk CollectWGSMetrics is equivalent to bammetrics
+# https://gatk.broadinstitute.org/hc/en-us/articles/360037269351-CollectWgsMetrics-Picard-
+# https://hpc.nih.gov/apps/picard.html
+rule collectwgsmetrics:
+    input: 
+        bam=output_dir + "/cram/{id}.cram",
+        bai=output_dir + "/cram/{id}.cram.crai",
+        ref=hg38_ref
+    output: output_dir + "/collectwgsmetrics/{id}.collect_wgs_metrics.txt"
+    resources :
+        mem_mb= 80000,
+        runtime="3d"
+    benchmark:
+        output_dir +"/benchmark/collectwgsmetrics/{id}.tsv"
+    envmodules: "picard/2.27.3"
+    shell: """
+        java -jar $PICARDJAR CollectWgsMetrics \
+            I={input.bam} \
+            O={output} \
+            R={input.ref} 
+    """
+
+rule gatkhc_pb:
+    input:
+        bam=output_dir + "/cram/{id}.cram",
+        ref=hg38_ref,
+        ref_dict=ref_dict
+    output:
+        gvcf=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf",
+        gz=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf.gz",
+        tbi=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf.gz.tbi",
+        idx=output_dir +"/gatkhc_pb/{id}.gatk.g.vcf.idx"
+    threads: 24
+    benchmark:
+        output_dir +"/benchmark/gatkhc_pb/{id}.tsv"
+    resources: 
+        mem_mb = 240000,
+        runtime= "3d",
+        partition="gpu",
+        slurm="gres=gpu:v100x:2",
+        tmpdir=output_dir + "/TMP"
+    envmodules: "parabricks/4.0.0"
+    shell: """
+        pbrun haplotypecaller \
+            --gvcf \
+            --ref {input.ref} \
+            --in-bam {input.bam} \
+            --out-variants {output.gvcf}  
+        bgzip -c {output.gvcf} > {output.gz}
+        tabix {output.gz}      
+    """
+ 
+### Call DV
+rule deepvariant_pb:
+    input:
+        bam=output_dir + "/cram/{id}.cram",
+        ref=hg38_ref
+    output:
+        gvcf=output_dir +"/deepvariant_pb/{id}.deepvariant.g.vcf",
+        gz=output_dir +"/deepvariant_pb/{id}.deepvariant.g.vcf.gz",
+        tbi=output_dir +"/deepvariant_pb/{id}.deepvariant.g.vcf.gz.tbi",
+    threads: 48
+    benchmark:
+        output_dir +"/benchmark/deepvariant_pb/{id}.tsv"
+    envmodules: "parabricks/4.0.0", "bcftools"
+    resources: 
+        mem_mb = 240000,
+        runtime= "1d",
+        partition="gpu",
+        slurm="gres=gpu:v100x:2",
+        tmpdir=output_dir + "/TMP"
+    shell: """
+        pbrun deepvariant \
+            --gvcf  \
+            --ref {input.ref} \
+            --in-bam {input.bam} \
+            --out-variants {output.gvcf} 
+        bgzip -c {output.gvcf} > {output.gz}
+        tabix {output.gz}
+    """
+
+
+
+### vcf index is required here
+rule gatk_combine_gvcf:
+    input: 
+        vcfs=lambda w: expand(output_dir + "/gatkhc_pb/{id}.gatk.g.vcf.gz", id= [person.id for person in families[w.fam]]),
+        tbis=lambda w: expand(output_dir + "/gatkhc_pb/{id}.gatk.g.vcf.gz.tbi", id= [person.id for person in families[w.fam]]),
+        idx=lambda w: expand(output_dir + "/gatkhc_pb/{id}.gatk.g.vcf.idx", id= [person.id for person in families[w.fam]]),
+        ref=hg38_ref
+    output: output_dir+"/gatk_combine_gvcf/{fam}.combine_gvcf.g.vcf.gz"
+    threads: 16
+    envmodules: "GATK/4.3.0.0"
+    benchmark:
+        output_dir + "/benchmark/gatk_combine_gvcf/{fam}.tsv"
+    resources: 
+        mem_mb = 40000,
+        runtime= "10d"
+    params: 
+        v=lambda w, input: " -V ".join(input.vcfs)
+    shell: """
+        gatk CombineGVCFs \
+            -V {params.v} \
+            -R {input.ref} \
+            -O {output} 
+    """
+
+### 
+rule gatk_genotype_gvcf_pb:
+    input: 
+        gvcf=output_dir+"/gatk_combine_gvcf/{fam}.combine_gvcf.g.vcf.gz",
+        ref=hg38_ref
+    output:
+        vcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf",
+        gz=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz",
+    threads: 16
+    envmodules: "parabricks/4.0.0", "bcftools"
+    benchmark:
+        output_dir + "/benchmark/gatk_genotype_gvcf_pb/{fam}.tsv"
+    resources: 
+        mem_mb = 80000,
+        runtime= "1d",
+        partition="gpu",
+        slurm="gres=gpu:v100x:2",
+        tmpdir=output_dir + "/TMP"
+    shell: """
+        pbrun genotypegvcf \
+            --in-gvcf {input.gvcf} \
+            --ref {input.ref} \
+            --out-vcf {output.vcf} 
+        bgzip -@ {threads} -c {output.vcf}> {output.gz} && \
+        tabix {output.gz}
+    """
+
+rule gatk_cgp:
+    input: 
+        gvcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz",
+        ped=ped_dir + "/{fam}.ped",
+        ref=hg38_ref
+    output: 
+        gvcf=output_dir+"/gatk_cgp/{fam}.cgp.g.vcf.gz",
+        norm=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
+    threads: 16
+    envmodules: "GATK/4.3.0.0", "bcftools"
+    benchmark:
+        output_dir + "/benchmark/gatk_cgp/{fam}.tsv"
+    resources: 
+        mem_mb = 40000,
+        runtime= "10d"
+    shell: """
+        gatk CalculateGenotypePosteriors \
+            -V {input.gvcf} \
+            -ped {input.ped} --skip-population-priors \
+            -O {output.gvcf} 
+        bcftools norm -f {input.ref} -m -  {output.gvcf} | bcftools view -i'ALT!="*"' -Oz -o {output.norm}
+    """
+
+rule glnexus_dv: 
+    input:
+        gvcf=lambda w: expand(output_dir +"/deepvariant_pb/{id}.deepvariant.g.vcf.gz", id=[person.id for person in families[w.fam]]),
+        tbi=lambda w: expand(output_dir +"/deepvariant_pb/{id}.deepvariant.g.vcf.gz.tbi", id=[person.id for person in families[w.fam]]),
+        ref=hg38_ref
+    output:
+        vcf = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz",
+        csi = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz.csi"
+    threads: 8
+    benchmark:
+        output_dir +"/benchmark/glnexus_dv/dv_{fam}.tsv"
+    resources: 
+        mem_mb = 100*1000,
+        runtime= "1d"
+    envmodules: "glnexus", "bcftools"
+    params: 
+        tempdir=temp(directory(output_dir +"/glnexus/GLnexus.DB_{}")).format(uuid.uuid4()) 
+    shell: """
+        glnexus_cli -t {threads} --config DeepVariantWGS --dir {params.tempdir} {input.gvcf} |  bcftools norm -f {input.ref} -m - -O z -o {output.vcf} 
+        bcftools index {output.vcf}
+        rm -fr {params.tempdir}
+    """
+
+### fix DP (for strelka) and AD
+rule call_dnm_dv: 
+    input: 
+        vcf = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz",
+        ped= ped_dir + "/{fam}.ped",
+        interval=wgs_interval,
+        ref = hg38_ref
+    output:
+        vcf= output_dir +"/slivar/DV_{fam}.dnm.vcf",
+        norm_vcf= temp(output_dir +"/slivar/DV_{fam}.tmp0.vcf.gz"),
+        tmp = temp(output_dir +"/slivar/DV_{fam}.tmp.vcf.gz"),
+        gz = output_dir +"/slivar/DV_{fam}.dnm.vcf.gz"
+    benchmark:
+        output_dir +"/benchmark/slivar/DV_{fam}.tsv"
+    resources: 
+        mem_mb = 20*1000,
+        runtime= "1d"
+    params: min_gq=10, min_dp=20
+    envmodules: "bcftools"
+    conda:
+        "workflow/envs/slivar.yaml"
+    shell: """
+        zcat {input.vcf} | sed -e 's/ID=AD,Number=\./ID=AD,Number=R/' |bcftools norm -f {input.ref} -m - -O z -o {output.norm_vcf} 
+        tabix {output.norm_vcf}
+        slivar expr  \
+            --vcf {output.norm_vcf} \
+            --ped  {input.ped} \
+            --pass-only \
+            --out-vcf {output.vcf} \
+            --trio "denovo:( \
+                ( \
+                    (variant.CHROM == 'chrX' && kid.sex=='male') && \
+                    kid.hom_alt && kid.AB > 0.98  \
+                ) || \
+                ( \
+                    (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
+                    kid.het && kid.AB > 0.25 && kid.AB < 0.75 \
+                ) \
+                ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+                mom.hom_ref && dad.hom_ref \
+                    &&  (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < 0.05 \
+                    &&  (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < 0.05 \
+                    && kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq} \
+                    && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0))"
+        bgzip -c {output.vcf} > {output.tmp}
+        tabix {output.tmp}
+        bcftools view -R {input.interval} {output.tmp} -O z -o {output.gz}
+        tabix {output.gz}
+    """
+
+
+
+
+### Call dnm from gatk
+use rule  call_dnm_dv as call_dnm_gatk with:
+    input: 
+        vcf=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
+        ped=ped_dir + "/{fam}.ped",
+        ref = hg38_ref,
+        interval=wgs_interval
+    output: 
+       vcf= output_dir +"/slivar/GATK_{fam}.dnm.vcf",
+       norm_vcf= temp(output_dir +"/slivar/GATK_{fam}.tmp0.vcf.gz"),
+       tmp = temp(output_dir +"/slivar/GATK_{fam}.tmp.vcf.gz"),
+       gz = output_dir +"/slivar/GATK_{fam}.dnm.vcf.gz"
+    params: 
+       min_gq=20, 
+       min_dp=30
+    benchmark:
+        output_dir +"/benchmark/slivar/GATK_{fam}.tsv"
+
+rule merge_DV_GATK:
+    input: 
+        DV=output_dir +"/slivar/DV_{fam}.dnm.vcf.gz",
+        GATK=output_dir +"/slivar/GATK_{fam}.dnm.vcf.gz"
+    output:
+        gz=output_dir +"/GATK_DV/{fam}.merge.dnm.vcf.gz",
+        tbi=output_dir +"/GATK_DV/{fam}.merge.dnm.vcf.gz.tbi",
+        both=output_dir +"/GATK_DV/D_and_G.{fam}.dnm.vcf.gz",
+        one=output_dir +"/GATK_DV/D_or_G.{fam}.dnm.vcf.gz"
+    envmodules: "bcftools"
+    shell: """
+        bcftools merge --force-samples --threads 2 -m none {input.DV} {input.GATK} -Oz -o {output.gz}
+        tabix {output.gz}
+        bcftools filter -i "N_MISSING == 0" -Oz -o {output.both} {output.gz}
+        bcftools filter -i "N_MISSING > 0" -Oz -o {output.one} {output.gz}
+        tabix {output.both}
+        tabix {output.one}
+    """
+
+
+
+
+### Call JIGV
+rule call_JIGV:
+    input:
+        bam=lambda w: expand(output_dir +"/cram/{id}.cram", id=[person.id for person in families[w.fam]]),
+        bai=lambda w: expand(output_dir +"/cram/{id}.cram.crai", id=[person.id for person in families[w.fam]]),
+        ped=ped_dir + "/{fam}.ped",
+        ref=hg38_ref,
+        sites= output_dir +"/slivar/{caller}_{fam}.dnm.vcf.gz"
+    output:
+        html= output_dir +"/call_JIGV/{caller}_{fam}.JIGV.html"
+    benchmark:
+        output_dir +"/benchmark/call_JIGV/{caller}_{fam}.tsv"
+    resources: 
+        mem_mb = 80*1000,
+        runtime= "3d"
+    params: 
+        proband=lambda w: [person.id for person in families[w.fam] if families[w.fam].get_father(person) ][0]
+    shell: """
+        jigv  \
+            --fasta {input.ref} \
+            --sample {params.proband} \
+            --ped {input.ped} \
+            --sites {input.sites} \
+            {input.bam} > {output.html}
+    """
+
+### Call JIGV for DV&GATK
+use rule call_JIGV as call_JIGV_for_DG with:
+    input:
+        bam=lambda w: expand(output_dir +"/cram/{id}.cram", id=[person.id for person in families[w.fam]]),
+        bai=lambda w: expand(output_dir +"/cram/{id}.cram.crai", id=[person.id for person in families[w.fam]]),
+        ped=ped_dir + "/{fam}.ped",
+        ref=hg38_ref,
+        sites= output_dir +"/GATK_DV/{caller}.{fam}.dnm.vcf.gz"
+  
+########################################################
+# append rules for dnSTR calling
+########################################################
+### split bed files first
+# skip chrX for the time being
+rule split_bed: 
+    input: 
+        hipstr_panel
+    output: 
+        expand(output_dir+"/splitted_panel/hipstr_{chunk}.bed", chunk=CHUNKS)
+    params: 
+        split_total = split_total,
+        prefix=output_dir+"/splitted_panel/hipstr_"
+    resources :
+        mem_mb=10000
+    shell: '''
+        # split cannot take piped input, leading to the error of "cannot determine file size"
+        # so we use tmpfile here to get around the issue
+        tmpfile=$(mktemp /tmp/abc-script.XXXXXX); grep -v -e "^chrX" -e "chrY" {input} > $tmpfile; split --numeric-suffixes=0 -n l/{params.split_total} --suffix-length=5  --additional-suffix=".bed" $tmpfile {params.prefix}
+    '''
+
+use rule split_bed as split_bed_gangstr with: 
+    input: 
+        gangstr_panel
+    output: 
+        expand(output_dir+"/splitted_panel/gangstr_{chunk}.bed", chunk=CHUNKS)
+    params: 
+        split_total = split_total,
+        prefix=output_dir+"/splitted_panel/gangstr_"
+
+
+### As gangstr infor tag GRID will get lost during mergeSTR, we have to run gastr as trios
+# --bam-samps sample1,sample2 --samp-sex M,F as input option.
+rule gangstr:
+    input: 
+        bams = expand(output_dir+"/cram/{id}.cram", id= final_subjs),
+        ref = hg38_ref,
+        reg = output_dir+"/splitted_panel/gangstr_{chunk}.bed"
+    output:
+        multiext(output_dir+ "/gangstr/{chunk}", ".vcf", ".insdata.tab", ".samplestats.tab")
+    params:
+        prefix = output_dir+ "/gangstr/{chunk}", 
+        bams=lambda w, input: ",".join(input.bams),
+        sexes=  ",".join(SEX_DICT[id] for id in final_subjs),
+        ids= ",".join(final_subjs)
+    benchmark:
+        output_dir + "/benchmark/gangstr/{chunk}.tsv"
+    resources:
+        runtime="10h",
+        mem_mb=60000
+    shell: """
+        GangSTR --bam {params.bams} \
+            --ref {input.ref} \
+            --regions {input.reg} \
+            --include-ggl \
+            --bam-samps {params.ids} \
+            --samp-sex {params.sexes} \
+            --out {params.prefix} 
+    """
+
+# Hollox/Code_availability_manuscript-07-02-2023.pdf
+rule dumpstr_call:
+    input: output_dir+"/gangstr/{chunk}.vcf"
+    output:
+        multiext(output_dir+ "/dumpstr_call/gangstr_{chunk}", ".vcf", ".loclog.tab", ".samplog.tab")
+    params:
+        prefix = output_dir+"/dumpstr_call/gangstr_{chunk}", 
+        # min_dp = lambda w: 20 if (SEX_DICT[w.id] == 'M' and w.chrom=='chrX') else 40
+        # min_dp = lambda w: 15 if (w.chrom=='chrX') else 30
+    resources:
+        runtime="10h",
+        mem_mb=40000
+    shell: """
+        dumpSTR --vcf {input} --out {params.prefix} --gangstr-min-call-DP 15 \
+            --gangstr-max-call-DP 1000 --gangstr-filter-spanbound-only \
+            --gangstr-filter-badCI --vcftype gangstr --gangstr-min-call-Q 0.9 --drop-filtered
+    """
+    
+
+rule hipstr:
+    input: 
+        bams = expand(output_dir + "/cram/{id}.cram", id= final_subjs),
+        ref=hg38_ref,
+        # bam_list=bam_list,
+        reg = output_dir+"/splitted_panel/hipstr_{chunk}.bed"
+    output:
+        vcf= output_dir + "/hipstr/{chunk}.vcf.gz",
+        viz= output_dir + "/hipstr/{chunk}.aln.viz.gz",
+    log: output_dir + "/hipstr/{chunk}.log"
+    benchmark:
+        output_dir + "/benchmark/hipstr/{chunk}.tsv"
+    resources:
+        runtime="200h",
+        mem_mb=40000
+    envmodules: "hipstr", "bcftools"
+    params: 
+        bams=lambda w, input: ",".join(input.bams)
+    shell: """
+        HipSTR  --output-gls --bams {params.bams} --fasta {input.ref}  --regions  {input.reg} --str-vcf  {output.vcf} --viz-out {output.viz} --def-stutter-model  --log  {log}
+        tabix -p bed {output.viz}
+        tabix -p vcf {output.vcf}
+    """
+
+rule dumpstr_hipstr: 
+    input: output_dir + "/hipstr/{chunk}.vcf.gz"
+    output:
+        multiext(output_dir + "/dumpstr_call/hipstr_{chunk}", ".vcf", ".loclog.tab", ".samplog.tab")
+    params:
+        prefix = output_dir + "/dumpstr_call/hipstr_{chunk}", 
+        # min_dp = lambda w: 20 if (SEX_DICT[w.id] == 'M' and w.chrom=='chrX') else 40
+        # min_dp = lambda w: 15 if (w.chrom=='chrX') else 30
+    resources:
+        runtime="10h",
+        mem_mb=40000
+    shell: """
+        dumpSTR --vcf {input} --out {params.prefix} --hipstr-min-call-DP 15 \
+            --hipstr-max-call-DP 1000 --hipstr-min-call-Q 0.9 --drop-filtered \
+            --vcftype hipstr --hipstr-min-supp-reads 1 --hipstr-max-call-flank-indel 0.15 \
+            --hipstr-max-call-stutter 0.15 
+    """
+    
+# For chromosome X, the Hardy–Weinberg equilibrium filter
+# ref: 39M
+rule dumpstr_locus:
+    input: 
+        vcf= output_dir + "/dumpstr_call/{caller}_{chunk}.vcf",
+        dup_reg = dup_reg
+    output:
+        multiext(output_dir + "/dumpstr_locus/{caller}_{chunk}", ".vcf", ".loclog.tab", ".samplog.tab")
+    params:
+        prefix = output_dir + "/dumpstr_locus/{caller}_{chunk}"
+    resources:
+        runtime="20h",
+        mem_mb=40000
+    shell: """
+        dumpSTR --min-locus-hwep 0.00001 --min-locus-callrate 0.8 \
+            --filter-regions {input.dup_reg} \
+                --filter-regions-names SEGDUP \
+                --vcf {input.vcf} \
+                --out {params.prefix}
+    """
+
+
+rule vcf_index: 
+    input: output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf"
+    output: 
+        gz= output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf.gz",
+        tbi= output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf.gz.tbi"
+    resources:
+        runtime="20h",
+        mem_mb=10000    
+    envmodules: "bcftools"
+    shell: """
+        bcftools sort {input} | bgzip -c  > {output.gz}
+        tabix -p vcf {output.gz}
+    """
+
+
+### fix all.ped 
+
+rule merge_ped:
+    input:
+        expand(ped_dir + "/{fam}.ped", fam=fam_ids2)
+    output:
+        output_dir + "/merge_ped/all.ped"
+    shell: """
+        cat {input} | awk '{{if($3!=0 && $4!=0) print $0}}'   | sed -e 's/^\(t....\)c./\\1/' > {output}
+    """
+
+### ignore chrX for the time being
+
+rule monstr:
+    input: 
+        vcf = output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf.gz",
+        ped = output_dir + "/merge_ped/all.ped"
+    output: 
+        multiext( output_dir + "/monstr/{caller}_{chunk}", ".all_mutations.tab", ".locus_summary.tab")
+    benchmark:
+        output_dir + "/benchmark/monstr/{caller}_{chunk}.tsv"
+    container: "docker://gymreklab/monstr"
+    params:
+        prefix=output_dir + "/monstr/{caller}_{chunk}",
+        arg = lambda w: gangstr_filters if (w.caller=='gangstr') else hipstr_filters,
+        # chrX = lambda w: " --chrX " if (w.chrom=='chrX') else ""
+    # envmodules: "singularity"
+    resources:
+        runtime="20h",
+        mem_mb=40000 
+    shell: """
+        MonSTR  \
+            --strvcf {input.vcf} \
+            --fam {input.ped} \
+            --out {params.prefix} \
+            --min-score 0.8 \
+            --min-coverage 10 \
+            {params.arg} 
+            
+    """
+
+rule merge_monstr:
+    input: 
+        mutation=expand(output_dir + "/monstr/{{caller}}_{chunk}.all_mutations.tab", chunk=CHUNKS),
+        summary=expand(output_dir + "/monstr/{{caller}}_{chunk}.locus_summary.tab", chunk=CHUNKS)
+    output: 
+        mutation=output_dir + "/merge_monstr/{caller}.all_mutations.tab",
+        summary=output_dir + "/merge_monstr/{caller}.locus_summary.tab"
+    conda:
+        "workflow/envs/csvtk.yaml"
+    resources:
+        runtime="20h",
+        mem_mb=40000 
+    shell: """
+        csvtk concat -E -t {input.mutation} | csvtk sort -t -k chrom:N -k pos:n -k child -E - | csvtk filter -t -f "poocase>1" > {output.mutation}
+        csvtk concat -E -t {input.summary} | csvtk sort -t -k chrom:N -k pos:n  -E - | csvtk filter -t -f "total_mutations>0" > {output.summary}
+    """
+
+
+rule monstr_filter:
+    input: output_dir + "/merge_monstr/{caller}.all_mutations.tab"
+    output: 
+        filtered=output_dir + "/monstr_filter/{caller}.filtered.tab",
+        log=output_dir + "/monstr_filter/{caller}.filtered.log"
+    container: "docker://gymreklab/monstr"
+    resources:
+        runtime="2h",
+        mem_mb=20000 
+    shell: """
+        python3 /STRDenovoTools/scripts/qc_denovos.py --all-mutations-file {input} \
+                  --filtered-mutations-file {output.filtered} \
+                  --log-file {output.log} \
+                  --filter-denovos-child 5 \
+                  --filter-loc-denovos 5 \
+                  --filter-posterior 0.8 
+    """
+
+rule joint_STR: 
+    input: expand(output_dir + "/monstr_filter/{caller}.filtered.tab", caller=['hipstr','gangstr'])
+    output: output_dir + "/joint_STR/gangstr_hipstsr.final.tab"
+    conda:
+        "workflow/envs/csvtk.yaml"
+    shell: """
+        csvtk join -t -f "chrom,pos,child,child_gt,mat_gt,pat_gt" -p {input} > {output}
+    """
+        
+
+
+
+### extract bed file from the reference panel by chr, pos from MonSTR output
+rule bedfile_for_hipstr_call:
+    input: 
+        tab=output_dir +"/joint_STR/gangstr_hipstsr.final.tab",
+        ref_panel = hipstr_panel
+    output: 
+        tmp = temp(output_dir + "/vizaln/{fam}/{fam}_recall.both.tmp"),
+        bed = output_dir + "/vizaln/{fam}/{fam}_recall.both.bed"
+    params:
+        cmd = "sed 's/^/chr/'",
+        id = lambda w: CHILD_DICT[w.fam]
+    shell: """
+        awk -v FS='\\t' -v OFS='\\t' '{{if(NR>1 && $6=="{params.id}") print $1, $2}}' {input.tab} | {params.cmd} > {output.tmp}
+        if [ -s {output.tmp} ]; then 
+            grep -f {output.tmp} {input.ref_panel} > {output.bed}
+        else
+            echo -n > {output.bed}
+        fi
+    """
+
+### use monster filtered results instead
+# chr from filtered.tab has no "chr" prefix.
+use rule bedfile_for_hipstr_call as bedfile_for_hipstr_all with:
+    input: 
+        tab=output_dir +"/monstr_filter/hipstr.filtered.tab",
+        ref_panel = hipstr_panel
+    output: 
+        tmp = temp(output_dir + "/vizaln/{fam}/{fam}_recall.all.tmp"),
+        bed = output_dir + "/vizaln/{fam}/{fam}_recall.all.bed"
+    params:
+        cmd = "sed 's/^/chr/'",
+        id = lambda w: CHILD_DICT[w.fam]
+
+### We may skip all and focus on both and hipstr_only
+rule bedfile_for_hipstr_only:
+    input:
+        both = output_dir + "/vizaln/{fam}/{fam}_recall.both.bed",
+        hipstr_all = output_dir + "/vizaln/{fam}/{fam}_recall.all.bed"
+    output:
+        hipstr_only = output_dir + "/vizaln/{fam}/{fam}_recall.hipstr_only.bed"
+    resources:
+        runtime="2h",
+        mem_mb=2000
+    shell: """
+        grep -v -f  {input.both} {input.hipstr_all} > {output.hipstr_only}
+    """
+
+rule hipstr_recall:
+    input: 
+        bams = lambda w: expand(output_dir + "/cram/{id}.cram", id= [person.id for person in families[w.fam]]),
+        ref=hg38_ref,
+        reg = output_dir + "/vizaln/{fam}/{fam}_recall.{set}.bed"
+    output:
+        vcf = output_dir + "/vizaln/{fam}/{fam}.{set}.vcf.gz",
+        viz = output_dir + "/vizaln/{fam}/{fam}.{set}.aln.viz.gz"
+    resources:
+        runtime="2h",
+        mem_mb=10000
+    log: output_dir + "/vizaln/{fam}/{fam}.{set}.hipstr.log"
+    params:
+        bams=lambda w, input: ",".join(input.bams)
+    envmodules: "hipstr", "bcftools"
+    benchmark:
+        output_dir +"/benchmark/hipstr_recall/{fam}_{set}.tsv"
+    shell: """
+        HipSTR  --output-gls --bams  {params.bams} --fasta {input.ref} --regions  {input.reg} --str-vcf  {output.vcf} --viz-out {output.viz} --def-stutter-model  --min-reads 6 --log  {log}
+        tabix -p bed {output.viz}
+        tabix -p vcf {output.vcf}
+    """
+
+checkpoint scatter_chr_pos:
+    input: 
+        output_dir + "/vizaln/{fam}/{fam}.{set}.vcf.gz"
+    output:
+        directory(output_dir + "/vizaln/{fam}/{set}/variants/")
+    shell: """
+        mkdir -p {output}
+        zgrep -v "^#" {input}  | awk -v FS='\\t' 'system("touch {output}/"$1"_"$2".dnm")'
+    """
+
+rule vizaln:
+    input: 
+        dummy=output_dir + "/vizaln/{fam}/{set}/variants/{chr}_{pos}.dnm",
+        viz=output_dir + "/vizaln/{fam}/{fam}.{set}.aln.viz.gz"
+    output: 
+        output_dir + "/vizaln/{fam}/{set}/variants/{chr}_{pos}.html"
+    benchmark:
+        output_dir +"/benchmark/vizaln/{fam}_{set}.{chr}_{pos}.tsv"
+    shell: """
+        ./HipSTR/VizAln_rev {input.viz} {output} {wildcards.chr} {wildcards.pos}
+    """
+
+def aggregate_input(wildcards):
+    checkpoint_output = checkpoints.scatter_chr_pos.get(**wildcards).output[0]
+    return expand(output_dir + "/vizaln/{fam}/{{set}}/variants/{chr_pos}.html",
+           fam=wildcards.fam,
+           chr_pos=glob_wildcards(os.path.join(checkpoint_output, "{chr_pos}.dnm")).chr_pos)
+
+
+rule aggregate_visaln:
+    input: aggregate_input
+    output: 
+        output_dir + "/vizaln/{fam}/{set}/DONE"
+    shell: """
+        touch {output}
+    """
+
+
+#############################################
+# rules for phase DNMs
+#############################################
+checkpoint scatter_dnms:
+    input: output_dir +"/GATK_DV/D_and_G.{fam}.dnm.vcf.gz"
+    output:
+        directory(output_dir + "/phase_DNMs/{fam}/variants")
+    shell: """
+        mkdir -p {output}
+        zgrep -v "^#" {input}  | awk -v FS='\\t' -v OFS=':' '{{out="{output}/"$1"_"$2".dnm"; print $1,$2,$4,$5 >out}}'
+    """
+
+rule vcf4phase:
+    input:
+        dnm = output_dir + "/phase_DNMs/{fam}/variants/{chr}_{pos}.dnm",
+        vcf=output_dir +"/glnexus/{fam}.dv_combined.vcf.gz"
+    output:
+        vcf=output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz",
+        tbi=output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz.tbi"
+    envmodules: "bcftools"
+    resources: 
+        mem_mb = 20000,
+        runtime= "2h"
+    benchmark:
+        output_dir +"/benchmark/vcf4phase/{fam}.{chr}_{pos}.tsv"
+    params: 
+        reg= lambda w: '%s:%d-%d' % (w.chr, int(w.pos)-PHASE_WIN, int(w.pos)+PHASE_WIN)
+    shell: """
+        bcftools view -r {params.reg} {input.vcf} | bcftools annotate -Oz -x ID -I +"%CHROM:%POS:%REF:%ALT" -Oz -o {output.vcf};
+        tabix {output.vcf};
+    """
+
+rule phase_child:
+    input: 
+        bams=lambda w: expand(output_dir +"/cram/{id}.cram", id=[CHILD_DICT[w.fam]]),
+        bais=lambda w: expand(output_dir +"/cram/{id}.cram.crai", id=[CHILD_DICT[w.fam]]),
+        ref=hg38_ref,
+        vcf = output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz"
+    output: 
+        vcf= output_dir +"/phase_DNMs/{fam}/variants/{fam}.{chr}_{pos}.phase_child.vcf.gz"
+    params:
+        id = lambda w: CHILD_DICT[w.fam]
+    benchmark:
+        output_dir +"/benchmark/phase_child/{fam}.{chr}_{pos}.tsv"
+    resources: 
+        threads=2,
+        mem_mb = 40*1000,
+        runtime= "4h"
+    shell: """
+        whatshap phase -o {output.vcf} --tag=PS --indels --reference={input.ref} --sample {params.id} {input.vcf} {input.bams}
+    """
+
+rule phase_trios:
+    input: 
+        bams=lambda w: expand(output_dir +"/cram/{id}.cram", id=[person.id for person in families[w.fam]]),
+        bais=lambda w: expand(output_dir +"/cram/{id}.cram.crai", id=[person.id for person in families[w.fam]]),
+        ped=ped_dir + "/{fam}.ped",
+        ref=hg38_ref,
+        vcf = output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz"
+    output: 
+        vcf= output_dir +"/phase_DNMs/{fam}/variants/{fam}.{chr}_{pos}.phase_trios.vcf.gz"
+    benchmark:
+        output_dir +"/benchmark/phase_trios/{fam}.{chr}_{pos}.tsv"
+    resources: 
+        threads=2,
+        mem_mb = 40*1000,
+        runtime= "8h"
+    shell: """
+        whatshap phase -o {output.vcf} --tag=PS --indels --ped {input.ped} --reference={input.ref} {input.vcf} {input.bams} 
+    """
+
+rule extract_parental_origin:
+    input:
+        dnm = output_dir + "/phase_DNMs/{fam}/variants/{chr}_{pos}.dnm",
+        ped = ped_dir + "/{fam}.ped",
+        phase_child = output_dir +"/phase_DNMs/{fam}/variants/{fam}.{chr}_{pos}.phase_child.vcf.gz",
+        phase_trios = output_dir +"/phase_DNMs/{fam}/variants/{fam}.{chr}_{pos}.phase_trios.vcf.gz"
+    output:
+        output_dir + "/phase_DNMs/{fam}/variants/{chr}_{pos}.parental_origin.txt"
+    benchmark:
+        output_dir +"/benchmark/extract_parental_origin/{fam}.{chr}_{pos}.tsv"
+    resources: 
+        mem_mb = 4*1000,
+        runtime= "2h"
+    shell: """
+        perl scripts/extract_parental_origin.pl  {input.dnm} {input.ped} {input.phase_child} {input.phase_trios} {output}
+    """
+
+def aggregate_input(wildcards):
+    checkpoint_output = checkpoints.scatter_dnms.get(**wildcards).output[0]
+    return expand(output_dir + "/phase_DNMs/{fam}/variants/{chr_pos}.parental_origin.txt",
+           fam=wildcards.fam,
+           chr_pos=glob_wildcards(os.path.join(checkpoint_output, "{chr_pos}.dnm")).chr_pos)
+
+
+### should be replace "_" with ":" after VID is fixed
+rule aggregate_phase:
+    input: aggregate_input
+    output: 
+        output_dir + "/phase_DNMs/{fam}.parental_origin.tab"
+    shell: """
+        cat {input} | sort -t ":"  -Vs -k1,1 -k2,2n > {output}
+    """
+
