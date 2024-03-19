@@ -17,7 +17,15 @@
   - [JIGV html pages](#jigv-html-pages)
   - [QC metrics](#qc-metrics)
     - [Output of MultiQC](#output-of-multiqc)
-    - [Problematic samples](#problematic-samples)
+    - [Problematic samples in the 107 CGR samples](#problematic-samples-in-the-107-cgr-samples)
+  - [Parental origin of DNMs](#parental-origin-of-dnms)
+  - [Output of dnSTRs](#output-of-dnstrs)
+- [Post-analyses](#post-analyses)
+  - [Generate a summary report](#generate-a-summary-report)
+  - [Annotate DNMs](#annotate-dnms)
+    - [Prepare annotation databases for Annovar](#prepare-annotation-databases-for-annovar)
+  - [Annotate dnSTRs](#annotate-dnstrs)
+  - [Summary tables and figures](#summary-tables-and-figures)
 
 
 ---
@@ -272,12 +280,205 @@ We have generated two sets of MultiQC report files under the folder output_multi
 + multiqc_report.html (static mode)
 + multiqc_report_1.html (interactive mode)
 
-#### Problematic samples
+#### Problematic samples in the 107 CGR samples
 + SC074219 (t0450c2) is a singleton in this analysis and the data of its parents are processed in the previous study.
 + ***SC736795*** has coverage about 28X, which is much lower than the others.
 +	SC108472 has many unmapped reads, origin from bateria and viruses commonly found in the upper respiratory tractor.  It is confimred that the sample was procured from saliva.
 + In the trio t0588c1 (kid: SC109409; father: SC109418; mother: SC109419), the sample ***SC109418*** lacks of the expected relatedness with SC109409.
 
+In the end, we dropped all the 3 samples of the trio t0588c1, and moved the sample SC074219 (t0450c2) to the processing of 340 old Chernobyl samples.
 
+### Parental origin of DNMs
+Parentalorigin of DNMs are saved as tab-delimited files:
+  + output/phase_DNMs/<trio>.parental_origin.tab
 
+The description of the file format is available [here](https://github.com/NCI-CGR/TriosCompass_v2/tree/8trios#identify-parental-origin-of-dnms-using-whatshap).
 
+### Output of dnSTRs
+
+We had planned to dnSTR candidates jointly prediced by HipSTR and GangSTR.  During the manual curation, we found that the joint predicts are good but less than expected, and the predicts from HipSTR (not GangSTR) are good in general.  
+
+The dnSTRs predicted by HipSTR are available at the file:
+  output/monstr_filter/hipstr.filtered.tab
+
+We have also generated visulization for dnSTR using VizAln (from HipSTR package).  And we classied dnSTRs into two classes: "both" and "hipstr_only", based on whether it is predicted by both HipSTR and GangSTR or HipSTR only.  The html output files are available for each individual dnSTR under output/vizaln/<trio>/.
+
+```bash
+tree output/vizaln/t0600c1/{both,hipstr_only} | grep -v dnm
+output/vizaln/t0600c1/both
+├── DONE
+└── variants
+    ├── chr10_77376949.html
+    ├── chr13_49622153.html
+    ├── chr15_34451626.html
+    ├── chr15_34519652.html
+    ├── chr15_83917418.html
+    ├── chr17_39037973.html
+    ├── chr2_129489580.html
+    ├── chr22_20821590.html
+    ├── chr22_29238255.html
+    ├── chr3_59683847.html
+    ├── chr3_75419179.html
+    ├── chr3_75430889.html
+    ├── chr3_75590180.html
+    ├── chr5_166792836.html
+    ├── chr5_17343356.html
+    ├── chr6_26067044.html
+    ├── chr6_43820353.html
+    ├── chr6_72513043.html
+    └── chr9_123917193.html
+output/vizaln/t0600c1/hipstr_only
+├── DONE
+└── variants
+    ├── chr10_103294239.html
+    ├── chr10_42209752.html
+    ├── chr11_116092983.html
+    ├── chr12_118133195.html
+    ├── chr12_33235425.html
+    ├── chr13_49622943.html
+    ├── chr14_19216662.html
+    ├── chr14_35145733.html
+    ├── chr14_35145808.html
+    ├── chr14_35645347.html
+    ├── chr14_41148928.html
+    ├── chr14_41155087.html
+    ├── chr14_41180537.html
+    ├── chr14_41190756.html
+    ├── chr14_57192876.html
+    ├── chr15_21387443.html
+    ├── chr15_34456402.html
+    ├── chr16_12037969.html
+    ├── chr1_62189833.html
+    ├── chr1_63239698.html
+    ├── chr1_63863708.html
+    ├── chr17_46213289.html
+    ├── chr17_66291733.html
+    ├── chr18_11510834.html
+    ├── chr18_77555366.html
+    ├── chr19_20447360.html
+    ├── chr19_20534454.html
+    ├── chr20_10116788.html
+    ├── chr21_14202992.html
+    ├── chr2_131448160.html
+    ├── chr22_15691984.html
+    ├── chr22_20598516.html
+    ├── chr2_60449520.html
+    ├── chr3_75399925.html
+    ├── chr3_75423684.html
+    ├── chr3_75457555.html
+    ├── chr4_184834389.html
+    ├── chr4_186176918.html
+    ├── chr4_68615302.html
+    ├── chr4_68618256.html
+    ├── chr4_9118634.html
+    ├── chr5_161893008.html
+    ├── chr7_67737806.html
+    └── chr7_98026475.html
+
+2 directories, 128 files
+```
+
+The html output example and some details about callinng dnSTRs can be found [here](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Call_DNMs_in_STRs.md).
+
+:bookmark: The ".dnm" files are dummy files for the use of Snakemake workflow in the process of scatter-gather dnSTRs.
+
+--- 
+
+## Post-analyses
+### Generate a summary report
+```bash
+cd /data/DCEG_Trios/new_cgr_data/TriosCompass_v2
+
+# drop the trio t0588c1 and compile a list of trios ids
+ls  new_cgr_pedfiles/ | xargs -n1  -I% basename % .ped | grep -v t0588c1 > trios.lst
+
+wc -l trios.lst
+39 trios.lst
+
+### Re-create ID to get rid of chr4:9142040:T:TATAATATAATACAATATATA;chr4:9142040:T:TATAATATAATATAATATATAATATA;chr4:9142040:T:TATAATATAATATATAATATA
+# -t: tab-delim
+# -H no header line
+# -s: trean numeric fields as string -
+# --at 2: insert the new column at the 2nd column
+cat trios.lst | parallel "zgrep -v "^#" output/GATK_DV/D_and_G.{}.dnm.vcf.gz | awk -v var={} -v OFS='\t' '{print var,\$1,\$2,\$4,\$5'}" | csvtk mutate2 -t -H -s -e '$2 + ":" + $3 + ":" + $4 + ":" + $5' --at 2 > dnm_all.tab
+
+wc -l dnm_all.tab
+3293 dnm_all.tab
+
+### get phase information
+cat trios.lst | parallel "cat output/phase_DNMs/{}.parental_origin.tab | awk -v var={} -v OFS='\t' '{print var,\$1,\$2}' "  > dnm_phase.tab
+
+### Join phase information
+csvtk join -t -H -f "1,2" --na NA -k dnm_all.tab dnm_phase.tab > dnm_info.tab
+ 
+wc -l dnm_info.tab
+3293 dnm_info.tab
+
+### Add additioinal genomic context around the reference allele (+/- 1bp): xRx.
+module load samtools
+cat dnm_info.tab | parallel --colsep '\t'  'v=$(samtools faidx  ref/Homo_sapiens_assembly38.fasta {3}:{=4 $_-=1 =}-{=4 $_+=1 =}  | grep -v "^>"); echo {= $_ =} $v | sed "s/ /\t/g"'  :::: - > dnm_info.wi_tri.tab
+```
+
+### Annotate DNMs
+#### Prepare annotation databases for Annovar
+```bash
+### make a directory to install databases locally
+mkdir humandb
+
+### download databases not installed at Biowulf
+# genomicSuperDups  simpleRepeat
+module load annovar
+
+perl $ANNOVAR_HOME/annotate_variation.pl -downdb -build hg38  phastConsElements7way   humandb/
+perl $ANNOVAR_HOME/annotate_variation.pl -downdb -build hg38  genomicSuperDups   humandb/
+perl $ANNOVAR_HOME/annotate_variation.pl -downdb -build hg38  simpleRepeat   humandb/
+
+### make symbol links of the existing databases to the local folder
+ls -al $ANNOVAR_DATA/hg38
+find $ANNOVAR_DATA/hg38 -type f -exec ln -fs '{}' -t humandb/ \;
+
+# check what you got
+ls -al /data/DCEG_Trios/ChernobylTrios/TriosCompass_v2/humandb/ | head -n 6
+total 160382
+drwxr-s---. 2 zhuw10 DCEG_Trios      4096 Feb 23 15:14 .
+drwxr-s---. 2 zhuw10 DCEG_Trios      4096 Feb 28 11:47 ..
+lrwxrwxrwx. 1 zhuw10 DCEG_Trios        39 Feb 23 15:14 .annovar_date -> /fdb/annovar/current/hg38/.annovar_date
+lrwxrwxrwx. 1 zhuw10 DCEG_Trios        44 Feb 23 15:14 annovar_downdb.log -> /fdb/annovar/current/hg38/annovar_downdb.log
+lrwxrwxrwx. 1 zhuw10 DCEG_Trios        48 Feb 23 15:14 annovar.hg38.refdb.yml -> /fdb/annovar/current/hg38/annovar.hg38.refdb.yml
+
+### Prepare DNM input 
+awk -v OFS="\t" '{if (! /^#/ && $5 != "*") print $3, $4, $4+length($5)-1, $5, $6,$2}' dnm_info.wi_tri.tab | csvtk uniq -t -f 6 | csvtk sort -t -H -k 6:N > CGR_dnm.avinput
+
+wc -l CGR_dnm.avinput
+3285 CGR_dnm.avinput
+
+### Run the annotation 
+mkdir annovar
+perl $ANNOVAR_HOME/table_annovar.pl CGR_dnm.avinput /data/DCEG_Trios/ChernobylTrios/TriosCompass_v2/humandb/ --buildver hg38 --out annovar/CGR_dnm --remove --protocol refGene,knownGene,clinvar_20230416,gnomad40_genome,gnomad40_exome,phastConsElements7way,genomicSuperDups,simpleRepeat,rmsk --operation g,g,f,f,f,r,r,r,r --nastring '.'  --thread 4
+
+```
+
+### Annotate dnSTRs
+The annotation process for dnSTRs is similar as above, except one major difference: we are annotated the region of each STR not dnSTR itself.  The whole region of STR is defined in the STR reference panel. Therefore, we need join dnSTR (predicted by HipSTR) and with the reference panel to acquire the location of STR. Besides, the annotation is more focus on genes and regions rather than filters.
+
+```bash
+### Get chr, start of dnSTR
+cut -f 1,2  output/monstr_filter/hipstr.filtered.tab | csvtk del-header | csvtk uniq -t -f1,2 | sed "s/^/chr/" > hipstr_hits.lst 
+
+wc -l hipstr_hits.lst
+1612 hipstr_hits.lst
+
+### find the matches in STR/hg38_ver13.hipstr_9.bed to get chr, start, end and additional information for STR
+# save it in the format of avinput
+# Note: 0 is filled in the 4- and 5-column
+grep -f hipstr_hits.lst STR/hg38_ver13.hipstr_9.bed | awk -v OFS='\t' '{print $1,$2,$3,0,0,$4,$5,$6,$7}' > hipstr_hit.avinput
+
+### annotation
+perl $ANNOVAR_HOME/table_annovar.pl hipstr_hit.avinput /data/DCEG_Trios/ChernobylTrios/TriosCompass_v2/humandb/ --buildver hg38 --out annovar/chernobyl_hipstr --remove --protocol refGene,knownGene,phastConsElements7way,genomicSuperDups,simpleRepeat,rmsk --operation g,g,r,r,r,r --nastring '.'  --thread 4
+
+wc -l annovar/chernobyl_hipstr.hg38_multianno.txt
+1613 annovar/chernobyl_hipstr.hg38_multianno.txt
+```
+
+### Summary tables and figures
+Summary tables and figures were generated by R, and the details can be found at [here](https://github.com/NCI-CGR/TriosCompass_Benchmarking/tree/main/trio_analysis).
