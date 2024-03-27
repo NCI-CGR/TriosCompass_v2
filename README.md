@@ -9,7 +9,7 @@ This is a trios analysis workflow written in Snakemake.
   - [The reference genome hg38](#the-reference-genome-hg38)
   - [The reference panels for GangSTR and HipSTR](#the-reference-panels-for-gangstr-and-hipstr)
 - [Some details about the DNM calling](#some-details-about-the-dnm-calling)
-  - [Slivar expression to select DNMs](#slivar-expression-to-select-dnms)
+  - [*Slivar* expression to select DNMs](#slivar-expression-to-select-dnms)
 - [Development and benchmark of TriosCompass](#development-and-benchmark-of-trioscompass)
   - [Benchmark on the GIAB trios](#benchmark-on-the-giab-trios)
   - [Development and benchmark on the 8 trios from the Chernobyl data set](#development-and-benchmark-on-the-8-trios-from-the-chernobyl-data-set)
@@ -20,16 +20,16 @@ This is a trios analysis workflow written in Snakemake.
 
 ## Introduction
 
-This Snakemake workflow takes fastq/bam files and pedigree files as inupt, and generate lists of de novo mutations (DNMs) for each tios in the end. We had employed NVIDIA Parabricks toolbox in the pipeline, so as to accelerate NGS analysis with GPUs.
+This Snakemake workflow takes fastq/bam files and pedigree files as input, and generate lists of de novo mutations (DNMs) for each trios in the end. We had employed NVIDIA Parabricks toolbox in the pipeline, to accelerate NGS analysis with GPUs.
 
 Briefly, there are 3 major components in the workflow:
 + Call DNMs
   1. Variant calling by GATK HaplotypeCaller, DeepVariant (and Strelka).
-  2. Identify DNMs by Slivar.
+  2. Identify DNMs by [Slivar](https://github.com/brentp/slivar).
   3. Ensemble call. 
-  4. DNM candidates visulized by JIGV 
+  4. DNM candidates visualized by JIGV 
 + Extract parental origin of DNMs
-+ Call mDNMs (microsatillites DNMs; or dnSTR for de novo short tandem repeat).
++ Call mDNMs (microsatellites DNMs; or dnSTR for de novo short tandem repeat).
 
 
 ---
@@ -58,7 +58,7 @@ There are other dependencies required by the workflow, most of which are availab
 + Conda packages (locally installed)
   + csvtk (V0.28.0)
   + dumpSTR (V5.0.2)
-  + slivar (V0.2.8 23df117c3809a2bf57eb0dd1fffdca0df06252a3)
+  + [slivar](https://github.com/brentp/slivar) (V0.2.8 23df117c3809a2bf57eb0dd1fffdca0df06252a3)
 + Locally installed
   + GangSTR (V2.5.0)
   + WhatsHap (V2.1)
@@ -81,7 +81,7 @@ The interval file is to include the selected regions only to call DNMs (via bcft
 ### Download calling region of hg38 from the Broad Institute 
 wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/wgs_calling_regions.hg38.interval_list -O ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list
 
-### Then, convert the interval list to bed file uisng Picard
+### Then, convert the interval list to bed file using Picard
 module load picard 
 
 java -jar $PICARDJAR IntervalListToBed -I ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list -O ref/hg38.wgs_interval.bed
@@ -111,10 +111,10 @@ Both GangSTR and HipSTR use STRs specified in one reference panel, but with the 
 >Oketch, J. W., Wain, L. V, Hollox, E. J., & Hollox, E. (2022). A comparison of software for analysis of rare and common short tandem repeat (STR) variation using human genome sequences from clinical and population-based samples. 1–22. https://doi.org/10.1101/2022.05.25.493473
 
 
-We would like to have the STR genotypes predicted jointly by both of the two progarm, therefore we need create one common reference panel file for both of GangSTR and HipSTR. 
+We would like to have the STR genotypes predicted jointly by both of the two program, therefore we need create one common reference panel file for both of GangSTR and HipSTR. 
 
 ```bash
-### Get the GengSTR reference panel
+### Get the GangSTR reference panel
 wget https://s3.amazonaws.com/gangstr/hg38/genomewide/hg38_ver13.bed.gz -O STR/hg38_ver13.bed.gz
 
 gzip -d STR/hg38_ver13.bed.gz
@@ -132,7 +132,7 @@ awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.b
 ---
 
 ## Some details about the DNM calling
-### Slivar expression to select DNMs
+### [*Slivar*](https://github.com/brentp/slivar) expression to select DNMs
 ```bash
  "denovo:( \
       ( \
@@ -159,7 +159,7 @@ awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.b
 + (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0))
   + Similar read depth requirement is also applied for the parents.
 + mom.hom_ref && dad.hom_ref
-  + The genotypeos of the parents should both be "0/0";
+  + The genotypes of the parents should both be "0/0";
 + (mom.AD[1] + dad.AD[1]) <= 5
   + The total read support of the alternative allele (that is, the DNM) should be not bigger than 5 in parents.
 + kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq}
@@ -177,7 +177,7 @@ awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.b
 
 ### [Development and benchmark on the 8 trios from the Chernobyl data set](https://github.com/NCI-CGR/TriosCompass_v2/tree/8trios)
 
-We selected 8 trios from the 340 Chernobyl samples, which had been published in Yeager et al; Science 2021. This small data set has been used to develop new features and benchmarked with the original DNM predictes which has been manually curated.
+We selected 8 trios from the 340 Chernobyl samples, which had been published in Yeager et al; Science 2021. This small data set has been used to develop new features and benchmarked with the original DNM predicts which has been manually curated.
 
 ---
 
