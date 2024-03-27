@@ -7,13 +7,14 @@
   - [Set up the workspace](#set-up-the-workspace)
   - [Run the wrapper script to launch at Biowulf.](#run-the-wrapper-script-to-launch-at-biowulf)
 - [Compile 341 bam files](#compile-341-bam-files)
+  - [One new sample from the subject t0450c2](#one-new-sample-from-the-subject-t0450c2)
   - [Transfer existing bam files of Set 1-3 from Object Store to Biowulf](#transfer-existing-bam-files-of-set-1-3-from-object-store-to-biowulf)
   - [Transfer Set4 bam files from T drive at nci-cgr to biowulf](#transfer-set4-bam-files-from-t-drive-at-nci-cgr-to-biowulf)
   - [Check integrity of the transferred bam files](#check-integrity-of-the-transferred-bam-files)
   - [Remove redundant copies within the downloaded bam files](#remove-redundant-copies-within-the-downloaded-bam-files)
   - [Identify 15 bam files missed (340-325=15)](#identify-15-bam-files-missed-340-32515)
-  - [Transfer 12 bam files (aligned to hg19) from T-drive at nci-cgr to biowufl](#transfer-12-bam-files-aligned-to-hg19-from-t-drive-at-nci-cgr-to-biowufl)
-  - [Realign 12 bam files to hg38](#realign-12-bam-files-to-hg38)
+  - [Transfer 12 bam files (aligned to hg19) from T-drive at nci-cgr to biowulf](#transfer-12-bam-files-aligned-to-hg19-from-t-drive-at-nci-cgr-to-biowulf)
+  - [Realign 12 hg19 bam files to hg38](#realign-12-hg19-bam-files-to-hg38)
   - [Finally, compile a list of 341 bam files](#finally-compile-a-list-of-341-bam-files)
 - [Configuration of the workflow](#configuration-of-the-workflow)
   - [Notes for dnSTR calling](#notes-for-dnstr-calling)
@@ -25,7 +26,7 @@
 
 We applied TriosCompass on the 340 old Chernobyl data, together with one new sample SC074219 (t0450c2) from recently sequenced at the CGR lab.
 
-The pipeline is almost idential to [the one to process 107 new CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md), and we highlighted major differences in the following sections. 
+The pipeline is almost identical to [the one to process 107 new CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md), and we highlighted major differences in the following sections. 
 
 ---
 
@@ -41,7 +42,7 @@ cd /data/DCEG_Trios/ChernobylTrios/TriosCompass_v2
 conda activate snakemake
 
 ### Create folders used by the workflow (see /data/DCEG_Chernobyl/NP0436-HE5/Chernobyl_data at biowulf for the actual examples)
-mkdir -p logs bchernobyl_ped2/ ref/ STR/
+mkdir -p logs chernobyl_ped2/ ref/ STR/
 
 
 ### Transfer bam files to the folder bam (not shown)
@@ -53,11 +54,16 @@ mkdir -p logs bchernobyl_ped2/ ref/ STR/
 
 ### Run the wrapper script to launch at Biowulf.
 ```bash
+conda activate snakemake
+
 sbatch -J chernobyl -t 200:00:00 --export=ALL --mem=12g -p norm  --wrap='./run_it_chernobyl.sh '
 ```
 
 --- 
 ## Compile 341 bam files
+### One new sample from the subject t0450c2
+One additional sample is [SC074219 (t0450c2)](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md#problematic-samples-in-the-107-cgr-samples), sequenced recently. The fastq file was processed and aligned to the reference genome hg38 as described [here](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md).
+
 ### Transfer existing bam files of Set 1-3 from Object Store to Biowulf
 ```bash
 cd /data/DCEG_Trios/ChernobylTrios
@@ -157,6 +163,7 @@ e files failed check, see quickcheck/{/.}.bad_bams.fofn' "
 ```
 
 ### Remove redundant copies within the downloaded bam files
+Some samples have more than one copy of the bam files in Object Store. We need identify and remove those redundant copies.
 ```bash
 cd /data/DCEG_Trios/ChernobylTrios/bams
 
@@ -176,7 +183,7 @@ find . -name "*.bam" | pcregrep -o1 '/(SC[0-9]{6}).*.bam$' | sort -u |wc -l
 ```
 
 ### Identify 15 bam files missed (340-325=15)
-+ Found 3 of them in the object store
++ Found 3 of them in Object Store
 + Keep the remaining 12 in the file *12missing.lst*
 ```bash
 cd /data/DCEG_Trios/ChernobylTrios
@@ -190,7 +197,6 @@ sed 's/^M/\
 /g' manifest/Trios_Master_CCAD_Biowulf_merged.csv > Trios_Master_CCAD_Biowulf_merged.clean.csv
 
 ### There are 339 (not 340 files) in CSV file
-# wc count the line characcter
 wc -l Trios_Master_CCAD_Biowulf_merged.clean.csv 
 340 Trios_Master_CCAD_Biowulf_merged.clean.csv
 
@@ -240,7 +246,7 @@ comm -23 f1 f3 | sed -n '1!p' > 12missing.lst
 grep -f 12missing.lst Trios_Master_CCAD_Biowulf_merged.clean.csv
 ```
 
-### Transfer 12 bam files (aligned to hg19) from T-drive at nci-cgr to biowufl
+### Transfer 12 bam files (aligned to hg19) from T-drive at nci-cgr to biowulf
 ```bash
 ### @nci-cgr
 cat 12missing.lst | parallel 'printf "{}.bam\n{}.bam.bai\n"' > 12bams_location.txt
@@ -248,7 +254,7 @@ cat 12missing.lst | parallel 'printf "{}.bam\n{}.bam.bai\n"' > 12bams_location.t
 rsync -av --progress  --files-from=12bams_location.txt  /DCEG/Projects/Exome/SequencingData/to_archieve/BAM_Utrios helix.nih.gov:/data/DCEG_Trios/ChernobylTrios/bams/12bams_hg19
 ```
 
-### Realign 12 bam files to hg38
+### Realign 12 hg19 bam files to hg38
 + [realign12bams.snakefile](./data/realign12bams.snakefile)
 + [run_12bams.sh](./data/run_12bams.sh)
   
@@ -282,13 +288,13 @@ Accordingly, we had also compiled a list of [pedigree files]() for 131 trios fro
 ---
 ## Configuration of the workflow
 
-We simply put the configuration at the beginning of [the workflow file](./Snakefile_chernobyl), with the bam file locaitons extracted from the file [bam.lst](./data/bam.lst).
+We simply put the configuration at the beginning of [the workflow file](./Snakefile_chernobyl), with the bam file locations extracted from the file [bam.lst](./data/bam.lst).
 
 ### Notes for dnSTR calling
 We ran into ["ERROR: Not enough reads for SC056045" issue in GangSTR calling](https://github.com/gymreklab/GangSTR/i
 ssues/86), and we added extra command-line argument " --insertmean 382.6 --insertsdev 135.1 " to fix the issue.
 
-Besides, it took very long time to process two chunks: gangstr_00292.bed and gangstr_00166.bed. To speed it up, we had further split the chunks into smaller pieces: <=2 per peince.  We run all the peices using *parallel* and then merge the GangSTR predictions back.   
+Besides, it took very long time to process two chunks: gangstr_00292.bed and gangstr_00166.bed. To speed it up, we had further split the chunks into smaller pieces: <=2 lines per piece.  We run all the pieces using *parallel* and then merge the GangSTR predictions into two complete chunk files.   
 ```bash
 
 wc -l output/splitted_panel/gangstr_00{166,292}.bed
@@ -371,4 +377,4 @@ open chernobyl_multiqc/multiqc_report.html
 
 ---
 ## Post-analysis
-The output of workflow is identical to [the one for 107 CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md), so is [the post-analysis part](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md#post-analyses). 
+The output of workflow is similar to [the one for 107 CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md), so is [the post-analysis part](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md#post-analyses). 
