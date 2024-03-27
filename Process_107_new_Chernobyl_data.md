@@ -32,23 +32,23 @@
 
 ## Introduction
 
-The 107 WGS data are from Chernobyl Trios-Additional Families (see the details about the study in the [fogbugz: 31945: SR0436-012 Chernobyl Trios-Additional Families for 80x Germline WGS-ANALYSIS](https://cgr-bugz.nci.nih.gov/login?dest=%2ff%2fcases%2f31945)). 
+The 107 WGS data were procured from Chernobyl Trios-Additional Families (see the details about the study in the [fogbugz: 31945: SR0436-012 Chernobyl Trios-Additional Families for 80x Germline WGS-ANALYSIS](https://cgr-bugz.nci.nih.gov/login?dest=%2ff%2fcases%2f31945)). 
 
-This workflow *TriosCompass* has been generally introduced [here](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/README.md).  In this study, we had call DNMs using two approaches:
+This workflow *TriosCompass* has been generally introduced [here](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/README.md).  In this study, we had explored to call DNMs using two approaches:
 1. The candidates called by at least two out of the 3 callers: DeepVariant, GATK HaplotypeCaller and Strelka (see [Snakefile](./Snakefile));
 ![](./img/TrioCompass_Strelka_March2024_dag.png)
 2. The candidates called by both DeepVariant and GATK HaplotypeCaller (see [Snakefile_CGRv2](./Snakefile_CGRv2)).  
 ![](./img/TrioCompass_CGRv2_March2024_dag.png)
 
-We took the second one as final approach to have higer precision at the trade-off of the recall.  
+We took the second one as final approach to have higher precision at the trade-off of the recall.  
 
 ---
 
 ## The pipeline
 ### Configuration and input files
 #### Fastq input files
-Fastq files were transferred from /mnt/nfs/gigantor/ifs/DCEG/CGF/Sequencing/Illumina/HiSeq/PostRun_
-Analysis/Data/ (under the CGR T-drive) to /data/DCEG_Trios/new_cgr_data/fastq at biowulf via globus. 
+Fastq files were squenced at the CGR lab and transferred from /mnt/nfs/gigantor/ifs/DCEG/CGF/Sequencing/Illumina/HiSeq/PostRun_
+Analysis/Data/ (under the CGR T-drive) to /data/DCEG_Trios/new_cgr_data/fastq at biowulf via [globus](https://www.globus.org/data-transfer). 
 
 
 ```bash
@@ -102,12 +102,12 @@ The locations of each pair of fastq are specified in a manifest file.  The manif
 @RG\\tPL:ILLUMINA\\tID:{FLOWCELL}_{LANE}\\tSM:{CGF_ID}\\tPU:{CGF_ID}_{FLOWCELL}\\tLB:{CGF_ID}_{INDEX}
 ```
 
-The format of the manifest file is specified by schemas/cgr_manifest_schema.yaml. The manifest file will be automatically validated at the beginning of the Snakemake workflow via the new Snakemake feature of PEP (protable encapsulated project).  Users may vist [here](https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#configuring-scientific-experiments-via-peps) to learn more about this PEP feature. 
+The format of the manifest file is specified by schemas/cgr_manifest_schema.yaml. The manifest file will be automatically validated at the beginning of the Snakemake workflow via the new Snakemake feature of [PEP (portable encapsulated project)](https://pep.databio.org/).  Users may visit [here](https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#configuring-scientific-experiments-via-peps) to learn more about this PEP feature. 
 
 :bookmark: Note that one sample is allowed to have multiple fastq files from different flow cells.  The workflow will combine those fastq files and generate single bam file for each sample.
 
 #### Pedigree files
-In additioanl to the fastq input files, another important input files are pedigress files, to specify relationship among subjects/samples.  It always consists of one child and its parents. For example, for a family with two kids, we need two peidgree files:
+In additional to the fastq input files, another important input files are pedigree files, to specify relationship among subjects/samples.  It always consists of one child and its parents. For example, for a family with two kids, we need two pedigree files:
 
 ```bash
 cat  new_cgr_pedfiles/t0679c1.ped 
@@ -124,10 +124,10 @@ t0679c2 SC742276        SC742188        SC742277        2       1
 
 :bookmark: Note that the samples are ordered in the pedigree file in this way: father, mother and kid.  It may affect the order of the sample tracks in the output html page of JIGV.
 
----
+
 ---
 ### Configure file for Snakemake workflow
-Lastly but also importantly, a configure file for the Snakemake workflow is required:
+Lastly but also most importantly, a configure file for the Snakemake workflow is required:
 ```yaml
 name: CGR_Trios_Data1
 
@@ -164,7 +164,7 @@ sample_modifiers:
 ---
 
 ## Get started 
-Once the input files, resource data and the configure are ready, users may run the workflow using the wrapper shell script run_it_cgr.sh:
+Once the input files, resource data and the configure are ready, users may run the workflow using the wrapper shell script *run_it_cgr.sh*:
 
 ```bash
 cd  /data/DCEG_Trios/new_cgr_data/TriosCompass_v2
@@ -174,8 +174,7 @@ sbatch -J cgrv2 -t 200:00:00 --export=ALL --mem=12g -p norm  --wrap='./run_it_cg
 ```
 
 + run_it_cgrv2.sh
-  + :bookmark: Users may need change TMPDIR setting accordingly.
-  + The profile workflow/profiles/biowulf is used in this example, which is tailored for the HPC system *biowulf* at NIH. 
+  + :bookmark: The slurm profile workflow/profiles/biowulf is used in this example, which is tailored for the HPC system *biowulf* at NIH. 
 ```bash
 #!/bin/bash
 #SBATCH --time=200:00:00
