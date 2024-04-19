@@ -5,6 +5,10 @@ This is a trios analysis workflow written in Snakemake.
 ---
 - [Introduction](#introduction)
 - [Installation](#installation)
+  - [Locally installed bioinformatics tools](#locally-installed-bioinformatics-tools)
+    - [GangSTR](#gangstr)
+    - [WhatsHap](#whatshap)
+    - [HipSTR and revision (under TriosCompass\_v2 clone folder)](#hipstr-and-revision-under-trioscompass_v2-clone-folder)
   - [Preparation of the calling regions of DNMs](#preparation-of-the-calling-regions-of-dnms)
   - [The reference genome hg38](#the-reference-genome-hg38)
   - [The reference panels for GangSTR and HipSTR](#the-reference-panels-for-gangstr-and-hipstr)
@@ -62,6 +66,7 @@ There are other dependencies required by the workflow, most of which are availab
 + Locally installed
   + GangSTR (V2.5.0)
   + WhatsHap (V2.1)
+  + HipSTR (with revision)
 + Containers
   + docker://gymreklab/monstr (sha256:f5e90770d3a9dd1220764986c11f0cd8d345ed03955e36374bcbcdabfe8cb71d)
 
@@ -72,7 +77,84 @@ Besides, some resources files are also needed:
 + The reference panels for GangSTR and HipSTR
 + GRCh38GenomicSuperDup.bed.gz
   + Obtained from the UCSC Table Browser (hg38.genomicSuperDups table)
-    
+
+### Locally installed bioinformatics tools
+#### GangSTR
+```bash
+wget https://github.com/gymreklab/GangSTR/releases/download/v2.5/GangSTR-2.5.0-Source.tar.gz
+
+tar xvfz GangSTR-2.5.0-Source.tar.gz
+cd GangSTR-2.5.0-Source
+
+mkdir build
+cd build
+cmake ..
+make 
+cmake --install . --prefix $HOME
+-- Install configuration: ""
+-- Installing: /home/zhuw10/bin/GangSTR
+-- Set runtime path of "/home/zhuw10/bin/GangSTR" to ""
+
+which GangSTR
+~/bin/GangSTR
+```
+
+#### WhatsHap
+```bash
+pip3 install --user whatshap
+which whatshap
+~/.local/bin/whatshap
+```
+
+#### HipSTR and revision (under TriosCompass_v2 clone folder)
+By default, VizAln generates output html page as temporary file with random name.  We made revision so that the HTML output is written to the specific file using VizAln_rev. 
+```bash
+cd TrosCompass_v2
+git clone https://github.com/tfwillems/HipSTR.git
+
+cp scripts/VizAln_rev HipSTR/
+
+
+```
+
++ diff HipSTR/VizAln_rev HipSTR/VizAln
+```diff
+3c3
+< # Usage: VizAln alns.html.gz output_html chrom start [sample]
+---
+> # Usage: VizAln alns.html.gz chrom start [sample]
+8c8
+< if [ "$#" -eq 4 ] || [ "$#" -eq 5 ]; then
+---
+> if [ "$#" -eq 3 ] || [ "$#" -eq 4 ]; then
+56,58c56,57
+<     f=$2
+<     chrom=$3
+<     start=$4
+---
+>     chrom=$2
+>     start=$3
+60,61c59,60
+<     # f="/tmp/vizaln.$RANDOM.html"
+<     if [ "$#" -eq 4 ]
+---
+>     f="/tmp/vizaln.$RANDOM.html"
+>     if [ "$#" -eq 3 ]
+65c64
+<       tabix $1 $chrom:$start-$stop -h | awk -v START=$start '$2 == START || $2 == "#"' | awk -v SAMPLE=$5 '$4 == SAMPLE || $4 == "ALL"' | cut -f 1-4 --complement | python ${parent_path}/scripts/generate_aln_html.py > $f
+---
+>       tabix $1 $chrom:$start-$stop -h | awk -v START=$start '$2 == START || $2 == "#"' | awk -v SAMPLE=$4 '$4 == SAMPLE || $4 == "ALL"' | cut -f 1-4 --complement | python ${parent_path}/scripts/generate_aln_html.py > $f
+68c67
+<     # open $f 2>/dev/null || { echo >&2 "VizAln successfully generated the alignment visualization file, but failed to open it. Please open $f using a web browser";}
+---
+>     open $f 2>/dev/null || { echo >&2 "VizAln successfully generated the alignment visualization file, but failed to open it. Please open $f using a web browser";}
+71c70
+< Usage: VizAln alns.html.gz output_html chrom start [sample]
+---
+> Usage: VizAln alns.html.gz chrom start [sample]
+```
+
+---
 
 ### Preparation of the calling regions of DNMs
 The interval file is to include the selected regions only to call DNMs (via bcftools).  We used the file hg38.wgs_interval.bed in this study, which was converted from *resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list*. The latter is part of [resource bundle hosted by the Broad Institute](https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle). There are severals way to retrieve the interval file, for example, ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/wgs_calling_regions.hg38.interval_list.
