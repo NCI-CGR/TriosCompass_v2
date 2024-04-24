@@ -289,13 +289,11 @@ rule joint_dnSV:
     input: 
         output_dir + "/joint_dnSV/{fam}.dnSV.lst"
     output:
-        tmp = temp(output_dir + "/joint_dnSV/{fam}.tmp.vcf"),
         vcf = output_dir + "/joint_dnSV/{fam}.dnSV.vcf",
         stats = output_dir + "/joint_dnSV/{fam}.dnSV.stats",
         others = multiext(output_dir+ "/joint_dnSV/{fam}.dnSV.stats", "_CHR", "support")
     envmodules: "survivor"
     shell: """
-        SURVIVOR merge {input} 1000 1 1 0 0 50 {output.tmp}
-        grep -v "\\./\\." {output.tmp} >  {output.vcf}
+        SURVIVOR merge {input} 1000 2 0 0 0 50 {output.vcf}
         SURVIVOR stats {output.vcf} 50 -1 -1 {output.stats}
     """

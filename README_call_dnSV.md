@@ -5,6 +5,7 @@
 - [Introcution](#introcution)
 - [Dependencies](#dependencies)
   - [Install GraphTyper2 and svimmer](#install-graphtyper2-and-svimmer)
+- [Get started](#get-started)
 - [Notes](#notes)
 
 
@@ -27,7 +28,16 @@ git clone https://github.com/DecodeGenetics/svimmer.git
 wget https://github.com/DecodeGenetics/graphtyper/releases/download/v2.7.7/graphtyper -O scripts/graphtyper
 chmod a+x scripts/graphtyper 
 ```
+---
+## Get started
+This [sub-workflow](./Snakefile_dnSV) is follow-up processing of Snakefile_CGRv2, and it will be merged into the main workflow in the future.   
 
+![](img/TrioCompass_dnSV_dag.png)
+
++ run the workflow
+```bash
+sbatch -J dnSV -t 200:00:00 --export=ALL --mem=12g -p norm  --wrap='./run_dnSV.sh '
+```
 ---
 ## Notes
 + export REF_PATH and REF_CACHE in the wrapper script *run_dnSV.sh* as required by graphtyper
