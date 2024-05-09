@@ -1,0 +1,93 @@
+[2024-05-09 10:07:54,525] multiqc                                            [DEBUG  ]  This is MultiQC v1.20
+[2024-05-09 10:07:54,527] multiqc                                            [DEBUG  ]  Command used: /opt/conda/bin/multiqc --title QC --filename multiqc_report.html --outdir output_multiqc output/collectmultiplemetrics output/collectwgsmetrics output/fastp output/fastqc output/fastq_screen output/gatk_markdup output/dragen_gvcf --interactive
+[2024-05-09 10:07:55,111] multiqc                                            [WARNING]  MultiQC Version v1.21 now available!
+[2024-05-09 10:07:55,112] multiqc                                            [DEBUG  ]  Working dir : /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2
+[2024-05-09 10:07:55,112] multiqc                                            [DEBUG  ]  Template    : default
+[2024-05-09 10:07:55,112] multiqc                                            [DEBUG  ]  Running Python 3.11.7 | packaged by conda-forge | (main, Dec 23 2023, 14:43:09) [GCC 12.3.0]
+[2024-05-09 10:07:55,112] multiqc                                            [INFO   ]  Report title: QC
+[2024-05-09 10:07:55,112] multiqc                                            [DEBUG  ]  Analysing modules: custom_content, ccs, ngsderive, purple, conpair, lima, peddy, somalier, methylqa, mosdepth, phantompeakqualtools, qualimap, bamdst, preseq, hifiasm, quast, qorts, rna_seqc, rockhopper, rsem, rseqc, busco, bustools, goleft_indexcov, gffcompare, disambiguate, supernova, deeptools, sargasso, verifybamid, mirtrace, happy, mirtop, sambamba, gopeaks, homer, hops, macs2, theta2, snpeff, gatk, htseq, bcftools, featureCounts, fgbio, dragen, dragen_fastqc, dedup, pbmarkdup, damageprofiler, mapdamage, biobambam2, jcvi, mtnucratio, picard, vep, bakta, prokka, qc3C, nanostat, samblaster, samtools, sexdeterrmine, seqera_cli, eigenstratdatabasetools, bamtools, jellyfish, vcftools, longranger, stacks, varscan2, snippy, umitools, truvari, megahit, bbmap, bismark, biscuit, diamond, hicexplorer, hicup, hicpro, salmon, kallisto, slamdunk, star, hisat2, tophat, bowtie2, bowtie1, cellranger, snpsplit, odgi, pangolin, nextclade, freyja, humid, kat, leehom, librarian, nonpareil, adapterRemoval, bbduk, clipandmerge, cutadapt, flexbar, sourmash, kaiju, bracken, kraken, malt, motus, trimmomatic, sickle, skewer, sortmerna, biobloomtools, fastq_screen, afterqc, fastp, fastqc, filtlong, prinseqplusplus, pychopper, porechop, pycoqc, minionqc, anglerfish, multivcfanalyzer, clusterflow, checkqc, bcl2fastq, bclconvert, interop, ivar, flash, seqyclean, optitype, whatshap, xenome, xengsort, metaphlan, seqwho
+[2024-05-09 10:07:55,113] multiqc                                            [DEBUG  ]  Using temporary directory for creating report: /data/zhuw10/TMP/tmpb_zfnle8
+[2024-05-09 10:07:55,114] multiqc                                            [INFO   ]  Search path : /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output/collectmultiplemetrics
+[2024-05-09 10:07:55,114] multiqc                                            [INFO   ]  Search path : /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output/collectwgsmetrics
+[2024-05-09 10:07:55,114] multiqc                                            [INFO   ]  Search path : /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output/fastp
+[2024-05-09 10:07:55,114] multiqc                                            [INFO   ]  Search path : /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output/fastqc
+[2024-05-09 10:07:55,114] multiqc                                            [INFO   ]  Search path : /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output/fastq_screen
+[2024-05-09 10:07:55,115] multiqc                                            [INFO   ]  Search path : /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output/gatk_markdup
+[2024-05-09 10:07:55,115] multiqc                                            [INFO   ]  Search path : /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output/dragen_gvcf
+[2024-05-09 10:08:01,308] multiqc                                            [DEBUG  ]  Summary of files that were skipped by the search: [skipped_module_specific_max_filesize: 2784] // [skipped_no_match: 927] // [skipped_ignore_pattern: 207] // [skipped_filesize_limit: 45]
+[2024-05-09 10:08:01,435] multiqc                                            [DEBUG  ]  No samples found: custom_content
+[2024-05-09 10:08:01,467] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_map_metrics.txt
+[2024-05-09 10:08:01,650] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_vc_metrics.txt
+[2024-05-09 10:08:01,715] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_ploidy.txt
+[2024-05-09 10:08:01,762] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_overall_mean_cov_data.txt
+[2024-05-09 10:08:01,812] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_target_bed_coverage_metrics.txt
+[2024-05-09 10:08:01,812] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_wgs_cov_metrics.txt
+[2024-05-09 10:08:02,479] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_frag_len.txt
+[2024-05-09 10:08:02,513] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_trimmer_metrics.txt
+[2024-05-09 10:08:02,562] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file dragen_time_metrics.txt
+[2024-05-09 10:08:02,567] multiqc.modules.dragen.dragen                      [INFO   ]  Found 27 reports
+[2024-05-09 10:08:05,596] multiqc.modules.dragen_fastqc.dragen_fastqc        [INFO   ]  Found 9 reports
+[2024-05-09 10:08:05,627] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_AlignmentSummaryMetrics.txt
+[2024-05-09 10:08:05,636] multiqc.modules.picard.picard                      [INFO   ]  Found 9 AlignmentSummaryMetrics reports
+[2024-05-09 10:08:05,637] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501095_R1
+[2024-05-09 10:08:05,637] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501095_R2
+[2024-05-09 10:08:05,639] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501096_R1
+[2024-05-09 10:08:05,639] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501096_R2
+[2024-05-09 10:08:05,640] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501105_R1
+[2024-05-09 10:08:05,640] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501105_R2
+[2024-05-09 10:08:05,641] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501108_R1
+[2024-05-09 10:08:05,641] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501108_R2
+[2024-05-09 10:08:05,643] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501110_R1
+[2024-05-09 10:08:05,643] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501110_R2
+[2024-05-09 10:08:05,644] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501111_R1
+[2024-05-09 10:08:05,644] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SC501111_R2
+[2024-05-09 10:08:05,645] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SD162355_R1
+[2024-05-09 10:08:05,645] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SD162355_R2
+[2024-05-09 10:08:05,647] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SD162357_R1
+[2024-05-09 10:08:05,647] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SD162357_R2
+[2024-05-09 10:08:05,649] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SD162359_R1
+[2024-05-09 10:08:05,649] multiqc.modules.picard.BaseDistributionByCycleMetrics [DEBUG  ]  Duplicate sample name found in base_distribution_by_cycle.txt! Overwriting: SD162359_R2
+[2024-05-09 10:08:05,649] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_baseContent.txt
+[2024-05-09 10:08:05,664] multiqc.modules.picard.picard                      [INFO   ]  Found 18 BaseDistributionByCycleMetrics reports
+[2024-05-09 10:08:05,834] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_gcbias.txt
+[2024-05-09 10:08:05,834] multiqc.modules.picard.picard                      [INFO   ]  Found 9 GcBiasMetrics reports
+[2024-05-09 10:08:05,869] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_insertSize.txt
+[2024-05-09 10:08:05,931] multiqc.modules.picard.picard                      [INFO   ]  Found 9 InsertSizeMetrics reports
+[2024-05-09 10:08:05,937] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_dups.txt
+[2024-05-09 10:08:05,942] multiqc.modules.picard.picard                      [INFO   ]  Found 9 MarkDuplicates reports
+[2024-05-09 10:08:05,956] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file picard_histogram.txt
+[2024-05-09 10:08:05,959] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_quality_by_cycle.txt
+[2024-05-09 10:08:05,964] multiqc.modules.picard.picard                      [INFO   ]  Found 9 QualityByCycleMetrics reports
+[2024-05-09 10:08:05,968] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file picard_histogram_1.txt
+[2024-05-09 10:08:05,968] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_quality_score_distribution.txt
+[2024-05-09 10:08:05,971] multiqc.modules.picard.picard                      [INFO   ]  Found 9 QualityScoreDistributionMetrics reports
+[2024-05-09 10:08:05,972] multiqc.modules.picard.QualityYieldMetrics         [DEBUG  ]  Duplicate sample name found in quality_yield.txt! Overwriting: quality_yield
+[2024-05-09 10:08:05,972] multiqc.modules.picard.QualityYieldMetrics         [DEBUG  ]  Duplicate sample name found in quality_yield.txt! Overwriting: quality_yield
+[2024-05-09 10:08:05,973] multiqc.modules.picard.QualityYieldMetrics         [DEBUG  ]  Duplicate sample name found in quality_yield.txt! Overwriting: quality_yield
+[2024-05-09 10:08:05,973] multiqc.modules.picard.QualityYieldMetrics         [DEBUG  ]  Duplicate sample name found in quality_yield.txt! Overwriting: quality_yield
+[2024-05-09 10:08:05,973] multiqc.modules.picard.QualityYieldMetrics         [DEBUG  ]  Duplicate sample name found in quality_yield.txt! Overwriting: quality_yield
+[2024-05-09 10:08:05,974] multiqc.modules.picard.QualityYieldMetrics         [DEBUG  ]  Duplicate sample name found in quality_yield.txt! Overwriting: quality_yield
+[2024-05-09 10:08:05,974] multiqc.modules.picard.QualityYieldMetrics         [DEBUG  ]  Duplicate sample name found in quality_yield.txt! Overwriting: quality_yield
+[2024-05-09 10:08:05,975] multiqc.modules.picard.QualityYieldMetrics         [DEBUG  ]  Duplicate sample name found in quality_yield.txt! Overwriting: quality_yield
+[2024-05-09 10:08:05,975] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_QualityYieldMetrics.txt
+[2024-05-09 10:08:05,975] multiqc.modules.picard.picard                      [INFO   ]  Found 1 QualityYieldMetrics reports
+[2024-05-09 10:08:05,983] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_picard_wgsmetrics.txt
+[2024-05-09 10:08:05,992] multiqc.modules.picard.picard                      [INFO   ]  Found 9 WgsMetrics reports
+[2024-05-09 10:08:05,993] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file picard_histogram_2.txt
+[2024-05-09 10:08:06,021] multiqc.modules.fastq_screen.fastq_screen          [INFO   ]  Found 9 reports
+[2024-05-09 10:08:06,026] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_fastq_screen.txt
+[2024-05-09 10:08:06,567] multiqc.modules.fastqc.fastqc                      [INFO   ]  Found 18 reports
+[2024-05-09 10:08:06,568] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_fastqc.txt
+[2024-05-09 10:08:07,110] multiqc.plots.plotly.heatmap                       [DEBUG  ]  Resizing width from 385 to 900 to fit horizontal column text on the screen
+[2024-05-09 10:08:07,110] multiqc.plots.plotly.heatmap                       [DEBUG  ]  Resizing from 900x540 to fit the maximum size 900x500
+[2024-05-09 10:08:07,110] multiqc.plots.plotly.heatmap                       [DEBUG  ]  Heatmap size: 900x500, px per element: 81.82x27.78
+[2024-05-09 10:08:07,114] multiqc.utils.software_versions                    [DEBUG  ]  Reading software versions from config.software_versions
+[2024-05-09 10:08:07,116] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_software_versions.txt
+[2024-05-09 10:08:07,164] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_general_stats.txt
+[2024-05-09 10:08:07,165] multiqc                                            [DEBUG  ]  Compressing plot data
+[2024-05-09 10:08:08,615] multiqc.utils.util_functions                       [DEBUG  ]  Wrote data file multiqc_data.json
+[2024-05-09 10:08:08,617] multiqc                                            [INFO   ]  Report      : output_multiqc/multiqc_report.html
+[2024-05-09 10:08:08,617] multiqc                                            [INFO   ]  Data        : output_multiqc/multiqc_report_data
+[2024-05-09 10:08:08,617] multiqc                                            [DEBUG  ]  Moving data file from '/data/zhuw10/TMP/tmpb_zfnle8/multiqc_data' to '/vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output_multiqc/multiqc_report_data'
+[2024-05-09 10:08:08,743] multiqc                                            [DEBUG  ]  Full report path: /vf/users/DCEG_Trios/novaseq_benchmark/TriosCompass_v2/output_multiqc/multiqc_report.html
+[2024-05-09 10:08:08,939] multiqc                                            [INFO   ]  MultiQC complete

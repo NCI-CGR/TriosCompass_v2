@@ -1,0 +1,10 @@
+Sample	SC501095	SC501096	SC501105	SC501108	SC501110	SC501111	SD162355	SD162357	SD162359
+output/dragen_gvcf/SC501095	{'target_bed': {'source_file': 'target_bed', 'value': 107.13}, 'wgs': {'source_file': 'wgs', 'value': 104.1}}								
+output/dragen_gvcf/SC501096		{'target_bed': {'source_file': 'target_bed', 'value': 103.24}, 'wgs': {'source_file': 'wgs', 'value': 100.34}}							
+output/dragen_gvcf/SC501105			{'target_bed': {'source_file': 'target_bed', 'value': 106.41}, 'wgs': {'source_file': 'wgs', 'value': 103.41}}						
+output/dragen_gvcf/SC501108				{'target_bed': {'source_file': 'target_bed', 'value': 102.28}, 'wgs': {'source_file': 'wgs', 'value': 99.47}}					
+output/dragen_gvcf/SC501110					{'target_bed': {'source_file': 'target_bed', 'value': 91.51}, 'wgs': {'source_file': 'wgs', 'value': 88.91}}				
+output/dragen_gvcf/SC501111						{'target_bed': {'source_file': 'target_bed', 'value': 98.72}, 'wgs': {'source_file': 'wgs', 'value': 95.98}}			
+output/dragen_gvcf/SD162355							{'target_bed': {'source_file': 'target_bed', 'value': 104.9}, 'wgs': {'source_file': 'wgs', 'value': 102.13}}		
+output/dragen_gvcf/SD162357								{'target_bed': {'source_file': 'target_bed', 'value': 93.66}, 'wgs': {'source_file': 'wgs', 'value': 91.37}}	
+output/dragen_gvcf/SD162359									{'target_bed': {'source_file': 'target_bed', 'value': 108.75}, 'wgs': {'source_file': 'wgs', 'value': 106.05}}
