@@ -1,0 +1,42 @@
+description: A example schema for a pipeline.
+imports:
+#  - http://schema.databio.org/pep/2.0.0.yaml
+  - schemas/2.0.0.yaml
+  
+properties:
+  output_dir:
+    type: string
+    description: "output of the workflow"
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        CGF_ID:
+          type: string
+          description: "sample id"
+        FLOEWCELL:
+          type: string
+          description: "Flowcell"
+        INDEX:
+          type: string
+          description: "Library index"
+        LANE:
+          type: string
+          description: "Lane number in flowcell"
+          enum: ["1", "2","3", "4", "5", "6", "7", "8"]
+        R1:
+          type: string
+          description: "path to the R1 fastq file"
+        R2:
+          type: string
+          description: "path to the R2 fastq file"
+      required:
+        - FLOWCELL
+        - CGF_ID
+        - INDEX
+        - R1
+        - R2
+required:
+  - samples
+  - output_dir

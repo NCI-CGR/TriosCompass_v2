@@ -1,0 +1,286 @@
+import os
+import uuid
+import peds
+import glob
+from itertools import compress
+
+pepfile: "pep/novaseq_config.yaml"
+pepschema: "schemas/novaseq_manifest_schema.yaml"
+
+samples = pep.sample_table
+# samples = samples.loc[ samples['CGF_ID'].isin( ['SC108472','SC730933'])]
+
+# print(samples.index)
+# print(samples.loc[["SD162355_A22FKHJLT3",'SD162357_A22FKHJLT3']]["R1"])
+
+# print(pep.config.output_dir)
+
+
+# get unique value of a list
+# print(list(set(samples["FLOWCELL"].tolist())))
+
+flowcells = list(set(samples["FLOWCELL"].tolist()))
+subjs = sorted(list(set(samples["CGF_ID"].tolist())))
+ids = samples["sample_name"].tolist()
+
+# print("ids:\n")
+# print(ids)
+# print(subjs)
+# print(len(list(set(ids))))
+# exit()
+
+# print (samples)
+
+
+# 'SC742296': ['BH2HYTDSX5', 'BH2JN2DSX5']
+subj_flowcell_dict=samples[['CGF_ID','FLOWCELL']].drop_duplicates().groupby('CGF_ID')['FLOWCELL'].apply(list).to_dict()
+
+ref_dict=os.path.splitext(pep.config.hg38_ref)[0]+'.dict'
+
+# print (subj_flowcell_dict)
+
+
+### Define trios
+ped_files = glob.glob(pep.config.ped_dir + "/*.ped")
+
+### make more compatible
+output_dir = pep.config.output_dir
+
+### It seems order of the family member is as the order of entries in the pedigree file
+# see https://github.com/jeremymcrae/peds/blob/master/peds/ped.py
+# Therefore, it is likely to be the order: father, mother and kid
+# t0334   SC074198        0       0       1       1
+# t0334   SC074199        0       0       2       1
+# t0334   SC074201        SC074198        SC074199        1       1
+families = {}
+SEX_DICT={}
+for fn in ped_files:
+    f=peds.open_ped(fn)[0]
+    families[f.id]=f
+    for person in f:
+        SEX_DICT[person.id] = 'M' if person.is_male() else 'F'
+
+fam_ids = list(families.keys()) 
+
+fam_ids2=  [f for f in fam_ids if f != 't0588c1' ]
+# print(fam_ids)
+
+
+### to link with the section of rules from the workflow Snakefile_chernobyl
+output_dir = pep.config.output_dir
+callers=['DV', 'GATK', "D_and_G"]
+fam_ids=fam_ids2 # remove the subject t0588c1
+hg38_ref = pep.config.hg38_ref
+ref_dict=os.path.splitext(hg38_ref)[0]+'.dict'
+wgs_interval= pep.config.wgs_interval
+ped_dir = pep.config.ped_dir
+
+### for dnSTR calling
+gangstr_panel = pep.config.gangstr_panel
+hipstr_panel = pep.config.hipstr_panel
+hipstr_filters= pep.config.hipstr_filters
+gangstr_filters= pep.config.gangstr_filters
+dup_reg = pep.config.dup_reg
+STR_CALLERS=["hipstr", "gangstr"]
+split_total = pep.config.split_total
+CHUNKS =[str(x).zfill(5) for x in range(split_total)]
+final_subjs = list(set([p.id for f in fam_ids2 for p  in families[f] ]))
+
+### Settings for dnSTR
+# ref_fai = hg38_ref +'.fai'
+child_ids = [[person.id for person in families[fid] if families[fid].get_father(person) ][0] for fid in fam_ids2]
+CHILD_DICT=dict(zip(fam_ids2,child_ids))
+PHASE_WIN = pep.config.phase_window
+
+# print(subjs)
+
+### test on first 2 samples 
+# subjs = subjs[0:2]
+# print(subjs)
+
+rule all:
+    input: 
+       expand(output_dir + "/fq_list/{CGF_ID}.fastq_list.csv", CGF_ID=subjs),
+       expand(output_dir + "/dragen_gvcf/{subj}/{subj}.hard-filtered.gvcf.gz", subj=subjs),
+       expand(output_dir +"/dragen_dnm_vcf/{fam}.dnm.vcf", fam=fam_ids2)
+       
+       
+
+
+# RGID,RGSM,RGLB,Lane,Read1File,Read2File
+# KeyError: "None of [Index([<built-in function id>], dtype='object', name='sample_name')] are in the [index]"
+rule make_fastq_list:
+    input: 
+        R1s=lambda w: [ samples.loc[w.CGF_ID + '_'+ flowcell]["R1"] for flowcell in subj_flowcell_dict[w.CGF_ID] ],
+        R2s=lambda w: [ samples.loc[w.CGF_ID + '_'+ flowcell]["R2"] for flowcell in subj_flowcell_dict[w.CGF_ID] ]
+        # R2s=lambda w: expand(samples.loc[list({id})]["R2"], id=[ w.CGF_ID + '_'+ flowcell for flowcell in subj_flowcell_dict[w.CGF_ID] ])
+    output:
+        output_dir  + "/fq_list/{CGF_ID}.fastq_list.csv"
+    params: 
+       fqs=lambda w, input: "\n".join(["{FLOWCELL}_{LANE},{CGF_ID},{CGF_ID}_{INDEX},{LANE},{R1},{R2}" . format  (**samples.loc[id]) for id in list(compress(ids, [ id == w.CGF_ID for id in samples['CGF_ID']]))  ])
+    resources:
+        runtime="2h",
+        mem_mb=1000
+    shell: """
+        echo "RGID,RGSM,RGLB,Lane,Read1File,Read2File" > {output}
+        echo {params.fqs} >>{output}
+    """
+
+rule dragen_gvcf: 
+    input:
+        fq_list = output_dir  + "/fq_list/{subj}.fastq_list.csv",
+        bed = wgs_interval
+    output:
+        dragen_start = output_dir + "/dragen_gvcf/{subj}/dragen_log.start.log",
+        dragen_end = output_dir + "/dragen_gvcf/{subj}/dragen_log.end.log",
+        gvcf = output_dir + "/dragen_gvcf/{subj}/{subj}.hard-filtered.gvcf.gz"
+    resources: 
+        partition="nci-dragen",
+        threads=64,
+        runtime= "6h",
+        mem_mb=512000
+    benchmark:
+        output_dir +"/benchmark/dragen_gvcf/{subj}.tsv"
+    shell: """
+        mkdir -p $(dirname {output.gvcf})
+        
+        # export PATH=$PATH:/opt/edico/bin
+        source /etc/profile.d/edico.sh
+
+        ulimit -n 65535
+
+        dragen_lic -f genome &> {output.dragen_start}
+
+        # load reference for your analysis, for DNA, RNA, CNV, and HLA analysis, use
+        # dragen -l -r /staging/human/hg38
+
+        dragen -f \
+            -r /staging/human/hg38 \
+            --vc-target-bed {input.bed} \
+            --fastq-list {input.fq_list} \
+            --fastq-list-sample-id {wildcards.subj} \
+            --enable-variant-caller true \
+            --enable-map-align-output true \
+            --enable-map-align true \
+            --enable-duplicate-marking true \
+            --vc-emit-ref-confidence GVCF \
+            --vc-enable-vcf-output true \
+            --output-directory "$(dirname {output.gvcf})" \
+            --output-file-prefix {wildcards.subj} \
+            --output-format cram \
+            --enable-cnv true \
+            --cnv-enable-self-normalization true --cnv-interval-width 1000  \
+            --enable-sv true
+
+
+        dragen_lic -f genome &> {output.dragen_end}
+    """
+# https://support-docs.illumina.com/SW/dragen_v42/Content/SW/DRAGEN/PedigreeMode.htm
+rule dragen_joint:
+    input:
+        gvcfs = lambda w: expand(output_dir + "/dragen_gvcf/{subj}/{subj}.hard-filtered.gvcf.gz", subj=[person.id for person in families[w.fam]]),
+        ped = ped_dir + "/{fam}.ped",
+    output:
+        dragen_start = output_dir + "/dragen_joint/{fam}/dragen_log.start.log",
+        dragen_end = output_dir + "/dragen_joint/{fam}/dragen_log.end.log",
+        vcf = output_dir + "/dragen_joint/{fam}/{fam}.hard-filtered.vcf.gz"
+    resources: 
+        partition="nci-dragen",
+        threads=64,
+        runtime= "6h",
+        mem_mb=512000
+    params: 
+        v=lambda w,input: " --variant ".join(input.gvcfs)
+    benchmark:
+        output_dir +"/benchmark/dragen_joint/{fam}.tsv"
+    shell: """
+        mkdir -p $(dirname {output.dragen_end})
+        
+        # export PATH=$PATH:/opt/edico/bin
+        source /etc/profile.d/edico.sh
+
+        ulimit -n 65535
+
+        dragen_lic -f genome &> {output.dragen_start}
+
+        # load reference for your analysis, for DNA, RNA, CNV, and HLA analysis, use
+        # dragen -l -r /staging/human/hg38
+
+        dragen -f \
+            -r /staging/human/hg38 \
+            --enable-joint-genotyping true \
+            --variant {params.v} \
+            --output-directory "$(dirname {output.dragen_end})" \
+            --output-file-prefix {wildcards.fam} \
+            --pedigree-file {input.ped}
+
+        dragen_lic -f genome &> {output.dragen_end}
+    """
+
+rule call_dnm_dragen: 
+    input: 
+        vcf = output_dir + "/dragen_joint/{fam}/{fam}.hard-filtered.vcf.gz",
+        ped= ped_dir + "/{fam}.ped",
+        interval=wgs_interval,
+        ref = hg38_ref
+    output:
+        vcf= output_dir +"/slivar/dragen_{fam}.vcf",
+        norm_vcf= temp(output_dir +"/slivar/dragen_{fam}.tmp0.vcf.gz"),
+        tmp = temp(output_dir +"/slivar/dragen_{fam}.tmp.vcf.gz"),
+        gz = output_dir +"/slivar/dragen_{fam}.dnm.vcf.gz"
+    benchmark:
+        output_dir +"/benchmark/slivar/dragen_{fam}.tsv"
+    resources: 
+        mem_mb = 20*1000,
+        runtime= "1d"
+    params: min_gq=10, min_dp=20
+    envmodules: "bcftools"
+    conda:
+        "workflow/envs/slivar.yaml"
+    shell: """
+        zcat {input.vcf} | sed -e 's/ID=AD,Number=\./ID=AD,Number=R/' |bcftools norm -f {input.ref} -m - -O z -o {output.norm_vcf} 
+        tabix {output.norm_vcf}
+        slivar expr  \
+            --vcf {output.norm_vcf} \
+            --ped  {input.ped} \
+            --pass-only \
+            --out-vcf {output.vcf} \
+            --trio "denovo:( \
+                ( \
+                    (variant.CHROM == 'chrX' && kid.sex=='male') && \
+                    kid.hom_alt && kid.AB > 0.98  \
+                ) || \
+                ( \
+                    (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
+                    kid.het && kid.AB > 0.25 && kid.AB < 0.75 \
+                ) \
+                ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+                mom.hom_ref && dad.hom_ref \
+                    &&  (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < 0.05 \
+                    &&  (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < 0.05 \
+                    && kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq} \
+                    && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0))"
+        bgzip -c {output.vcf} > {output.tmp}
+        tabix {output.tmp}
+        bcftools view -R {input.interval} {output.tmp} -O z -o {output.gz}
+        tabix {output.gz}
+    """
+
+rule dragen_dnm_vcf:
+    input: 
+        output_dir +"/slivar/dragen_{fam}.dnm.vcf.gz"
+    output: 
+        output_dir +"/dragen_dnm_vcf/{fam}.dnm.vcf"
+    resources: 
+        threads=2,
+        mem_mb = 4*1000,
+        runtime= "2h"
+    envmodules: "bcftools"
+    params: 
+        proband = lambda w: CHILD_DICT[w.fam]
+    shell: """
+        bcftools view -s {params.proband} {input} | bcftools filter  -i "DN = 'DeNovo'" -Ov -o {output}
+    """
+
+
+
