@@ -24,7 +24,7 @@
 
 ## Introduction
 
-To benchmark the NGS data generated from Illumina NovaSeq, we explored calling DNMs from 3 trios using TriosCompass and Dragen: 1 GIAB trio (AJtrio) and 2 Chernobyl trios (t0311c1 and t0321c1).  The details of the project is available at [FogBugz](https://cgr-bugz.nci.nih.gov/f/cases/34832).
+To benchmark the NGS data generated from Illumina NovaSeq, we explored calling DNMs from 3 trios using TriosCompass and Dragen: 1 GIAB trio (AJtrio) and 2 Chernobyl trios (t0311c1 and t0321c1).  The details of the project is available at [FogBugz](https://tracker.nci.nih.gov/browse/CGRSA-7).
 
 ---
 
