@@ -2,5 +2,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - slivar 
+  - gatk4 ==4.3.0.0
   - bcftools 

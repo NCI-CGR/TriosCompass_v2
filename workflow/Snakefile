@@ -11,7 +11,7 @@ configfile: os.path.join(workflow.basedir, "..", "config/config.yaml")
 report: "report/workflow.rst"
 
 
-print(os.getcwd())
+# print(os.getcwd())
 
 
 # Using singularity for conda/mamba support
@@ -24,6 +24,8 @@ include: "rules/ref.smk"
 if config["fastq_input"]["enable"]:
     include: "rules/premap.smk"
     include: "rules/mapping.smk"
+else:
+    include: "rules/bam_input.smk"
 
 include: "rules/bam_qc.smk"
 include: "rules/gatk_hc.smk"
@@ -33,10 +35,6 @@ include: "rules/jigv.smk"
 
 rule all: 
     input: 
-        rules.bwa_index.output,
-        genome_dict,
-        expand(output_dir + "/fq2bam/{SAMPLE_ID}.bam", SAMPLE_ID=subjs ),
-        expand(output_dir + "/gatk_cgp/{fam}.cgp_norm.vcf.gz", fam=fam_ids),
         expand(output_dir + "/dnm_vcf/{fam}.dnm.vcf.gz", fam=fam_ids),
         expand(output_dir + "/call_JIGV/{fam}.JIGV.html", fam=fam_ids),
         optional_output=optional_output,

@@ -1,9 +1,10 @@
-name: fastq_test
+name: bam_test
 
-pepfile: "config/fastq_pep.yaml"
-pepschema: "../schemas/fastq_schema.yaml"
+pepfile: "config/bam_pep.yaml"
+pepschema: "../schemas/bam_schema.yaml"
 
 output_dir: "output"
+
 
 ref:
   sequence: "ref/Homo_sapiens_assembly38.fasta"
@@ -15,16 +16,13 @@ parabricks:
   singularity_cmd: " /usr/local/current/singularity/4.0.3/bin/singularity exec --pwd /mnt --nv -B `pwd`:/mnt docker://nvcr.io/nvidia/clara/clara-parabricks:4.0.0-1 "
 
 fastq_input:
-  enable: True # process the fastq input; False if bam inputs are provided
+  enable: False # process the fastq input; False if bam inputs are provided
   fastqc: 
     enable: True
   fastq_screen:
     enable: True
     config: "ref/fastq_screen.abs.conf"
-
-bam_input:
-  reset_RG: True
-
+  
 bam_qc:
   flagstat: 
     enable: True
@@ -59,7 +57,6 @@ threads:
   gatk_genotype_gvcf_pb: 16
   deepvariant_pb: 48
   glnexus_dv: 8
-  replace_rg: 8
 
 ### for pedigree files
 ped_dir: "ped"

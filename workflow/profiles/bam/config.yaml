@@ -1,0 +1,100 @@
+
+cluster-cancel: "scancel"
+jobscript: "slurm-jobscript.sh"
+cluster: "slurm-submit.py"
+cluster-status: "slurm-status.py"
+
+
+# Example resource configuration
+# default-resources:
+#   - runtime=100
+#   - mem_mb=6000
+#   - disk_mb=1000000
+# # set-threads: map rule names to threads
+# set-threads:
+#   - single_core_rule=1
+#   - multi_core_rule=10
+# # set-resources: map rule names to resources in general
+# set-resources:
+#   - high_memory_rule:mem_mb=12000
+#   - long_running_rule:runtime=1200
+
+configfile: TriosCompass_v2/config/bam_config.yaml
+snakefile: TriosCompass_v2/workflow/Snakefile
+verbose: True
+skip-script-cleanup: True
+latency-wait: 60
+reason: True
+show-failed-logs: True
+keep-going: True
+printshellcmds: True
+rerun-incomplete: True
+use-conda: True
+use-envmodules: True
+use-singularity: True
+local-cores: 1
+printshellcmds: True
+
+restart-times: "0"
+
+# Cluster submission
+jobname: "{rule}.{jobid}"   
+max-jobs-per-second: 1     
+max-status-checks-per-second: 10     
+jobs: 800     
+
+# Job resources
+set-resources:
+  - bwa_index:mem_mb=16000
+  - fastp:mem_mb=40000
+  - fastqc:mem_mb=10000
+  - fastq_screen:mem_mb=50000
+  - fq2bam:mem_mb=40000
+  - fq2bam:runtime="8h"
+  - fq2bam:partition=gpu
+  - fq2bam:slurm=gres=gpu:v100x:1 
+  - flagstat:mem_mb=80000
+  - collectwgsmetrics:runtime="1d"
+  - collectwgsmetrics:mem_mb=80000
+  - collectmultiplemetrics:mem_mb=80000
+  - collectmultiplemetrics:partition=gpu
+  - collectmultiplemetrics:slurm=gres=gpu:v100x:1 
+  - gatkhc_pb:mem_mb=240000
+  - gatkhc_pb:runtime="1d"
+  - gatkhc_pb:partition=gpu
+  - gatkhc_pb:slurm=gres=gpu:v100x:1
+  - gatk_combine_gvcf:mem_mb=40000
+  - gatk_combine_gvcf:runtime="6d"
+  - gatk_cgp:mem_mb=40000
+  - gatk_cgp:runtime="1d"
+  - gatk_genotype_gvcf_pb:runtime="1d"
+  - gatk_genotype_gvcf_pb:mem_mb=80000
+  - gatk_genotype_gvcf_pb:partition=gpu
+  - gatk_genotype_gvcf_pb:slurm=gres=gpu:v100x:1 
+  - deepvariant_pb:mem_mb=180000
+  - deepvariant_pb:runtime="1d"
+  - deepvariant_pb:slurm=gres=gpu:v100x:1
+  - deepvariant_pb:partition=gpu
+  - glnexus_dv:mem_mb=100000
+  - glnexus_dv:runtime="1d"
+  - call_dnm_dv:mem_mb=20000
+  - call_dnm_dv:runtime="1d"
+  - call_dnm_hc:mem_mb=20000
+  - call_dnm_hc:runtime="1d"
+  - call_JIGV:mem_mb=60000
+  - replace_rg:mem_mb=60000
+  - replace_rg:runtime="1d"
+
+
+# Define the number of threads used by rules
+# buggy about this setting parse (see 121M)
+# set-threads:
+#   - "bwa_index=16"
+
+# For some reasons time needs quotes to be read by snakemake
+default-resources:
+  - mem_mb=2000
+  - runtime="10:00:00"
+
+
+

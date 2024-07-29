@@ -4,10 +4,10 @@ import os
 
 # Process fastq sequences using fastp, fastqc, and fastq_screen
 
-pepfile: os.path.join(workflow.basedir, "..", "config/fastq_pep.yaml")
-
+pepfile: os.path.join(workflow.basedir, "..", config["pepfile"])
 # validate_project() got an unexpected keyword argument 'exclude_case'
-# pepschema: "../schemas/fastq_schema.yaml"
+pepschema: config["pepschema"]
+
 
 samples = pep.sample_table
 flowcells = list(set(samples["FLOWCELL"].tolist()))
