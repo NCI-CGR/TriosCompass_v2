@@ -29,8 +29,16 @@ Most Snakemake command-line option has also been configured at workflow/profiles
   + peppy
   + peds
   + eido
-  + uuid
-  + itertools
+
++ Use [environment.yaml](environment.yaml) to create a new env for TriosCompassV2
+```bash
+
+mamba env create -f environment.yaml
+
+conda activate TriosCompassV2
+```
+
+
 
 ### Resources
 + Homo_sapiens_assembly38.fasta
@@ -55,16 +63,41 @@ AJ      HG002   HG003   HG004   1       1
 ```bash
 cd /data/DCEG_Trios/ChernobylTrios/dev
 
-git clone -b general_use git@github.com:NCI-CGR/TriosCompass_v2.git
+# git clone -b general_use git@github.com:NCI-CGR/TriosCompass_v2.git
+unzip trioscompass_test.zip
 
-conda activate snakemake
+mamba env create -f TriosCompass_v2/environment.yaml
+
+conda activate TriosCompassV2
 module load singularity
 
 mkdir -p TMP
 export TMPDIR=TMP
 
-snakemake --configfile TriosCompass_v2/config/config.yaml --profile TriosCompass_v2/workflow/profiles/biowulf 2>&1 | tee snakemake.log 
+### List input data
+tree data
+data
+├── bam
+│   ├── HG002_NA24385_son_80X.bam
+│   ├── HG003_NA24149_father_80X.bam
+│   └── HG004_NA24143_mother_80X.bam
+└── fq
+    ├── HG002_NA24385_son_80X_R1.fq.gz
+    ├── HG002_NA24385_son_80X_R2.fq.gz
+    ├── HG003_NA24149_father_80X_R1.fq.gz
+    ├── HG003_NA24149_father_80X_R2.fq.gz
+    ├── HG004_NA24143_mother_80X_R1.fq.gz
+    └── HG004_NA24143_mother_80X_R2.fq.gz
 
+2 directories, 9 files
+
+rm -fr output/*
+
+### Run TriosCompass on fastq input files
+sbatch -J fq -t 200:00:00 --export=ALL --mem=12g -p norm  --wrap='./run_fq.sh '
+
+### Run TriosCompass on bam input files
+sbatch -J bam -t 200:00:00 --export=ALL --mem=12g -p norm  --wrap='./run_bam.sh '
 ```
 
 
@@ -170,3 +203,4 @@ default-resources:
   - runtime="10:00:00"
 
 ```
+
