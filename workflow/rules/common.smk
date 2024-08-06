@@ -19,3 +19,13 @@ optional_output = list()
 
 output_dir = config["output_dir"]
 
+def get_bam_by_subj(wildcards):
+    return get_bam(wildcards.subj)
+
+def get_bams_by_family(wildcards):
+    rv = [get_bam(person.id) for person in families[wildcards.fam]]
+    # print(rv)
+    return rv
+
+def get_child_bam_by_family(wildcards):
+    return get_bam(CHILD_DICT[wildcards.fam])

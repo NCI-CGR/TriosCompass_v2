@@ -2,6 +2,4 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - glnexus
-  - bcftools
-  - tabix
+  - trtools ==5.0.2

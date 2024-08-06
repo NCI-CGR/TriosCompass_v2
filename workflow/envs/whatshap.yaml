@@ -2,6 +2,4 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - glnexus
-  - bcftools
-  - tabix
+  - whatshap ==2.1

@@ -1,16 +1,16 @@
 name: bam_test
 
-pepfile: "config/bam_pep.yaml"
+pepfile: "config/fullbam_pep.yaml"
 pepschema: "../schemas/bam_schema.yaml"
 
-output_dir: "output"
+output_dir: "output_fullbam"
 
 
 ref:
   sequence: "ref/Homo_sapiens_assembly38.fasta"
   build: "hg38"
 
-ped_dir: "new_cgr_pedfiles"
+ped_dir: "ped"
 
 parabricks:
   singularity_cmd: " /usr/local/current/singularity/4.0.3/bin/singularity exec --pwd /mnt --nv -B `pwd`:/mnt docker://nvcr.io/nvidia/clara/clara-parabricks:4.0.0-1 "
@@ -51,7 +51,7 @@ phasing:
 
 dnSTR:
   # split bed into chunks to speed up dnSTR call
-  split_n: 4
+  split_n: 400
   dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
   hipstr:
     enable: True
@@ -87,19 +87,7 @@ threads:
   phase_trios: 2
   
 
-### for pedigree files
-ped_dir: "ped"
 
-### Settings for dnSTR calling
-split_total: 400
-gangstr_panel: "STR/hg38_ver13.le9.bed"
-hipstr_panel: "STR/hg38_ver13.hipstr_9.bed"
-hipstr_filters: " --min-span-coverage 3 --min-supp-reads 3 "
-gangstr_filters: " --max-perc-encl-parent 0.05 --min-encl-match 0.9 --min-total-encl 10 --gangstr "
-dup_reg: "STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
-
-### WhatsHap
-phase_window: 10000
 
 
 

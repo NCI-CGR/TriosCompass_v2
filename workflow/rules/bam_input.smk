@@ -25,18 +25,13 @@ if config["bam_input"]["reset_RG"]:
         wrapper:
             "v1.25.0/bio/picard/addorreplacereadgroups"
     
-    def get_bam(wildcards):
-        return output_dir +"/fixed-rg/{}.bam".format(wildcards.subj) 
+    def get_bam(subj):
+        return output_dir +"/fixed-rg/{}.bam".format(subj) 
 
-    def get_bams_by_family(wildcards):
-        return expand(output_dir +"/fixed-rg/{subj}.bam", subj=[person.id for person in families[wildcards.fam]])
 
 else:
-    def get_bam(wildcards):
-        return sample_bam_dict[wildcards.subj] 
+    def get_bam(subj):
+        return sample_bam_dict[subj] 
 
-    def get_bams_by_family(wildcards):
-        rv = [sample_bam_dict[person.id] for person in families[wildcards.fam]]
-        # print(rv)
-        return rv
+
 

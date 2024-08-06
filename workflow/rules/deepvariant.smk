@@ -30,7 +30,8 @@ rule glnexus_dv:
         tbi=lambda w: expand(output_dir +"/deepvariant_pb/{id}.deepvariant.g.vcf.gz.tbi", id=[person.id for person in families[w.fam]]),
         ref=genome
     output:
-        vcf = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz"
+        vcf = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz",
+        tbi = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz.tbi"
     threads: config["threads"]["glnexus_dv"]
     benchmark:
         output_dir +"/benchmark/glnexus_dv/dv_{fam}.tsv"
@@ -39,6 +40,7 @@ rule glnexus_dv:
         tempdir=temp(directory(output_dir +"/glnexus/GLnexus.DB_{}")).format(uuid.uuid4()),
         config=config["deepvariant"]["glnexus_config"] 
     shell: """
-        glnexus_cli -t {threads} --config {params.config} --dir {params.tempdir} {input.gvcf} |  bcftools norm -f {input.ref} -m - -O z -o {output} 
+        glnexus_cli -t {threads} --config {params.config} --dir {params.tempdir} {input.gvcf} |  bcftools norm -f {input.ref} -m - -O z -o {output.vcf} 
+        tabix -p vcf {output.vcf}
         rm -fr {params.tempdir}
     """

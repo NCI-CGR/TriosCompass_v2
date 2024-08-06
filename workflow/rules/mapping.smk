@@ -20,8 +20,6 @@ rule fq2bam:
             --out-bam {output} 
     """
 
-def get_bam(wildcards):
-    return output_dir +"/fq2bam/{}.bam".format(wildcards.subj) 
+def get_bam(subj):
+    return output_dir +"/fq2bam/{}.bam".format(subj) 
 
-def get_bams_by_family(wildcards):
-    return expand(output_dir +"/fq2bam/{subj}.bam", subj=[person.id for person in families[wildcards.fam]])
