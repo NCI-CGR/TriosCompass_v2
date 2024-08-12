@@ -1,6 +1,6 @@
 rule gatkhc_pb:
     input:
-        bam=get_bam,
+        bam=get_bam_by_subj,
         ref=genome,
         ref_dict=genome_dict
     output:

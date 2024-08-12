@@ -2,7 +2,7 @@ import uuid
 
 rule deepvariant_pb:
     input:
-        bam=get_bam,
+        bam=get_bam_by_subj,
         ref=genome
     output:
         gvcf=output_dir +"/deepvariant_pb/{subj}.deepvariant.g.vcf",

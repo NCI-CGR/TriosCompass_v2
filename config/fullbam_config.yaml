@@ -1,9 +1,9 @@
-name: bam_test
+name: test_8trios
 
 pepfile: "config/fullbam_pep.yaml"
 pepschema: "../schemas/bam_schema.yaml"
 
-output_dir: "output_fullbam"
+output_dir: "output"
 
 
 ref:
@@ -22,7 +22,10 @@ fastq_input:
   fastq_screen:
     enable: True
     config: "ref/fastq_screen.abs.conf"
-  
+
+bam_input:
+  reset_RG: False
+
 bam_qc:
   flagstat: 
     enable: True
@@ -69,7 +72,10 @@ dnSTR:
   #   ref_panel: "ref/STR/hg38_ver13.le9.bed"
   #   filter: " --max-perc-encl-parent 0.05 --min-encl-match 0.9 --min-total-encl 10 --gangstr "
 
-
+multiqc:
+  enable: True
+  output_dir: "MultiQC_output"
+  
 threads:
   bwa_index: 16
   fastp: 8

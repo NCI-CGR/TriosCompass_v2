@@ -16,6 +16,8 @@ genome_dict = refDir + '/' + genome_prefix + '.dict'
 genome_fai = refDir + '/' + refFile + '.fai'
 
 optional_output = list()
+qc_output = list()
+
 
 output_dir = config["output_dir"]
 
@@ -24,7 +26,6 @@ def get_bam_by_subj(wildcards):
 
 def get_bams_by_family(wildcards):
     rv = [get_bam(person.id) for person in families[wildcards.fam]]
-    # print(rv)
     return rv
 
 def get_child_bam_by_family(wildcards):

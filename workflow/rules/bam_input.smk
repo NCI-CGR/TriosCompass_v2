@@ -12,6 +12,8 @@ samples = pep.sample_table
 subjs = list(set(samples["SAMPLE_ID"].tolist())) # 
 sample_bam_dict=dict(zip(samples.SAMPLE_ID, samples.BAM))
 
+# print (sample_bam_dict)
+
 if config["bam_input"]["reset_RG"]:
     rule replace_rg:
         input: lambda w: sample_bam_dict[w.subj] 
@@ -33,5 +35,5 @@ else:
     def get_bam(subj):
         return sample_bam_dict[subj] 
 
-
+    # print(get_bam("SC501095"))
 

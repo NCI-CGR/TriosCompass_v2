@@ -45,6 +45,8 @@ rule fastp:
                 --length_required 50 --low_complexity_filter
     """
 
+qc_output.append(expand(output_dir+"/fastp/{sample_name}.json, sample_name = ids))
+
 if config["fastq_input"]["fastqc"]["enable"]:
     rule fastqc:
         input: output_dir+"/fastp/{fid}.fastp.fastq.gz"
@@ -63,7 +65,7 @@ if config["fastq_input"]["fastqc"]["enable"]:
             "v2.1.1/bio/fastqc"     
     
     optional_output.append( expand(output_dir+"/fastqc/{id}.{reads}_fastqc.zip", id =ids, reads=['R1','R2']))
-
+    qc_output.append( expand(output_dir+"/fastqc/{id}.{reads}_fastqc.zip", id =ids, reads=['R1','R2']))
 
 #  fastq_screen: TODO
 

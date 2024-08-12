@@ -1,7 +1,7 @@
 ### add optional qc 
 if config["bam_qc"]["flagstat"]["enable"]:
     rule flagstat: 
-        input: get_bam
+        input: get_bam_by_subj
         output: 
             flagstat=output_dir +"/flagstat/{subj}.flagstat",
             idxstat=output_dir +"/flagstat/{subj}.idxstat"
@@ -16,12 +16,12 @@ if config["bam_qc"]["flagstat"]["enable"]:
     
     optional_output.append( expand(output_dir+"/flagstat/{subj}.flagstat", subj = subjs)) 
     optional_output.append( expand(output_dir+"/flagstat/{subj}.idxstat", subj = subjs))    
-
+    qc_output.append(expand(output_dir+"/flagstat/{subj}.idxstat", subj = subjs))
 
 if config["bam_qc"]["collectwgsmetrics"]["enable"]:
     rule collectwgsmetrics:
         input: 
-            bam= get_bam,
+            bam= get_bam_by_subj,
             ref= genome
         output: output_dir + "/collectwgsmetrics/{subj}.collect_wgs_metrics.txt"
         benchmark:
@@ -35,11 +35,12 @@ if config["bam_qc"]["collectwgsmetrics"]["enable"]:
         """
     
     optional_output.append( expand(output_dir+"/collectwgsmetrics/{subj}.collect_wgs_metrics.txt", subj = subjs))  
+    qc_output.append(expand(output_dir+"/collectwgsmetrics/{subj}.collect_wgs_metrics.txt", subj = subjs))  
 
 if config["bam_qc"]["collectmultiplemetrics"]["enable"]:
     rule collectmultiplemetrics:
         input: 
-            bam = get_bam,
+            bam = get_bam_by_subj,
             ref = genome
         output: output_dir +"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt"
         benchmark:
@@ -58,3 +59,4 @@ if config["bam_qc"]["collectmultiplemetrics"]["enable"]:
         '''
     
     optional_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt", subj = subjs)) 
+    qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}", subj = subjs))

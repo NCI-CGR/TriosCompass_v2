@@ -35,6 +35,9 @@ include: "rules/jigv.smk"
 include: "rules/phasing.smk"
 include: "rules/dnSTR.smk"
 
+if config["multiqc"]["enable"]:
+    include: "rules/multiqc.smk"
+
 rule all: 
     input: 
         expand(output_dir + "/dnm_vcf/{fam}.dnm.vcf.gz", fam=fam_ids),

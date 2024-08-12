@@ -57,7 +57,7 @@ set-resources:
   - flagstat:mem_mb=80000
   - collectwgsmetrics:runtime="1d"
   - collectwgsmetrics:mem_mb=80000
-  - collectmultiplemetrics:mem_mb=20000
+  - collectmultiplemetrics:mem_mb=80000
   - collectmultiplemetrics:runtime="1d"
   - collectmultiplemetrics:partition=gpu
   - collectmultiplemetrics:slurm=gres=gpu:v100x:1 
@@ -73,12 +73,12 @@ set-resources:
   # - gatk_genotype_gvcf_pb:mem_mb=8000
   - gatk_genotype_gvcf_pb:partition=gpu
   - gatk_genotype_gvcf_pb:slurm=gres=gpu:v100x:1 
-  - deepvariant_pb:mem_mb=40000
+  - deepvariant_pb:mem_mb=180000
   - deepvariant_pb:runtime="20h"
   - deepvariant_pb:slurm=gres=gpu:v100x:1
   - deepvariant_pb:partition=gpu
-  # - glnexus_dv:mem_mb=100000
-  # - glnexus_dv:runtime="1d"
+  - glnexus_dv:mem_mb=100000
+  - glnexus_dv:runtime="1d"
   # - call_dnm_dv:mem_mb=20000
   # - call_dnm_dv:runtime="1d"
   # - call_dnm_hc:mem_mb=20000
@@ -89,7 +89,7 @@ set-resources:
   # - phase_child:mem_mb=40000
   - phase_trios:run_time="12h"
   - split_bed_hipstr:mem_mb=10000
-  # - hipstr:mem_mb=40000
+  - hipstr:mem_mb=40000
   - hipstr:runtime="18h"
   - dumpstr_call_hipstr:mem_mb=40000
   - dumpstr_locus:mem_mb=40000
