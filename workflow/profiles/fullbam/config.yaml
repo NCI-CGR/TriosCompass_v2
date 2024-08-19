@@ -100,6 +100,17 @@ set-resources:
   - merge_monstr:runtime="20h"
   - monstr_filter:mem_mb=10000
   # - hipstr_recall:mem_mb=10000
+  - manta_create_run_script:mem_mb=10000
+  - manta_call:mem_mb=60000
+  - manta_call:runtime="3d"
+  - uniq_svid:mem_mb=40000
+  - svimmer:runtime="24h"
+  - svimmer:mem_mb=60000  
+  - graphtyper:runtime="72h"
+  - graphtyper:mem_mb=120000
+  - graphtyper_filter:mem_mb=20000
+  - smoove:runtime="24h"
+  - smoove:mem_mb=100000
 
 # Define the number of threads used by rules
 # buggy about this setting parse (see 121M)

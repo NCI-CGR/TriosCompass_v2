@@ -21,6 +21,7 @@ qc_output = list()
 
 output_dir = config["output_dir"]
 
+
 def get_bam_by_subj(wildcards):
     return get_bam(wildcards.subj)
 

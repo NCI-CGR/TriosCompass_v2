@@ -76,6 +76,10 @@ multiqc:
   enable: True
   output_dir: "MultiQC_output"
   
+dnSV:
+  enable: True
+  exclude_bed: "ref/exclude.cnvnator_100bp.GRCh38.20170403.bed"
+
 threads:
   bwa_index: 16
   fastp: 8
@@ -91,6 +95,12 @@ threads:
   glnexus_dv: 8
   phase_child: 2
   phase_trios: 2
+  manta_call: 10
+  uniq_svid: 4
+  svimmer: 4
+  graphtyper: 40
+  smoove: 20
+
   
 
 

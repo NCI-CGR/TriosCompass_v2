@@ -6,7 +6,10 @@ import peds
 # Process fastq sequences using fastp, fastqc, and fastq_screen
 
 pepfile: os.path.join(workflow.basedir, "..", config["pepfile"])
-pepschema: config["pepschema"]
+
+### Disable pepschema, due to:
+# Could not load remote file: http://schema.databio.org/pep/2.0.0.yaml. Original exception: URLError(TimeoutError(110, 'Connection timed out'))
+# pepschema: config["pepschema"]
 
 samples = pep.sample_table
 subjs = list(set(samples["SAMPLE_ID"].tolist())) # 
