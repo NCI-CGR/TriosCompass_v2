@@ -93,7 +93,17 @@ def aggregate_input(wildcards):
 rule aggregate_phase:
     input: aggregate_input
     output: 
-        output_dir + "/phase_DNMs/{fam}.parental_origin.tab"
+        report(
+            output_dir + "/phase_DNMs/{fam}.parental_origin.tab",
+            caption="../report/parental_origin.rst",
+            category="De novo mutations",
+            subcategory="Phasing",
+            labels={
+                "Family": "{fam}",
+                "Desc": "parental origin of DNMs",
+                "File type": "tab/tsv"
+            }
+        )
     shell: """
         cat {input} | sort -t ":"  -Vs -k1,1 -k2,2n > {output}
     """

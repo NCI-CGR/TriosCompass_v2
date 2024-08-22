@@ -1,1 +1,1 @@
-This is TriosCompassV2 description.
+TriosCompassV2 is a snakemake workflow to identify de novo mutatios. 

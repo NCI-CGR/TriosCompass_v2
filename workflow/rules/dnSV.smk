@@ -188,7 +188,17 @@ rule joint_dnSV:
     input: 
         output_dir + "/joint_dnSV/{fam}.dnSV.lst"
     output:
-        vcf = output_dir + "/joint_dnSV/{fam}.dnSV.vcf",
+        vcf = report(
+            output_dir + "/joint_dnSV/{fam}.dnSV.vcf",
+            caption="../report/dnSV.rst",
+            category="De novo SVs",
+            subcategory="Predictions",
+            labels={
+                "Family": "{fam}",
+                "Desc": "dnSV",
+                "File type": "VCF"
+            }
+        ),
         stats = output_dir + "/joint_dnSV/{fam}.dnSV.stats",
         others = multiext(output_dir+ "/joint_dnSV/{fam}.dnSV.stats", "_CHR", "support")
     conda: "../envs/survivor.yaml"
@@ -197,4 +207,21 @@ rule joint_dnSV:
         SURVIVOR stats {output.vcf} 50 -1 -1 {output.stats}
     """
 
+rule dnSV_summary:
+    input: expand(output_dir + "/joint_dnSV/{fam}.dnSV.vcf", fam=fam_ids)
+    output:
+        report(
+            output_dir + "/dnSV_summary/dnSV_summary.txt",
+            category="De novo SVs",
+            subcategory="Summary",
+            labels={
+                "Desc": "Count of dnSVs",    
+                "File type": "txt",
+            }
+        )
+    shell: """
+        (echo -e "TrioID\tdnSTR_Cnt" && ls {input} | parallel 'id=$(basename {{/}} .dnSV.vcf);cnt=$(zgrep -v -c "^#" {{}} ); echo -e "$id\t$cnt" ')  > {output}
+    """
+
 optional_output.append(expand(output_dir + "/joint_dnSV/{fam}.dnSV.vcf", fam=families))
+optional_output.append(output_dir + "/dnSV_summary/dnSV_summary.txt")

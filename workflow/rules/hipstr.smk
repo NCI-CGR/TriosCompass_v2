@@ -97,7 +97,18 @@ rule vizaln:
         dummy=output_dir + "/vizaln/{fam}/hipstr/variants/{chr}_{pos}.dnm",
         viz=output_dir + "/vizaln/{fam}/{fam}.hipstr.aln.viz.gz"
     output: 
-        output_dir + "/vizaln/{fam}/hipstr/variants/{chr}_{pos}.html"
+        report(
+            output_dir + "/vizaln/{fam}/hipstr/variants/{chr}_{pos}.html",
+            caption="../report/visaln.rst",
+            category="Visulization of dnSTR",
+            subcategory="{fam}",
+            labels={
+                "chr": "{chr}",
+                "pos": "{pos}",
+                "Desc": "VizAln of dnSTR",
+                "File tyoe": "HTML"
+            }
+        )
     benchmark:
         output_dir +"/benchmark/vizaln/{fam}_hipstr.{chr}_{pos}.tsv"
     singularity: "docker://cgrlab/hipstr:latest"

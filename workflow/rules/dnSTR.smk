@@ -114,7 +114,17 @@ rule merge_monstr:
 rule monstr_filter:
     input: output_dir + "/merge_monstr/{caller}.all_mutations.tab"
     output: 
-        filtered=output_dir + "/monstr_filter/{caller}.filtered.tab",
+        filtered=report(
+            output_dir + "/monstr_filter/{caller}.filtered.tab",
+            caption="../report/dnSTR.rst",
+            category="De novo STRs",
+            subcategory="MonSTR predictions",
+            labels={
+                "STR caller": "{caller}",
+                "Desc": "MonSTR predictions for all trios",
+                "File type": "tab/tsv"
+            }
+        ),
         log=output_dir + "/monstr_filter/{caller}.filtered.log"
     singularity: "docker://gymreklab/monstr"
     shell: """
@@ -126,6 +136,25 @@ rule monstr_filter:
                   --filter-posterior 0.8 
     """
 
+rule dnSTR_summary:
+    input: output_dir + "/monstr_filter/{caller}.filtered.tab"
+    output: 
+        report(
+            output_dir + "/dnSTR_summary/{caller}.dnSTR_summary.txt",
+            caption="../report/dnSTR.rst",
+            category="De novo STRs",
+            subcategory="Summary of MonSTR predictions",
+            labels={
+                "STR caller": "{caller}",
+                "Desc": "Count of dnSTRs",
+                "File type": "txt"
+            }
+        )
+    conda: "../envs/csvtk.yaml"
+    shell: """
+        csvtk summary -t -g family -f pos:countn {input} | csvtk rename -t -f 1,2 -n Family,Countn > {output}
+    """
+
 ### Join hipstr and gangstr if both called
 # rule joint_STR: 
 #     input: expand(output_dir + "/monstr_filter/{caller}.filtered.tab", caller=['hipstr','gangstr'])
@@ -134,5 +163,6 @@ rule monstr_filter:
 #     shell: """
 #         csvtk join -t -f "chrom,pos,child,child_gt,mat_gt,pat_gt" -p {input} > {output}
 #     """
-        
+
+optional_output.append( expand(output_dir + "/dnSTR_summary/{caller}.dnSTR_summary.txt", caller=['hipstr']) )    
 

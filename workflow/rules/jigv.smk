@@ -6,7 +6,17 @@ rule call_JIGV:
         ref=genome,
         sites= output_dir +"/GATK_DV/D_and_G.{fam}.dnm.vcf.gz"
     output:
-        html= output_dir +"/call_JIGV/{fam}.JIGV.html"
+        html= report(
+            output_dir +"/call_JIGV/{fam}.JIGV.html",
+            caption="../report/JIGV.rst",
+            category="De novo mutations",
+            subcategory="Visulization",
+            labels={
+                "Family": "{fam}",
+                "Desc": "JIGV snapshots",
+                "File type": "html",
+            }
+        )
     benchmark:
         output_dir +"/benchmark/call_JIGV/{fam}.tsv"
     params: 

@@ -43,10 +43,11 @@ if config["multiqc"]["enable"]:
 
 rule all: 
     input: 
-        expand(output_dir + "/dnm_vcf/{fam}.dnm.vcf.gz", fam=fam_ids),
+        output_dir + "/dnm_vcf_summary/DNM_summary.txt",
         expand(output_dir + "/call_JIGV/{fam}.JIGV.html", fam=fam_ids),
         expand(output_dir + "/phase_DNMs/{fam}.parental_origin.tab", fam=fam_ids),
         optional_output=optional_output,
+        
         
 
 

@@ -1,0 +1,1 @@
+De novo mutations called by both DeepVariant and GATK HaptotypeCaller.

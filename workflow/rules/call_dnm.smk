@@ -80,11 +80,39 @@ rule merge_DV_GATK:
 ### generate vcf file of the proband
 rule dnm_vcf:
     input: output_dir +"/GATK_DV/D_and_G.{fam}.dnm.vcf.gz"
-    output: output_dir +"/dnm_vcf/{fam}.dnm.vcf.gz"
+    output: 
+        report(
+            output_dir +"/dnm_vcf/{fam}.dnm.vcf.gz",
+            caption="../report/dnm.rst",
+            category="De novo mutations",
+            subcategory="Prediction",
+            labels={
+                "Family": "{fam}",
+                "File type": "VCF.gz",
+                "Desc": "DNMs"
+            }
+        )
     conda: "../envs/bcftools.yaml"
     params: 
         proband = lambda w: CHILD_DICT[w.fam]
     shell: """
         bcftools view -s {params.proband} {input} | bcftools annotate -x ID  -I +"%CHROM:%POS:%REF:%ALT" -Oz -o {output}
         tabix -p vcf {output}
+    """
+
+rule dnm_vcf_summary:
+    input:
+        expand(output_dir +"/dnm_vcf/{fam}.dnm.vcf.gz", fam=fam_ids)
+    output:
+        report(
+            output_dir + "/dnm_vcf_summary/DNM_summary.txt",
+            category="De novo mutations",
+            subcategory="Summary",
+            labels={
+                "Desc": "Count of DNMs",    
+                "File type": "txt",
+            }
+        )
+    shell: """
+        (echo -e "TrioID\tDNM_Cnt" && ls {input} | parallel 'id=$(basename {{/}} .dnm.vcf.gz);cnt=$(zgrep -v "^#" {{}} |wc -l); echo -e "$id\t$cnt" ')  > {output}
     """
