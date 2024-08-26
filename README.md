@@ -19,6 +19,8 @@ A Snakemake workflow for DNM (de novo mutation) calling.
   - [User's guides](#users-guides)
     - [I. Installation](#i-installation)
     - [II. Inputs](#ii-inputs)
+      - [Reference genome](#reference-genome)
+      - [The STR reference panel to call dnSTRs](#the-str-reference-panel-to-call-dnstrs)
     - [III. Outputs](#iii-outputs)
     - [IV. Run TrisCompass](#iv-run-triscompass)
 
@@ -135,6 +137,7 @@ The perl script extracts the haplotype block containing the DNMs from the output
 | chr3:197879978:C:A               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
 | chr4:29657055:GC:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
 
+:bookmark: For most users, the first two columns provide essential information about parental origins of the predicted DNMs.
 
 ---
 
@@ -195,7 +198,59 @@ $WORKSPACE
 ```
  
 ### II. Inputs
+#### Reference genome
 
+User can put the reference genome any location under the folder $WORKSPACE and specify its relative location at config/config.yaml.  
+
+For instance, we may put the hg38 human genome *Homo_sapiens_assembly38.fasta* under the folder $WORKSPACE/ref/. 
+
++ config/config.yaml
+```yml
+ref:
+  sequence: "ref/Homo_sapiens_assembly38.fasta"
+  build: "hg38"
+```
+
+---
+
+
+
+---
+
+#### The STR reference panel to call dnSTRs
+
+We had developed joint call of dnSTR using both GangSTR and HipSTR, so we had prepared the same STR reference panels for both of the two programs.
+
+Both GangSTR and HipSTR use STRs specified in the STR reference panel, but with the different formats.  One paper suggested that there is good consistence between HipSTR and GangSTR.
+>Oketch, J. W., Wain, L. V, Hollox, E. J., & Hollox, E. (2022). A comparison of software for analysis of rare and common short tandem repeat (STR) variation using human genome sequences from clinical and population-based samples. 1–22. https://doi.org/10.1101/2022.05.25.493473
+
+
+We would like to have the STR genotypes predicted jointly by both of the two program, therefore we need create one common reference panel file for both of GangSTR and HipSTR. 
+
+```bash
+### Get the GangSTR reference panel
+wget https://s3.amazonaws.com/gangstr/hg38/genomewide/hg38_ver13.bed.gz -O STR/hg38_ver13.bed.gz
+
+gzip -d STR/hg38_ver13.bed.gz
+
+### reformat for HipSTR
+awk -v OFS='\t' '{print $1,$2,$3,$4,($3-$2+1)/$4,"GangSTR_STR_"NR,$5}' STR/hg38_ver13.bed  >  STR/hg38_ver13.hipstr.bed
+
+### HipSTR cannot take STR with unit length > 9 bp
+awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.hipstr.bed > STR/hg38_ver13.hipstr_9.bed
+
+### We put the same length restrict to hg38_ver13.bed.gz, so that both of the two reference panels are consistent.
+awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.bed
+```
+
+
+
+:bookmark: 
++ After manual curation, we chose to use *HipSTR* only for the dnSTR prediction.
++ The STR reference panel is specified in config/config.yaml
+  + ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
+
+---
 ### III. Outputs
 
 ### IV. Run TrisCompass
