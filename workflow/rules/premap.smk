@@ -45,7 +45,7 @@ rule fastp:
                 --length_required 50 --low_complexity_filter
     """
 
-qc_output.append(expand(output_dir+"/fastp/{sample_name}.json, sample_name = ids))
+qc_output.append(expand(output_dir+"/fastp/{sample_name}.json", sample_name = ids))
 
 if config["fastq_input"]["fastqc"]["enable"]:
     rule fastqc:
