@@ -20,7 +20,9 @@ A Snakemake workflow for DNM (de novo mutation) calling.
     - [I. Installation](#i-installation)
     - [II. Inputs](#ii-inputs)
       - [Reference genome](#reference-genome)
+      - [Preparation of the callable regions of DNMs](#preparation-of-the-callable-regions-of-dnms)
       - [The STR reference panel to call dnSTRs](#the-str-reference-panel-to-call-dnstrs)
+      - [Regions excluded in dnSTR calling](#regions-excluded-in-dnstr-calling)
     - [III. Outputs](#iii-outputs)
     - [IV. Run TrisCompass](#iv-run-triscompass)
 
@@ -213,8 +215,26 @@ ref:
 
 ---
 
+#### Preparation of the callable regions of DNMs
 
+The interval file (in *bed* format) is to specify regions to call DNMs, which should be matched with the reference genome.  For instance, we used the file hg38.wgs_interval.bed for the reference genome *hg38*, which was converted from *resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list*. The latter is part of [resource bundle hosted by the Broad Institute](https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle). There are severals way to retrieve the interval file, for example, ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/wgs_calling_regions.hg38.interval_list.
 
+```bash
+### Download calling region of hg38 from the Broad Institute 
+wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/wgs_calling_regions.hg38.interval_list -O ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list
+
+### Then, convert the interval list to bed file using Picard
+module load picard 
+
+java -jar $PICARDJAR IntervalListToBed -I ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list -O ref/hg38.wgs_interval.bed
+
+```
+
+Users can specify ref/hg38.wgs_interval.bed in config/config.yaml
+```yml
+call_dnm:
+  interval: "ref/hg38.wgs_interval.bed"
+```
 ---
 
 #### The STR reference panel to call dnSTRs
@@ -251,6 +271,24 @@ awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.b
   + ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
 
 ---
+
+#### Regions excluded in dnSTR calling
+For the human genome hg38, the file GRCh38GenomicSuperDup.bed was obtained using the UCSC Table Browser32 (hg38.genomicSuperDups table).  It needs to be further sorted, compressed and indexed:
+
+```bash
+bedtools sort -i GRCh38GenomicSuperDup.bed | bgzip -c > GRCh38GenomicSuperDup.bed.gz
+
+tabix -p bed GRCh38GenomicSuperDup.bed.gz
+```
+
++ Configured in config/config.yaml
+```yml
+dnSTR:
+  # split bed into chunks to speed up dnSTR call
+  split_n: 400
+  dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
+```
+
 ### III. Outputs
 
 ### IV. Run TrisCompass
