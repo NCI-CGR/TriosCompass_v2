@@ -25,6 +25,11 @@ A Snakemake workflow for DNM (de novo mutation) calling.
       - [Regions excluded in dnSTR calling](#regions-excluded-in-dnstr-calling)
       - [Regions excluded in dnSV calling](#regions-excluded-in-dnsv-calling)
       - [Resource bundle for hg38](#resource-bundle-for-hg38)
+      - [Fastq/BAM input files](#fastqbam-input-files)
+        - [PEP example for *fastq* input](#pep-example-for-fastq-input)
+        - [PEP example for *bam* input](#pep-example-for-bam-input)
+      - [Pedigree files](#pedigree-files)
+      - [Example folder structure for the final workspace](#example-folder-structure-for-the-final-workspace)
     - [III. Outputs](#iii-outputs)
     - [IV. Run TrisCompass](#iv-run-triscompass)
 
@@ -93,7 +98,7 @@ The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK Haplo
 + kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq}
   + GQ score of the variants should be no less than {params.min_gq} in all the members of the trio.
 
-:bookmark: In the workflow, the parameters {params.min_dp} and {params.min_gq} can be configured via config/config.yaml, so are the callable regions:
+:notebook: In the workflow, the parameters {params.min_dp} and {params.min_gq} can be configured via config/config.yaml, so are the callable regions:
 
 + config/config.yaml
 ```yml
@@ -141,7 +146,7 @@ The perl script extracts the haplotype block containing the DNMs from the output
 | chr3:197879978:C:A               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
 | chr4:29657055:GC:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
 
-:bookmark: For most users, the first two columns provide essential information about parental origins of the predicted DNMs.
+:notebook: For most users, the first two columns provide essential information about parental origins of the predicted DNMs.
 
 ---
 
@@ -267,7 +272,7 @@ awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.b
 
 
 
-:bookmark: 
+:notebook: 
 + After manual curation, we chose to use *HipSTR* only for the dnSTR prediction.
 + The STR reference panel is specified in config/config.yaml
   + ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
@@ -329,6 +334,208 @@ $WORKSPACE/ref
 A resource bundle for hg38 is available at here as a reference for users of TriosCompass.
 
 ---
+
+#### Fastq/BAM input files
+
+[PEP](https://pep.databio.org/) is employed to import metadata of the NGS data, which can be either Fastq or BAM files. A PEP consists 3 files: 
++ One *yaml* file for the metadata.
++ One *csv* file for the sample information.
++ Another *yaml* to define schema to validate the metadata.
+
+##### PEP example for *fastq* input
++ config/fastq_pep.yaml
+```yml
+pep_version: 2.0.0
+sample_table: sample_fastq.csv
+
+# In manifest file, Sample_ID + Flowcell should be unique
+sample_modifiers:
+  append:
+    sample_name: "sn"
+  derive:
+    attributes: [sample_name]
+    sources:
+      sn: "{SAMPLE_ID}_{FLOWCELL}"
+```
+
++ config/sample_fastq.csv
+```csv
+SAMPLE_ID,FLOWCELL,LANE,INDEX,R1,R2
+HG002,BH2JWTDSX5,1,CGGTTGTT-GTGGTATG,data/fq/HG002_NA24385_son_80X_R1.fq.gz,data/fq/HG002_NA24385_son_80X_R2.fq.gz
+HG003,BH2JWTDSX5,1,GCGTCATT-CAGACGTT,data/fq/HG003_NA24149_father_80X_R1.fq.gz,data/fq/HG003_NA24149_father_80X_R2.fq.gz
+HG004,BH2JWTDSX5,1,CTGTTGAC-ACCTCAGT,data/fq/HG004_NA24143_mother_80X_R1.fq.gz,data/fq/HG004_NA24143_mother_80X_R2.fq.gz
+```
+
++ workflow/schemas/fastq_schema.yaml
+```yml
+description: A example schema for a pipeline.
+imports:
+  - http://schema.databio.org/pep/2.0.0.yaml
+  # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
+  
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        SAMPLE_ID:
+          type: string
+          description: "sample id"
+        FLOWCELL:
+          type: string
+          description: "Flowcell"
+        INDEX:
+          type: string
+          description: "Library index"
+        LANE:
+          type: string
+          description: "Lane number in flowcell"
+          enum: ["1", "2"]
+        R1:
+          type: string
+          description: "path to the R1 fastq file"
+        R2:
+          type: string
+          description: "path to the R2 fastq file"
+      required:
+        - FLOWCELL
+        - SAMPLE_ID
+        - INDEX
+        - R1
+        - R2
+```
+
+:notebook: In this example, 6 columns in the sample csv file are required: SAMPLE_ID, FLOWCELL, LANE, INDEX, R1, R2. Such information is mainly used to build RG (read group) tag in the bam file:  
+
+```
+@RG    PL:ILLUMINA    ID:{FLOWCELL}_{LANE}    SM:{SAMPLE_ID}    PU:{SAMPLE_ID}_{FLOWCELL}    LB:{SAMPLE_ID}_{INDEX}
+```
+Users may put dummy data if some of the information is not available, and {SAMPLE_ID} needs not to be unique (as some samples might be sequenced in multiple flow cells to meet the coverage requirement).  Nevertheless, the combination of {SAMPLE_ID} and {FLOWCELL} must be unique.
+
+Users may put additional meta information in the sample csv file, which will be ignored by TriosCompass.
+
+##### PEP example for *bam* input
+
+The essential information for bam input is the sample id and the bam file location. Therefore, the metadata is much simpler compared to *fastq* input.
+
++ config/bam_pep.yaml
+```yml
+pep_version: 2.0.0
+sample_table: sample_bam.csv
+
+
+sample_modifiers:
+  append:
+    sample_name: "sn"
+  derive:
+    attributes: [sample_name]
+    sources:
+      sn: "{SAMPLE_ID}"
+```
+
++ config/sample_bam.csv
+```csv
+SAMPLE_ID,BAM
+HG002,sorted_bam/HG002_NA24385_son_80X.bam
+HG003,sorted_bam/HG003_NA24149_father_80X.bam
+HG004,sorted_bam/HG004_NA24143_mother_80X.bam
+```
+
++ workflow/schemas/bam_schema.yaml
+```yml
+description: A example schema for a pipeline.
+imports:
+  - http://schema.databio.org/pep/2.0.0.yaml
+  # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
+  
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        SAMPLE_ID:
+          type: string
+          description: "sample id"
+        BAM:
+          type: string
+          description: "path to the bam file"
+      required:
+        - SAMPLE_ID
+        - BAM
+```
+
+:notebook: {SAMPLE_ID} should be unique.  If the bam file has *RG* different from {SAMPLE_ID}, users may activate *reset_RG* option so as to reset all *RG* tag properly in the bam files.
+
++ config/config.yaml
+```yml
+bam_input:
+  reset_RG: True
+```
+
+---
+
+#### Pedigree files
+In addition to the NGS input data, another important input is pedigree files to define trios. 
+
+:notebook: There are several conventions required about pedigree files by TriosCompass:
++ Each trio is specified by one pedigree file;
++ All pedigree files are named by the family ID, with ".ped" as the file extensin, under one directory which is specified by config/config.yaml:
+    ```yml
+    ped_dir: "ped"
+    ```
++ Rows for the trio members are in the order *father-mother-child* in the pedigree file.
++ Trio member identifiers are matched with {SAMPLE_ID} as defined in the sample CSV file.
+
+
+Below is an example of the pedigree file for the GIAB AJ family:
++ ped/AJ.ped 
+```tab
+AJ      HG003   0       0       1       1
+AJ      HG004   0       0       2       1
+AJ      HG002   HG003   HG004   1       1
+```
+
+---
+
+#### Example folder structure for the final workspace
+```bash
+fastq
+├── HG002_NA24385_son_80X_R1.fq.gz
+├── HG002_NA24385_son_80X_R2.fq.gz
+├── HG003_NA24149_father_80X_R1.fq.gz
+├── HG003_NA24149_father_80X_R2.fq.gz
+├── HG004_NA24143_mother_80X_R1.fq.gz
+└── HG004_NA24143_mother_80X_R2.fq.gz
+sorted_bam/
+├── HG002_NA24385_son_80X.bam
+├── HG002_NA24385_son_80X.bam.bai
+├── HG003_NA24149_father_80X.bam
+├── HG003_NA24149_father_80X.bam.bai
+├── HG004_NA24143_mother_80X.bam
+└── HG004_NA24143_mother_80X.bam.bai
+ref/
+├── hg38.wgs_interval.bed
+├── Homo_sapiens_assembly38.fasta
+└── STR
+ped
+└── AJ.ped
+TriosCompass_v2
+├── config
+├── data
+├── environment.yaml
+├── img
+├── LICENSE
+├── README.md
+└── workflow
+```
+
+
+
+
+---
+
 
 ### III. Outputs
 
