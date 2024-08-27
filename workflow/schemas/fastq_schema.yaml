@@ -32,6 +32,7 @@ properties:
         - FLOWCELL
         - SAMPLE_ID
         - INDEX
+        - LANE
         - R1
         - R2
 
