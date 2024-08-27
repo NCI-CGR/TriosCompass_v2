@@ -41,7 +41,12 @@ jobs:
         conda info
         pip list | grep peds
         which snakemake
-
+    
+    - name: Lint workflow alternatively
+      shell: bash -el {0}
+      run: |
+        snakemake  --lint --configfile config/config.yaml 
+        
     - name: Lint workflow
       uses: snakemake/snakemake-github-action@v1.24.0
       with:

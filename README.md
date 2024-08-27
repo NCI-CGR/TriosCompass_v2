@@ -23,6 +23,8 @@ A Snakemake workflow for DNM (de novo mutation) calling.
       - [Preparation of the callable regions of DNMs](#preparation-of-the-callable-regions-of-dnms)
       - [The STR reference panel to call dnSTRs](#the-str-reference-panel-to-call-dnstrs)
       - [Regions excluded in dnSTR calling](#regions-excluded-in-dnstr-calling)
+      - [Regions excluded in dnSV calling](#regions-excluded-in-dnsv-calling)
+      - [Resource bundle for hg38](#resource-bundle-for-hg38)
     - [III. Outputs](#iii-outputs)
     - [IV. Run TrisCompass](#iv-run-triscompass)
 
@@ -281,13 +283,52 @@ bedtools sort -i GRCh38GenomicSuperDup.bed | bgzip -c > GRCh38GenomicSuperDup.be
 tabix -p bed GRCh38GenomicSuperDup.bed.gz
 ```
 
-+ Configured in config/config.yaml
++ The setting can also be customized in config/config.yaml
 ```yml
 dnSTR:
   # split bed into chunks to speed up dnSTR call
   split_n: 400
   dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
 ```
+
+---
+
+#### Regions excluded in dnSV calling
+We used exclude.cnvnator_100bp.GRCh38.20170403.bed for regions to be excluded in dnSV calling, as suggested at [brentp/smoove](https://github.com/brentp/smoove?tab=readme-ov-file#small-cohorts-n---40):
+
+```bash
+wget https://raw.githubusercontent.com/hall-lab/speedseq/master/annotations/exclude.cnvnator_100bp.GRCh38.20170403.bed -O ref/exclude.cnvnator_100bp.GRCh38.20170403.bed
+```
+
++ Settings in config.yaml
+```yml
+dnSV:
+  enable: True
+  exclude_bed: "ref/exclude.cnvnator_100bp.GRCh38.20170403.bed"
+```
+
+---
+
+#### Resource bundle for hg38
+
+After the installation of the above resource files required by TriosCompass to *ref/*, users may have the folder ref/ under $WORKSPACE as below:
+
+```bash
+$WORKSPACE/ref
+├── exclude.cnvnator_100bp.GRCh38.20170403.bed
+├── hg38.wgs_interval.bed
+├── Homo_sapiens_assembly38.fasta
+└── STR
+    ├── GRCh38GenomicSuperDup.bed.gz
+    ├── GRCh38GenomicSuperDup.bed.gz.tbi
+    ├── hg38_ver13.bed
+    ├── hg38_ver13.hipstr_9.bed
+    └── hg38_ver13.le9.bed
+```
+
+A resource bundle for hg38 is available at here as a reference for users of TriosCompass.
+
+---
 
 ### III. Outputs
 
