@@ -37,10 +37,10 @@ jobs:
 
     - name: check env
       shell: bash -el {0}
-        run: |
-          conda info
-          pip list | grep peds
-          which snakemake
+      run: |
+        conda info
+        pip list | grep peds
+        which snakemake
 
     - name: Lint workflow
       uses: snakemake/snakemake-github-action@v1.24.0
