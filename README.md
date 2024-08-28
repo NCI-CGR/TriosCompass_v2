@@ -48,6 +48,9 @@ TriosCompass consists of 4 functional components:
 + Call dnSTR (de novo simple tandem repeats) using HipSTR and MonSTR.
 + Call dnSV (de novo structural variants) using *Manta*, *GraphType2* and *smoove*
 
+The overall workflow diagram is as below: 
+![](img/TrioCompass_full_DAG.png)
+
 ---
 
 ### II. Dependencies
@@ -225,7 +228,7 @@ dnSVs are predicted jointly by two approaches in TriosCompass:
 + [smoove/lumpy-sv](https://github.com/brentp/smoove)
 + manta + GraphType2  
 
-![](img/dnSV_dag.png)
+![](img/TrioCompass_dnSV_dag.png)
 
 :notebook: 
 + Insertion is marked as translocation (i.e., "BND") in [smoove/lumpy-sv](https://github.com/arq5x/lumpy-sv/issues/160).
