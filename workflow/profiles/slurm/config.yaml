@@ -19,7 +19,8 @@ cluster-status: "slurm-status.py"
 #   - high_memory_rule:mem_mb=12000
 #   - long_running_rule:runtime=1200
 
-configfile: TriosCompass_v2/config/fullbam_config.yaml
+# configfile: TriosCompass_v2/config/fullbam_config.yaml
+
 snakefile: TriosCompass_v2/workflow/Snakefile
 verbose: True
 skip-script-cleanup: True
