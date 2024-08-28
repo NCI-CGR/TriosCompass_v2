@@ -29,9 +29,12 @@ A Snakemake workflow for DNM (de novo mutation) calling.
         - [PEP example for *fastq* input](#pep-example-for-fastq-input)
         - [PEP example for *bam* input](#pep-example-for-bam-input)
       - [Pedigree files](#pedigree-files)
-      - [Example folder structure for the final workspace](#example-folder-structure-for-the-final-workspace)
-    - [III. Outputs](#iii-outputs)
-    - [IV. Run TrisCompass](#iv-run-triscompass)
+      - [Example folder structure of the final workspace](#example-folder-structure-of-the-final-workspace)
+    - [III. Configure files](#iii-configure-files)
+      - [profile/config.yaml](#profileconfigyaml)
+      - [config/config.yaml](#configconfigyaml)
+    - [V. Run TriosCompass](#v-run-trioscompass)
+    - [IV. Outputs](#iv-outputs)
 
 
 ---
@@ -179,9 +182,60 @@ phasing:
 
 #### C. Call dnSTRs
 
+We had explored to call dnSTR candidates jointly by *HipSTR* and *GangSTR*. During the manual curation, we found that the joint predicts are good but much less than expected, and the HipSTR outperforms GangSTR in our manual evaluation.
+
+At present, our dnSTR calling process is as below:
+1. The STR reference panel is split into *N* chunks.
+2. For each chunk:
+   a. STRs of all samples (from different trios) are jointly genotyped by *HipSTR*.
+   b. Then, to be filtered by *dumpSTR*.
+   c. *MonSTR* is applied to call dnSTRs.
+3. Chunks of *MonSTR* is merged and then filtered further.
+
+Besides, *VisAln* (from the *HipSTR* package) is employed to generated visualization in HTML format.
+ 
+Below is the configure setting for dnSTR in config/config.yaml:
+```yml
+dnSTR:
+  # split bed into chunks to speed up dnSTR call
+  split_n: 400
+  dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
+  hipstr:
+    enable: True
+    ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
+    monstr_filter: " --min-span-coverage 3 --min-supp-reads 3 "
+    dumpstr_call_args: >
+            --hipstr-min-call-DP 15 
+            --hipstr-max-call-DP 1000 
+            --hipstr-min-call-Q 0.9 --drop-filtered 
+            --vcftype hipstr --hipstr-min-supp-reads 1 
+            --hipstr-max-call-flank-indel 0.15 
+            --hipstr-max-call-stutter 0.15 
+  # gangstr:
+  #   enable: False
+  #   ref_panel: "ref/STR/hg38_ver13.le9.bed"
+  #   filter: " --max-perc-encl-parent 0.05 --min-encl-match 0.9 --min-total-encl 10 --gangstr "
+```
+
+
 ---
 
 #### D. Call dnSVs
+dnSVs are predicted jointly by two approaches in TriosCompass:
++ [smoove/lumpy-sv](https://github.com/brentp/smoove)
++ manta + GraphType2  
+
+![](img/dnSV_dag.png)
+
+:notebook: 
++ Insertion is marked as translocation (i.e., "BND") in [smoove/lumpy-sv](https://github.com/arq5x/lumpy-sv/issues/160).
++ Bam files (not *cram*) are recognized by *lumpy-sv*.
++ Sample order in the ped file matters.  
+  By default, we had built ped files in the order as: father, mother, and child. Accordingly, the same order is remained in the jointly genotyped SV VCF file. Therefore, we used the *bcftools* command to identify dnSV as below:
+
+    ```bash
+    bcftools view -i 'GT[2]="het" && GT[1]="RR" && GT[0]="RR" ' -O v  {input} -o {output}
+    ``` 
 
 ---
 
@@ -499,16 +553,16 @@ AJ      HG002   HG003   HG004   1       1
 
 ---
 
-#### Example folder structure for the final workspace
+#### Example folder structure of the final workspace
 ```bash
-fastq
+fastq/ # for fastq input example
 ├── HG002_NA24385_son_80X_R1.fq.gz
 ├── HG002_NA24385_son_80X_R2.fq.gz
 ├── HG003_NA24149_father_80X_R1.fq.gz
 ├── HG003_NA24149_father_80X_R2.fq.gz
 ├── HG004_NA24143_mother_80X_R1.fq.gz
 └── HG004_NA24143_mother_80X_R2.fq.gz
-sorted_bam/
+sorted_bam/ # for bam input example
 ├── HG002_NA24385_son_80X.bam
 ├── HG002_NA24385_son_80X.bam.bai
 ├── HG003_NA24149_father_80X.bam
@@ -518,25 +572,80 @@ sorted_bam/
 ref/
 ├── hg38.wgs_interval.bed
 ├── Homo_sapiens_assembly38.fasta
-└── STR
-ped
+└── STR/
+ped/
 └── AJ.ped
 TriosCompass_v2
-├── config
-├── data
+├── config/
+├── data/
 ├── environment.yaml
-├── img
+├── img/
 ├── LICENSE
 ├── README.md
-└── workflow
+└── workflow/
+
+
+```
+
+---
+
+### III. Configure files
+We have introduced PEP yaml file to [specify the NGS input files of TriosCompass](#fastqbam-input-files). There are two other yaml files, which play essential roles in Snakemake workflows:
++ the profile config.yaml file
++ the configfile config.yaml file
+
+#### profile/config.yaml
+
+The profile config.yaml file has [multiple function roles](https://snakemake.readthedocs.io/en/v7.3.7/executing/cli.html#profiles): 
++ Define computing resources and threads.
++ Specify command-line options required to start Snakemake workflow properly. 
++ Submit Snakemake jobs to the cluster. 
+
+We have provided [an example profile](./workflow/profiles/slurm/config.yaml) to launch TriosCompass in a Slurm cluster.
+
+:notebook: To separate the workspace from TriosCompass, we set $WORKSPACE as the working directory, where TriosCompass_v2 (the locally cloned repo) is a sub-folder of $WORKSPACE.  Accordingly, the command below is recommended:
+```bash
+snakemake --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCompass_v2/config/config.yaml
+```
+
+:notebook: There is a bug in the release of Snakemake we are testing (Version 7.3.7), so that the section *set-threads* does not work properly in the profile config.yaml file. We had used [config/config.yaml](#configconfigyaml) as a work-around solution to specify threads for each Snakemake *rule*. 
+
+---
+
+#### config/config.yaml
+
+[This configure file](https://snakemake.readthedocs.io/en/v7.3.7/snakefiles/configuration.html?highlight=configfile#configuration) is for users to customized TriosCompass.  In particular, users may it to enable (or disable) certain optional components of TriosCompass. Most of sections of config.yaml have been already introduced in the section *Inputs*.  [A complete example of config/config.yaml](config/config.yaml) has been provided for users as a template.   
+
+---
+
+### V. Run TriosCompass
+
+A check list to launch TriosCompass
+- [x] Install singularity to the front-end nodes and working nodes of the cluster.
+- [x] Create new directory as work space and change directory to it.
+- [x] Git clone TriosCompass_v2.
+- [x] Install conda/mamba and activate the conda environment *TriosCompassV2* using TriosCompass_v2/environment.txt
+- [x] Prepare and install resource bundle for the specific reference genome.
+- [x] Configure profile settings to submit jobs to the cluster.
+- [x] Move NGS input data under the work space.
+  - [x] Prepare the proper PEP files for the NGS input.
+- [x] Configure TriosCompass_v2/config/config.yaml for the new run.
+
+Finally, the command can be launched in this way: 
+```bash
+### Assume $WORKSPACE is your working directory
+cd $WORKSPACE
+conda activate TriosCompassV2
+module load singularity # or load singularity is available in alternative way
+
+mkdir -p TMP
+export TMPDIR=$WORKSPACE/TMP
+
+snakemake  --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCompass_v2/config/config.yaml
 ```
 
 
 
-
 ---
+### IV. Outputs
 
-
-### III. Outputs
-
-### IV. Run TrisCompass
