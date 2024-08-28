@@ -13,7 +13,7 @@ ref:
 ped_dir: "ped"
 
 parabricks:
-  singularity_cmd: " /usr/local/current/singularity/4.0.3/bin/singularity exec --pwd /mnt --nv -B `pwd`:/mnt docker://nvcr.io/nvidia/clara/clara-parabricks:4.0.0-1 "
+  singularity_cmd: " singularity exec --pwd /mnt --nv -B `pwd`:/mnt docker://nvcr.io/nvidia/clara/clara-parabricks:4.0.0-1 "
 
 fastq_input:
   enable: False # process the fastq input; False if bam inputs are provided
