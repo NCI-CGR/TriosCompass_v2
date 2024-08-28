@@ -621,15 +621,15 @@ snakemake --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCo
 ### V. Run TriosCompass
 
 A check list to launch TriosCompass
-- [x] Install singularity to the front-end nodes and working nodes of the cluster.
-- [x] Create new directory as work space and change directory to it.
-- [x] Git clone TriosCompass_v2.
-- [x] Install conda/mamba and activate the conda environment *TriosCompassV2* using TriosCompass_v2/environment.txt
-- [x] Prepare and install resource bundle for the specific reference genome.
-- [x] Configure profile settings to submit jobs to the cluster.
-- [x] Move NGS input data under the work space.
-  - [x] Prepare the proper PEP files for the NGS input.
-- [x] Configure TriosCompass_v2/config/config.yaml for the new run.
+- [ ] Install singularity to the front-end nodes and working nodes of the cluster.
+- [ ] Create new directory as work space and change directory to it.
+- [ ] Git clone TriosCompass_v2.
+- [ ] Install conda/mamba and activate the conda environment *TriosCompassV2* using TriosCompass_v2/environment.txt
+- [ ] Prepare and install resource bundle for the specific reference genome.
+- [ ] Configure profile settings to submit jobs to the cluster.
+- [ ] Move NGS input data under the work space.
+  - [ ] Prepare the proper PEP files for the NGS input.
+- [ ] Configure TriosCompass_v2/config/config.yaml for the new run.
 
 Finally, the command can be launched in this way: 
 ```bash
