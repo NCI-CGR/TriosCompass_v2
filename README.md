@@ -35,6 +35,15 @@ A Snakemake workflow for DNM (de novo mutation) calling.
       - [config/config.yaml](#configconfigyaml)
     - [V. Run TriosCompass](#v-run-trioscompass)
     - [IV. Outputs](#iv-outputs)
+      - [MultiQC report](#multiqc-report)
+      - [DNM predictions, parental origins and visualizations](#dnm-predictions-parental-origins-and-visualizations)
+        - [DNM predictions](#dnm-predictions)
+        - [Parental origins of DNMs](#parental-origins-of-dnms)
+        - [JIGV visulization](#jigv-visulization)
+    - [dnSTR predictions and visulizations](#dnstr-predictions-and-visulizations)
+      - [dnSTR predictions from HipSTR/MonSTR](#dnstr-predictions-from-hipstrmonstr)
+      - [dnSTR visulizations by *VizAln*](#dnstr-visulizations-by-vizaln)
+        - [Example of VisAln realignment of the DNM (started at chr6:38571975) in the family *t0612*](#example-of-visaln-realignment-of-the-dnm-started-at-chr638571975-in-the-family-t0612)
 
 
 ---
@@ -647,8 +656,138 @@ export TMPDIR=$WORKSPACE/TMP
 snakemake  --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCompass_v2/config/config.yaml
 ```
 
+---
 
+### IV. Outputs
+The location of output is specified by config/config.yaml:
+```yml
+output_dir: "output"
+```
+
+Most of the output from TriosCompass will be saved to $WORKSPACE/output based on the configure setting above. Under the output folder, there are dozens of sub-folders for the (intermediate) outputs of TriosCompass.
+```bash
+ls $WORKSPACE/output/
+benchmark               dnSV               gatk_genotype_gvcf_pb  manta_sv       splitted_panel
+call_JIGV               dnSV_summary       gatkhc_pb              merge_monstr   svimmer
+collectmultiplemetrics  dumpstr_call       glnexus                merge_ped      trio_manta_list
+collectwgsmetrics       dumpstr_locus      graphtyper             monstr         vizaln
+deepvariant_pb          flagstat           graphtyper_filter      monstr_filter
+dnm_vcf                 gatk_cgp           hipstr                 phase_DNMs
+dnm_vcf_summary         gatk_combine_gvcf  joint_dnSV             slivar
+dnSTR_summary           GATK_DV            manta                  smoove
+```
+
+Location of MultiQC output is specified by config["multiqc"]["output_dir"]:
+```yml
+multiqc:
+  enable: True
+  output_dir: "MultiQC_output"
+```
+
+There are 4 major outputs from TriosCompass:
++ MultiQC reports
++ DNM predictions, parental origins and visualizations
++ dnSTR predictions and visulizations
++ dnSV predictions
+
+#### MultiQC report
+The MultiQC report is a colletion of QC metrics of NGS data.
+
+```bash
+tree MultiQC_output/
+MultiQC_output/
+├── multiqc_data
+│   ├── multiqc_citations.txt
+│   ├── multiqc_data.json
+│   ├── multiqc_general_stats.txt
+│   ├── multiqc.log
+│   ├── multiqc_sources.txt
+│   ├── picard_alignment_readlength_plot.txt
+│   ├── picard_alignment_summary_Aligned_Bases.txt
+│   ├── picard_alignment_summary_Aligned_Reads.txt
+│   ├── picard_base_distribution_by_cycle__Adenine.txt
+│   ├── picard_base_distribution_by_cycle__Cytosine.txt
+│   ├── picard_base_distribution_by_cycle__Guanine.txt
+│   ├── picard_base_distribution_by_cycle__Thymine.txt
+│   ├── picard_base_distribution_by_cycle__Undetermined.txt
+│   ├── picard_gcbias_plot.txt
+│   ├── picard_insert_size_Counts.txt
+│   ├── picard_insert_size_Percentages.txt
+│   ├── picard_quality_by_cycle.txt
+│   ├── picard_quality_score_distribution.txt
+│   ├── samtools-flagstat-dp_Percentage_of_total.txt
+│   ├── samtools-flagstat-dp_Read_counts.txt
+│   ├── samtools-idxstats-mapped-reads-plot_Normalised_Counts.txt
+│   ├── samtools-idxstats-mapped-reads-plot_Observed_over_Expected_Counts.txt
+│   ├── samtools-idxstats-mapped-reads-plot_Raw_Counts.txt
+│   └── samtools-idxstats-xy-plot.txt
+└── multiqc.html
+```
+
+#### DNM predictions, parental origins and visualizations
+##### DNM predictions
+The final DNM candidates are predicted by both DV and HC.  And we extract the variant information from DV output and save it as {output}/dnm_vcf/{fam}.dnm.vcf.gz, where {output} and {fam} are placeholders for the output directory and trio ID, respecitively.
+
+Besides, the counts of DNMs for all trios are summarised in the file {output}/dnm_vcf_summary/DNM_summary.txt.
+
+##### Parental origins of DNMs
+
+The output of parental origins of DNMs is a tab-delimited test file, availalbe at *{output}/phase_DNMs/{fam}.parental_origin.tab* .  
+
+The format of this output is [as described](#b-phase-dnms), and most of users may just focus on first two columns of the file.
+
+##### JIGV visulization
+[JIGV](https://github.com/brentp/jigv) snapshots have generated for each DNM, available as *{output}/call_JIGV/{fam}.JIGV.html* .
 
 ---
-### IV. Outputs
 
+### dnSTR predictions and visulizations
+#### dnSTR predictions from HipSTR/MonSTR
+The dnSTRs predicted by HipSTR/MonSTR are available as *{output}/monstr_filter/hipstr.filtered.tab* . The output format of the MonSTR prediction is described [here](https://github.com/gymreklab/STRDenovoTools?tab=readme-ov-file#outprefixall_mutationstab).
+
+#### dnSTR visulizations by *VizAln*
+We have also generated visulization for dnSTR using [VizAln (from HipSTR package)](https://github.com/tfwillems/HipSTR#alignment-visualization). Each dnSTR of one trio has its own html file under *{output}/vizaln/{fam}/hipstr/variants/*.
+
+```bash
+tree output/vizaln/t0311/hipstr
+output/vizaln/t0311/hipstr
+├── DONE
+└── variants
+    ├── chr10_103294239.dnm
+    ├── chr10_103294239.html
+    ├── chr10_34375054.dnm
+    ├── chr10_34375054.html
+    ├── chr10_46899557.dnm
+    ├── chr10_46899557.html
+    ├── chr10_50707597.dnm
+    ├── ...
+```
+
+:notebook: The ".dnm" files are dummy files for the use of Snakemake workflow in the process of scatter-gather dnSTRs.
+
+##### Example of VisAln realignment of the DNM (started at chr6:38571975) in the family *t0612*
+
+An example of VisAln realignment is available [here](https://htmlpreview.github.io/?https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/chr6_38571975.html).
+
+In the family *t0612*, the identifiers of child, father and mother are SC260721, SC260720 and SC260670, respectively.
+```bash
+cat ped_files/t0612.ped 
+t0612   SC260720        0       0       1       1
+t0612   SC260670        0       0       2       1
+t0612   SC260721        SC260720        SC260670        2       1
+```
+
+From [the MonSTR prediction](./data/hipstr.filtered.tab), we have: 
+| chrom | pos      | period | child    | newallele | mutsize | child_gt | mat_gt | pat_gt |
+|-------|----------|--------|----------|-----------|---------|----------|--------|--------|
+| 6     | 38571975 | 2      | SC260721 | 13        | 2       | 13,13    | 11,13  | 11,11  |
+
+
+It suggests there is an de novo tandem repeat mutation started at the position chr6:38571975 in the subject SC260721.  The unit length of repeat (period) is 2, and has 13 repeat units (newallele) in the child *SC260721*, which is 2 more than the reference genome (mutsize; i.e., the wild type genotype is [11,11]).  The MonSTR prediction indicated that the genotypes of child, father and mother are [13,13], [11,11] and [11,13], respectively. 
+
+In the VizAln html page, we have genotypes of the family members marked in different ways.  For example, "SC260670: 0|4" means one allele is wild type and another is 4 bp insertion. Negative values stands for deletion (read [this](https://github.com/tfwillems/HipSTR/tree/master#alignment-visualization) for some details).  Therefore, "SC260721: 4|4", "SC260720: 0|0" and  "SC260670: 0|4" are well matched with the MonSTR prediction: [13,13], [11,11] and [11,13] for child, father and mother,respectively,  in this example.
+
+
+:bookmark: Please note that the alignments from VizAln were arranged by the alphabet order of the sample identifiers. 
+
+---
