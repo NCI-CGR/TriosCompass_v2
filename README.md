@@ -52,22 +52,22 @@ A Snakemake workflow for DNM (de novo mutation) calling.
 ## Overview
 
 ### I. Introduction
-TriosCompass consists of 4 functional components:
+*TriosCompass* consists of four functional components:
 + Call DNMs (de novo mutations) using *DeepVariant* and *GATK HaplotypeCaller*
 + Phase DNMs using *whatshap*
-+ Call dnSTR (de novo simple tandem repeats) using HipSTR and MonSTR.
++ Call dnSTR (de novo simple tandem repeats) using HipSTR and MonSTR
 + Call dnSV (de novo structural variants) using *Manta*, *GraphType2* and *smoove*
 
-The overall workflow diagram is as below: 
+The overall workflow diagram of *TriosCompass* is as below: 
 ![](img/TrioCompass_full_DAG.png)
 
 ---
 
 ### II. Dependencies
 
-All required bioinformatics tools are wrapped as conda, container and etc, so there is no need to for users to install any of them.
+All required bioinformatics tools are wrapped as conda, container and etc, so TriosCompass is portable and easy to be deployed.
 
-Nevertheless, there are still some dependencies required to start Snakemake workflow, which have been specified in [environment.yaml](environment.yaml).  Users can create a new *conda* env for TriosCompassV2
+Nevertheless, there are still some basic dependencies required to start any Snakemake workflow (e.g., conda and python), which have been specified in [environment.yaml](environment.yaml).  Users can create a new *conda* env for TriosCompassV2: 
 ```bash
 
 mamba env create -f environment.yaml
@@ -75,7 +75,7 @@ mamba env create -f environment.yaml
 conda activate TriosCompassV2
 ```
 
-Besides, singularity needs to be installed globally. 
+Besides, singularity needs to be installed globally, and the details of the TriosCompass installation can be found [below](https://github.com/NCI-CGR/TriosCompass_v2/tree/main?tab=readme-ov-file#i-installation).  
 
 ### III. Methods
 #### A. Call DNMs
@@ -133,15 +133,15 @@ The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK Haplo
 #### B. Phase DNMs
 We identified parental origin of DNMs using [*WhatsHap*](https://github.com/whatshap/whatshap). 
 
-There are two running modes in WhatsHap: individual and pedigree.  Pedigree mode is ideal to identify parental origin of variants in the child.  However, WhatsHap does not phase DNMs in the pedigree mode, as DNMs do not follow mendelian inheritance. Phasing DNMs is not supported by WhatsHap at present (see this [issue](https://github.com/whatshap/whatshap/issues/82) for the details). However, DNMs are phased in the individual mode.  Therefore, we managed to run WhatsHap in both individual mode and pedigree mode and extract parental original from the two outputs.
+There are two running modes in WhatsHap: individual and pedigree. In the individual mode, variants are phased into haplotype blocks by *WhatsHap*, without parental origin information.  Pedigree mode is ideal to identify parental origin of variants in the child.  However, WhatsHap does not phase DNMs in the pedigree mode, as DNMs do not follow mendelian inheritance. Therefore, phasing DNMs is not supported by WhatsHap at present (see this [issue](https://github.com/whatshap/whatshap/issues/82) for the details). Nevertheless, a DNM could be phased with the other informative germline variants into the same haplotype block in the individual mode, and thereby all variants in the block share the same parental origin.  Therefore, we managed to run WhatsHap in both individual mode and pedigree mode, and extract parental original from the two outputs.
 
 We first explored to run WhatsHap on the whole genome using the workflow [Snakefile_whatshap_WG](./Snakefile_whatshap_WG).  It turns out to be very slow: it took up to 7 days to process one trio family, and 2-3 days for each trio in average.  Finally,  we chose to phase a 10 Kb window around each DNM. 
 
 ![](img/Trios_workflow_rulegraph_whatshap_100K.png)
 
-We developed [a Perl script](./scripts/extract_parental_origin.pl) to identify the parental origin, and the aggregated results are output to the file: output/phase_DNMs/{Trios_ID}.parental_origin.tab.  The output file is a headless tab delimited text file, with 9 columns including variant id of DNM, parental origin prediction.  
+We developed [a Perl script](workflow/scripts/extract_parental_origin.pl) to identify the parental origin, and the aggregated results are output to the file: output/phase_DNMs/{Trios_ID}.parental_origin.tab.  The output file is a tab delimited text file, with 9 columns including variant id of DNM, parental origin prediction.  
 
-The perl script extracts the haplotype block containing the DNMs from the output of WhatsHap phasing child, and collects the phased variants of child in the block.  It also repeats the processing on the output of WhatsHap phasing trios.  The phase prediction from the latter is given as *F|M*, i.e, the first allele is the one inherited from the father (F) and the other in inherited from the mother (M). However, the phase prediction from the former is not certain, that is, it could be F|M or M|F. Ideally, the phases of the variants in each haplotype block from WhatsHap phasing child only should be either all identical (FM count) or all opposite (MF count) with those from WhatsHap phasing trios.  We simply assign parental origin as Not Determined (ND) if there is inconsistency (i.e., both FM count > 0 and MF count > 0). 
+The perl script extracts the haplotype block containing the DNMs from the output of WhatsHap phasing child (i.e., the individual mode), and collects the phased variants of child in the block.  The script also repeats the processing on the output of WhatsHap phasing trios.  The phase prediction from the latter is given as *F|M*, i.e, the first allele is the one inherited from the father (F) and the other in inherited from the mother (M). However, the parental origin prediction from the individual mode is not certain, that is, it could be F|M or M|F. Ideally, the phases of the variants in each haplotype block from WhatsHap phasing child only should be either all identical (FM count) or all opposite (MF count) to those from WhatsHap phasing trios. In such cases, we can certainly identify the parental origin of the block and so is that of the DNM in the same block.   We simply assign parental origin as *Not Determined* (ND) if there is inconsistency of FM statuses among the variants in the same block (i.e., both FM count > 0 and MF count > 0). 
 
 + Example of the output of extract_parental_origin.pl
   
@@ -196,7 +196,7 @@ phasing:
 
 #### C. Call dnSTRs
 
-We had explored to call dnSTR candidates jointly by *HipSTR* and *GangSTR*. During the manual curation, we found that the joint predicts are good but much less than expected, and the HipSTR outperforms GangSTR in our manual evaluation.
+We had explored to call dnSTR candidates jointly by *HipSTR* and *GangSTR*. During the manual curation, we found that the joint predicts are good but much fewer than expected, and the HipSTR outperforms GangSTR in our manual evaluation.  Therefore, we gave up *GangSTR*, and employed *HipSTR/MonSTR* in the dnSTR prediction.
 
 At present, our dnSTR calling process is as below:
 1. The STR reference panel is split into *N* chunks.
@@ -241,10 +241,11 @@ dnSVs are predicted jointly by two approaches in TriosCompass:
 
 ![](img/TrioCompass_dnSV_dag.png)
 
-<font size="+3">&#128214;</font> 
+<font size="+3">&#128214;</font> Please note: 
 + Insertion is marked as translocation (i.e., "BND") in [smoove/lumpy-sv](https://github.com/arq5x/lumpy-sv/issues/160).
 + Bam files (not *cram*) are recognized by *lumpy-sv*.
 + Sample order in the ped file matters.  
+  
   By default, we had built ped files in the order as: father, mother, and child. Accordingly, the same order is remained in the jointly genotyped SV VCF file. Therefore, we used the *bcftools* command to identify dnSV as below:
 
     ```bash
