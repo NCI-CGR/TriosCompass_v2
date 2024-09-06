@@ -24,7 +24,6 @@ A Snakemake workflow for DNM (de novo mutation) calling.
       - [The STR reference panel to call dnSTRs](#the-str-reference-panel-to-call-dnstrs)
       - [Regions excluded in dnSTR calling](#regions-excluded-in-dnstr-calling)
       - [Regions excluded in dnSV calling](#regions-excluded-in-dnsv-calling)
-      - [Resource bundle for hg38](#resource-bundle-for-hg38)
       - [Fastq/BAM input files](#fastqbam-input-files)
         - [PEP example for *fastq* input](#pep-example-for-fastq-input)
         - [PEP example for *bam* input](#pep-example-for-bam-input)
@@ -45,6 +44,7 @@ A Snakemake workflow for DNM (de novo mutation) calling.
         - [dnSTR visulizations by *VizAln*](#dnstr-visulizations-by-vizaln)
           - [Example of VisAln realignment of the DNM (started at chr6:38571975) in the family *t0612*](#example-of-visaln-realignment-of-the-dnm-started-at-chr638571975-in-the-family-t0612)
       - [dnSV predictions](#dnsv-predictions)
+      - [Snakemake report for TriosCompass](#snakemake-report-for-trioscompass)
 
 
 ---
@@ -114,19 +114,20 @@ The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK Haplo
 + kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq}
   + GQ score of the variants should be no less than {params.min_gq} in all the members of the trio.
 
-:notebook: In the workflow, the parameters {params.min_dp} and {params.min_gq} can be configured via config/config.yaml, so are the callable regions:
+<font size="+3">&#128214;</font> In the workflow, the parameters {params.min_dp} and {params.min_gq} can be configured via config/config.yaml, so are the callable regions:
 
 + config/config.yaml
-```yml
-call_dnm:
-  interval: "ref/hg38.wgs_interval.bed" # DNM callable regions
-  dv:
-    min_gq: 3
-    min_dp: 20
-  hc:
-    min_gq: 20
-    min_dp: 30
-```
+
+    ```yml
+    call_dnm:
+      interval: "ref/hg38.wgs_interval.bed" # DNM callable regions
+      dv:
+        min_gq: 3
+        min_dp: 20
+      hc:
+        min_gq: 20
+        min_dp: 30
+    ```
 
 ---
 #### B. Phase DNMs
@@ -162,7 +163,7 @@ The perl script extracts the haplotype block containing the DNMs from the output
 | chr3:197879978:C:A               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
 | chr4:29657055:GC:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
 
-:notebook: For most users, the first two columns provide essential information about parental origins of the predicted DNMs.
+<font size="+3">&#128214;</font> For most users, the first two columns provide essential information about parental origins of the predicted DNMs.
 
 ---
 
@@ -240,7 +241,7 @@ dnSVs are predicted jointly by two approaches in TriosCompass:
 
 ![](img/TrioCompass_dnSV_dag.png)
 
-:notebook: 
+<font size="+3">&#128214;</font> 
 + Insertion is marked as translocation (i.e., "BND") in [smoove/lumpy-sv](https://github.com/arq5x/lumpy-sv/issues/160).
 + Bam files (not *cram*) are recognized by *lumpy-sv*.
 + Sample order in the ped file matters.  
@@ -281,11 +282,12 @@ User can put the reference genome any location under the folder $WORKSPACE and s
 For instance, we may put the hg38 human genome *Homo_sapiens_assembly38.fasta* under the folder $WORKSPACE/ref/. 
 
 + config/config.yaml
-```yml
-ref:
-  sequence: "ref/Homo_sapiens_assembly38.fasta"
-  build: "hg38"
-```
+
+    ```yml
+    ref:
+      sequence: "ref/Homo_sapiens_assembly38.fasta"
+      build: "hg38"
+    ```
 
 ---
 
@@ -339,7 +341,7 @@ awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.b
 
 
 
-:notebook: 
+<font size="+3">&#128214;</font> 
 + After manual curation, we chose to use *HipSTR* only for the dnSTR prediction.
 + The STR reference panel is specified in config/config.yaml
   + ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
@@ -356,12 +358,13 @@ tabix -p bed GRCh38GenomicSuperDup.bed.gz
 ```
 
 + The setting can also be customized in config/config.yaml
-```yml
-dnSTR:
-  # split bed into chunks to speed up dnSTR call
-  split_n: 400
-  dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
-```
+
+    ```yml
+    dnSTR:
+      # split bed into chunks to speed up dnSTR call
+      split_n: 400
+      dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
+    ```
 
 ---
 
@@ -373,10 +376,11 @@ wget https://raw.githubusercontent.com/hall-lab/speedseq/master/annotations/excl
 ```
 
 + Settings in config.yaml
-```yml
-dnSV:
-  enable: True
-  exclude_bed: "ref/exclude.cnvnator_100bp.GRCh38.20170403.bed"
+
+    ```yml
+    dnSV:
+      enable: True
+      exclude_bed: "ref/exclude.cnvnator_100bp.GRCh38.20170403.bed"
 ```
 
 ---
@@ -411,69 +415,72 @@ A resource bundle for hg38 is available at here as a reference for users of Trio
 
 ##### PEP example for *fastq* input
 + config/fastq_pep.yaml
-```yml
-pep_version: 2.0.0
-sample_table: sample_fastq.csv
 
-# In manifest file, Sample_ID + Flowcell should be unique
-sample_modifiers:
-  append:
-    sample_name: "sn"
-  derive:
-    attributes: [sample_name]
-    sources:
-      sn: "{SAMPLE_ID}_{FLOWCELL}"
-```
+    ```yml
+    pep_version: 2.0.0
+    sample_table: sample_fastq.csv
+    
+    # In manifest file, Sample_ID + Flowcell should be unique
+    sample_modifiers:
+      append:
+        sample_name: "sn"
+      derive:
+        attributes: [sample_name]
+        sources:
+          sn: "{SAMPLE_ID}_{FLOWCELL}"
+    ```
 
 + config/sample_fastq.csv
-```csv
-SAMPLE_ID,FLOWCELL,LANE,INDEX,R1,R2
-HG002,BH2JWTDSX5,1,CGGTTGTT-GTGGTATG,data/fq/HG002_NA24385_son_80X_R1.fq.gz,data/fq/HG002_NA24385_son_80X_R2.fq.gz
-HG003,BH2JWTDSX5,1,GCGTCATT-CAGACGTT,data/fq/HG003_NA24149_father_80X_R1.fq.gz,data/fq/HG003_NA24149_father_80X_R2.fq.gz
-HG004,BH2JWTDSX5,1,CTGTTGAC-ACCTCAGT,data/fq/HG004_NA24143_mother_80X_R1.fq.gz,data/fq/HG004_NA24143_mother_80X_R2.fq.gz
-```
+
+    ```csv
+    SAMPLE_ID,FLOWCELL,LANE,INDEX,R1,R2
+    HG002,BH2JWTDSX5,1,CGGTTGTT-GTGGTATG,data/fq/HG002_NA24385_son_80X_R1.fq.gz,data/fq/HG002_NA24385_son_80X_R2.fq.gz
+    HG003,BH2JWTDSX5,1,GCGTCATT-CAGACGTT,data/fq/HG003_NA24149_father_80X_R1.fq.gz,data/fq/HG003_NA24149_father_80X_R2.fq.gz
+    HG004,BH2JWTDSX5,1,CTGTTGAC-ACCTCAGT,data/fq/HG004_NA24143_mother_80X_R1.fq.gz,data/fq/HG004_NA24143_mother_80X_R2.fq.gz
+    ```
 
 + workflow/schemas/fastq_schema.yaml
-```yml
-description: A example schema for a pipeline.
-imports:
-  - http://schema.databio.org/pep/2.0.0.yaml
-  # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
-  
-properties:
-  samples:
-    type: array
-    items:
-      type: object
-      properties:
-        SAMPLE_ID:
-          type: string
-          description: "sample id"
-        FLOWCELL:
-          type: string
-          description: "Flowcell"
-        INDEX:
-          type: string
-          description: "Library index"
-        LANE:
-          type: string
-          description: "Lane number in flowcell"
-          enum: ["1", "2"]
-        R1:
-          type: string
-          description: "path to the R1 fastq file"
-        R2:
-          type: string
-          description: "path to the R2 fastq file"
-      required:
-        - FLOWCELL
-        - SAMPLE_ID
-        - INDEX
-        - R1
-        - R2
-```
 
-:notebook: In this example, 6 columns in the sample csv file are required: SAMPLE_ID, FLOWCELL, LANE, INDEX, R1, R2. Such information is mainly used to build RG (read group) tag in the bam file:  
+    ```yml
+    description: A example schema for a pipeline.
+    imports:
+      - http://schema.databio.org/pep/2.0.0.yaml
+      # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
+      
+    properties:
+      samples:
+        type: array
+        items:
+          type: object
+          properties:
+            SAMPLE_ID:
+              type: string
+              description: "sample id"
+            FLOWCELL:
+              type: string
+              description: "Flowcell"
+            INDEX:
+              type: string
+              description: "Library index"
+            LANE:
+              type: string
+              description: "Lane number in flowcell"
+              enum: ["1", "2"]
+            R1:
+              type: string
+              description: "path to the R1 fastq file"
+            R2:
+              type: string
+              description: "path to the R2 fastq file"
+          required:
+            - FLOWCELL
+            - SAMPLE_ID
+            - INDEX
+            - R1
+            - R2
+    ```
+
+<font size="+3">&#128214;</font> In this example, 6 columns in the sample csv file are required: SAMPLE_ID, FLOWCELL, LANE, INDEX, R1, R2. Such information is mainly used to build RG (read group) tag in the bam file:  
 
 ```
 @RG    PL:ILLUMINA    ID:{FLOWCELL}_{LANE}    SM:{SAMPLE_ID}    PU:{SAMPLE_ID}_{FLOWCELL}    LB:{SAMPLE_ID}_{INDEX}
@@ -487,53 +494,55 @@ Users may put additional meta information in the sample csv file, which will be 
 The essential information for bam input is the sample id and the bam file location. Therefore, the metadata is much simpler compared to *fastq* input.
 
 + config/bam_pep.yaml
-```yml
-pep_version: 2.0.0
-sample_table: sample_bam.csv
 
-
-sample_modifiers:
-  append:
-    sample_name: "sn"
-  derive:
-    attributes: [sample_name]
-    sources:
-      sn: "{SAMPLE_ID}"
-```
+    ```yml
+    pep_version: 2.0.0
+    sample_table: sample_bam.csv
+    
+    
+    sample_modifiers:
+      append:
+        sample_name: "sn"
+      derive:
+        attributes: [sample_name]
+        sources:
+          sn: "{SAMPLE_ID}"
+    ```
 
 + config/sample_bam.csv
-```csv
-SAMPLE_ID,BAM
-HG002,sorted_bam/HG002_NA24385_son_80X.bam
-HG003,sorted_bam/HG003_NA24149_father_80X.bam
-HG004,sorted_bam/HG004_NA24143_mother_80X.bam
-```
+  
+    ```csv
+    SAMPLE_ID,BAM
+    HG002,sorted_bam/HG002_NA24385_son_80X.bam
+    HG003,sorted_bam/HG003_NA24149_father_80X.bam
+    HG004,sorted_bam/HG004_NA24143_mother_80X.bam
+    ```
 
 + workflow/schemas/bam_schema.yaml
-```yml
-description: A example schema for a pipeline.
-imports:
-  - http://schema.databio.org/pep/2.0.0.yaml
-  # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
-  
-properties:
-  samples:
-    type: array
-    items:
-      type: object
-      properties:
-        SAMPLE_ID:
-          type: string
-          description: "sample id"
-        BAM:
-          type: string
-          description: "path to the bam file"
-      required:
-        - SAMPLE_ID
-        - BAM
-```
+    ```yml
+    description: A example schema for a pipeline.
+    imports:
+      - http://schema.databio.org/pep/2.0.0.yaml
+      # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
+      
+    properties:
+      samples:
+        type: array
+        items:
+          type: object
+          properties:
+            SAMPLE_ID:
+              type: string
+              description: "sample id"
+            BAM:
+              type: string
+              description: "path to the bam file"
+          required:
+            - SAMPLE_ID
+            - BAM
+    ```
 
-:notebook: {SAMPLE_ID} should be unique.  If the bam file has *RG* different from {SAMPLE_ID}, users may activate *reset_RG* option so as to reset all *RG* tag properly in the bam files.
+<font size="+3">&#128214;</font> {SAMPLE_ID} should be unique.  If the bam file has *RG* different from {SAMPLE_ID}, users may activate *reset_RG* option so as to reset all *RG* tag properly in the bam files.
 
 + config/config.yaml
 ```yml
@@ -546,7 +555,7 @@ bam_input:
 #### Pedigree files
 In addition to the NGS input data, another important input is pedigree files to define trios. 
 
-:notebook: There are several conventions required about pedigree files by TriosCompass:
+<font size="+3">&#128214;</font> There are several conventions required about pedigree files by TriosCompass:
 + Each trio is specified by one pedigree file;
 + All pedigree files are named by the family ID, with ".ped" as the file extensin, under one directory which is specified by config/config.yaml:
     ```yml
@@ -558,11 +567,12 @@ In addition to the NGS input data, another important input is pedigree files to 
 
 Below is an example of the pedigree file for the GIAB AJ family:
 + ped/AJ.ped 
-```tab
-AJ      HG003   0       0       1       1
-AJ      HG004   0       0       2       1
-AJ      HG002   HG003   HG004   1       1
-```
+  
+    ```tab
+    AJ      HG003   0       0       1       1
+    AJ      HG004   0       0       2       1
+    AJ      HG002   HG003   HG004   1       1
+    ```
 
 ---
 
@@ -616,12 +626,12 @@ The profile config.yaml file has [multiple function roles](https://snakemake.rea
 
 We have provided [an example profile](./workflow/profiles/slurm/config.yaml) to launch TriosCompass in a Slurm cluster.
 
-:notebook: To separate the workspace from TriosCompass, we set $WORKSPACE as the working directory, where TriosCompass_v2 (the locally cloned repo) is a sub-folder of $WORKSPACE.  Accordingly, the command below is recommended:
+<font size="+3">&#128214;</font> To separate the workspace from TriosCompass, we set $WORKSPACE as the working directory, where TriosCompass_v2 (the locally cloned repo) is a sub-folder of $WORKSPACE.  Accordingly, the command below is recommended:
 ```bash
 snakemake --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCompass_v2/config/config.yaml
 ```
 
-:notebook: There is a bug in the release of Snakemake we are testing (Version 7.3.7), so that the section *set-threads* does not work properly in the profile config.yaml file. We had used [config/config.yaml](#configconfigyaml) as a work-around solution to specify threads for each Snakemake *rule*. 
+<font size="+3">&#128214;</font> There is a bug in the release of Snakemake we are testing (Version 7.3.7), so that the section *set-threads* does not work properly in the profile config.yaml file. We had used [config/config.yaml](#configconfigyaml) as a work-around solution to specify threads for each Snakemake *rule*. 
 
 ---
 
@@ -661,6 +671,7 @@ snakemake  --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosC
 
 ### IV. Outputs
 The location of output is specified by config/config.yaml:
+
 ```yml
 output_dir: "output"
 ```
@@ -679,6 +690,7 @@ dnSTR_summary           GATK_DV            manta                  smoove
 ```
 
 Location of MultiQC output is specified by config["multiqc"]["output_dir"]:
+
 ```yml
 multiqc:
   enable: True
@@ -764,7 +776,7 @@ output/vizaln/t0311/hipstr
     ├── ...
 ```
 
-:notebook: The ".dnm" files are dummy files for the use of Snakemake workflow in the process of scatter-gather dnSTRs.
+<font size="+3">&#128214;</font> The ".dnm" files are dummy files for the use of Snakemake workflow in the process of scatter-gather dnSTRs.
 
 ###### Example of VisAln realignment of the DNM (started at chr6:38571975) in the family *t0612*
 
@@ -779,6 +791,7 @@ t0612   SC260721        SC260720        SC260670        2       1
 ```
 
 From [the MonSTR prediction](./data/hipstr.filtered.tab), we have: 
+
 | chrom | pos      | period | child    | newallele | mutsize | child_gt | mat_gt | pat_gt |
 |-------|----------|--------|----------|-----------|---------|----------|--------|--------|
 | 6     | 38571975 | 2      | SC260721 | 13        | 2       | 13,13    | 11,13  | 11,11  |
@@ -789,21 +802,37 @@ It suggests there is an de novo tandem repeat mutation started at the position c
 In the VizAln html page, we have genotypes of the family members marked in different ways.  For example, "SC260670: 0|4" means one allele is wild type and another is 4 bp insertion. Negative values stands for deletion (read [this](https://github.com/tfwillems/HipSTR/tree/master#alignment-visualization) for some details).  Therefore, "SC260721: 4|4", "SC260720: 0|0" and  "SC260670: 0|4" are well matched with the MonSTR prediction: [13,13], [11,11] and [11,13] for child, father and mother,respectively,  in this example.
 
 
-:bookmark: Please note that the alignments from VizAln were arranged by the alphabet order of the sample identifiers. 
+<font size="+3">&#128214;</font> Please note that the alignments from VizAln were arranged by the alphabet order of the sample identifiers. 
 
 ---
 
 #### dnSV predictions
 As aforementioned, dnSVs are jointly predicted by *Smoove* and *Manta/TypeGraph2*.  The results are merged VCF files generated by *SURVIVOR*: {output}/joint_dnSV/{fam}.dnSV.vcf: 
 + output/joint_dnSV/t0311.dnSV.vcf
-```tab
-#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  SC501095        SC501095_1
-chr18   55923597        chr18:55923597:OG       N       ]chr11:13001662]N    239     PASS    SUPP=2;SUPP_VEC=11;SVLEN=0;SVTYPE=TRA;SVMETHOD=SURVIVOR1.0.7;CHR2=chr11;END=13001651;CIPOS=-107,0;CIEND=0,11;STRANDS=++ GT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO     0/1:NA:42921828:0,13:--:239:TRA:668279_2:NA:NA:chr18_55923490-chr11_13001662    0/1:NA:42921946:0,0:++:217:TRA:chr18_55923597_OG:NA:NA:chr18_55923597-chr11_13001651
-chr20   37068816        chr20:37068816:OG       N       ]chr11:5933976]N    255     PASS    SUPP=2;SUPP_VEC=11;SVLEN=0;SVTYPE=TRA;SVMETHOD=SURVIVOR1.0.7;CHR2=chr11;END=5933971;CIPOS=-32,0;CIEND=0,5;STRANDS=++    GT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO     0/1:NA:31134808:0,20:-+:80:TRA:668295_2:NA:NA:chr20_37068784-chr11_5933976      0/1:NA:31134845:0,0:++:255:TRA:chr20_37068816_OG:NA:NA:chr20_37068816-chr11_5933971
-```
+  
+    ```tab
+    #CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  SC501095        SC501095_1
+    chr18   55923597        chr18:55923597:OG       N       ]chr11:13001662]N    239     PASS    SUPP=2;SUPP_VEC=11;SVLEN=0;SVTYPE=TRA;SVMETHOD=SURVIVOR1.0.7;CHR2=chr11;END=13001651;CIPOS=-107,0;CIEND=0,11;STRANDS=++ GT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO     0/1:NA:42921828:0,13:--:239:TRA:668279_2:NA:NA:chr18_55923490-chr11_13001662    0/1:NA:42921946:0,0:++:217:TRA:chr18_55923597_OG:NA:NA:chr18_55923597-chr11_13001651
+    chr20   37068816        chr20:37068816:OG       N       ]chr11:5933976]N    255     PASS    SUPP=2;SUPP_VEC=11;SVLEN=0;SVTYPE=TRA;SVMETHOD=SURVIVOR1.0.7;CHR2=chr11;END=5933971;CIPOS=-32,0;CIEND=0,5;STRANDS=++    GT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO     0/1:NA:31134808:0,20:-+:80:TRA:668295_2:NA:NA:chr20_37068784-chr11_5933976      0/1:NA:31134845:0,0:++:255:TRA:chr20_37068816_OG:NA:NA:chr20_37068816-chr11_5933971
+    ```
 
-:notebook: Two sample columns are available for the child (e.g.,SC501095) in the example vcf output: the first one is from *Smoove* and the other is from *Manta/TypeGraph2*
+<font size="+3">&#128214;</font> Two sample columns are available for the child (e.g.,SC501095) in the example vcf output: the first one is from *Smoove* and the other is from *Manta/TypeGraph2*
 
 Besides, a summary of dnSV count is available as *{output}/dnSV_summary/dnSV_summary.txt*.
 
 ---
+
+#### Snakemake report for TriosCompass
+[Reports](https://snakemake.readthedocs.io/en/v7.3.7/snakefiles/reporting.html) is a very useful feature of Snakemake. We utilized this feature to package TriosCompass outputs into a zip file and index them with the HTMP page. 
+
+Below is an example command to generate reports for TriosCompass: 
+
+```bash
+snakemake  --report TriosCompass_full_report.zip --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCompass_v2/config/config.yaml
+```
+
++ A snapshot of the report HTML page. 
+![](img/README_2024-09-06-11-43-08.png)
+
+---
+
