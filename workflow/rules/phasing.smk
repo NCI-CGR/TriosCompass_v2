@@ -105,5 +105,5 @@ rule aggregate_phase:
             }
         )
     shell: """
-        cat {input} | sort -t ":"  -Vs -k1,1 -k2,2n > {output}
+        ( echo -e "VariantID\tParentalOrigin\tPhase\tHaplotypeBlockSize\t InformativeSiteCnt\tFM_count\tMF_count\tFM_status\tParentOriginChange" && cat {input} | sort -t ":"  -Vs -k1,1 -k2,2n ) > {output}
     """
