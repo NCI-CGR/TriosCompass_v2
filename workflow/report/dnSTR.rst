@@ -1,1 +1,1 @@
-MonSTR predictions
+The dnSTRs predicted by HipSTR/MonSTR are available as {output}/monstr_filter/hipstr.filtered.tab .  Some of the details is available `here <https://github.com/NCI-CGR/TriosCompass_v2?tab=readme-ov-file#dnstr-predictions-from-hipstrmonstr>`_.
