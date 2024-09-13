@@ -7,6 +7,7 @@
 A Snakemake workflow for DNM (de novo mutation) calling.
 
 ---
+
 - [Snakemake workflow: TriosCompass](#snakemake-workflow-trioscompass)
   - [Overview](#overview)
     - [I. Introduction](#i-introduction)
@@ -25,7 +26,7 @@ A Snakemake workflow for DNM (de novo mutation) calling.
       - [Regions excluded in dnSTR calling](#regions-excluded-in-dnstr-calling)
       - [Regions excluded in dnSV calling](#regions-excluded-in-dnsv-calling)
       - [Resource bundle for hg38](#resource-bundle-for-hg38)
-      - [Fastq/BAM input files](#fastqbam-input-files)
+      - [Fastq and BAM input files](#fastq-and-bam-input-files)
         - [PEP example for *fastq* input](#pep-example-for-fastq-input)
         - [PEP example for *bam* input](#pep-example-for-bam-input)
       - [Pedigree files](#pedigree-files)
@@ -47,8 +48,8 @@ A Snakemake workflow for DNM (de novo mutation) calling.
       - [dnSV predictions](#dnsv-predictions)
       - [Snakemake report for TriosCompass](#snakemake-report-for-trioscompass)
 
-
 ---
+
 
 ## Overview
 
@@ -68,7 +69,7 @@ The overall workflow diagram of *TriosCompass* is as below:
 
 All required bioinformatics tools are wrapped as conda, container and etc, so TriosCompass is portable and easy to be deployed.
 
-Nevertheless, there are still some basic dependencies required to start any Snakemake workflow (e.g., conda and python), which have been specified in [environment.yaml](environment.yaml).  Users can create a new *conda* env for TriosCompassV2: 
+Nevertheless, there are still some basic dependencies required to start any Snakemake workflow (e.g., conda and python), which have been specified in [environment.yaml](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/environment.yaml).  Users can create a new *conda* env for TriosCompassV2: 
 ```bash
 
 mamba env create -f environment.yaml
@@ -76,12 +77,12 @@ mamba env create -f environment.yaml
 conda activate TriosCompassV2
 ```
 
-Besides, singularity needs to be installed globally, and the details of the TriosCompass installation can be found [below](https://github.com/NCI-CGR/TriosCompass_v2/tree/main?tab=readme-ov-file#i-installation).  
+Besides, singularity needs to be installed globally, and the details of the TriosCompass installation can be found [below](#i-installation).  
 
 ### III. Methods
 #### A. Call DNMs
 
-The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK HaplotypeCaller (HC)* in the specified callable regions, then filtered using [*sliver*](https://github.com/brentp/slivar):
+The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK HaplotypeCaller (HC)* in the specified callable regions, then filtered using [sliver](https://github.com/brentp/slivar):
 
 ```bash
  "denovo:( \
@@ -136,33 +137,33 @@ We identified parental origin of DNMs using [*WhatsHap*](https://github.com/what
 
 There are two running modes in WhatsHap: individual and pedigree. In the individual mode, variants are phased into haplotype blocks by *WhatsHap*, without parental origin information.  Pedigree mode is ideal to identify parental origin of variants in the child.  However, WhatsHap does not phase DNMs in the pedigree mode, as DNMs do not follow mendelian inheritance. Therefore, phasing DNMs is not supported by WhatsHap at present (see this [issue](https://github.com/whatshap/whatshap/issues/82) for the details). Nevertheless, a DNM could be phased with the other informative germline variants into the same haplotype block in the individual mode, and thereby all variants in the block share the same parental origin.  Therefore, we managed to run WhatsHap in both individual mode and pedigree mode, and extract parental original from the two outputs.
 
-We first explored to run WhatsHap on the whole genome using the workflow [Snakefile_whatshap_WG](./Snakefile_whatshap_WG).  It turns out to be very slow: it took up to 7 days to process one trio family, and 2-3 days for each trio in average.  Finally,  we chose to phase a 10 Kb window around each DNM. 
+We first explored to run WhatsHap on the whole genome using the workflow [Snakefile_whatshap_WG](https://github.com/NCI-CGR/TriosCompass_v2/blob/8trios/Snakefile_whatshap_WG).  It turns out to be very slow: it took up to 7 days to process one trio family, and 2-3 days for each trio in average.  Finally,  we chose to phase a 10 Kb window around each DNM. 
 
-![](img/Trios_workflow_rulegraph_whatshap_100K.png)
+![](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/Trios_workflow_rulegraph_whatshap_100K.png?raw=True)
 
-We developed [a Perl script](workflow/scripts/extract_parental_origin.pl) to identify the parental origin, and the aggregated results are output to the file: output/phase_DNMs/{Trios_ID}.parental_origin.tab.  The output file is a tab delimited text file, with 9 columns including variant id of DNM, parental origin prediction.  
+We developed [a Perl script](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/workflow/scripts/extract_parental_origin.pl) to identify the parental origin, and the aggregated results are output to the file: output/phase_DNMs/{Trios_ID}.parental_origin.tab.  The output file is a tab delimited text file, with 9 columns including variant id of DNM, parental origin prediction.  
 
 The perl script extracts the haplotype block containing the DNMs from the output of WhatsHap phasing child (i.e., the individual mode), and collects the phased variants of child in the block.  The script also repeats the processing on the output of WhatsHap phasing trios.  The phase prediction from the latter is given as *F|M*, i.e, the first allele is the one inherited from the father (F) and the other in inherited from the mother (M). However, the parental origin prediction from the individual mode is not certain, that is, it could be F|M or M|F. Ideally, the phases of the variants in each haplotype block from WhatsHap phasing child only should be either all identical (FM count) or all opposite (MF count) to those from WhatsHap phasing trios. In such cases, we can certainly identify the parental origin of the block and so is that of the DNM in the same block.   We simply assign parental origin as *Not Determined* (ND) if there is inconsistency of FM statuses among the variants in the same block (i.e., both FM count > 0 and MF count > 0). 
 
 + Example of the output of extract_parental_origin.pl
   
-    | VariantID                        | Parental Origin | Phase | Haplotype Block Size | # Informative Sites | FM count | MF count | FM status | Parent origin change |
-    |----------------------------------|-----------------|-------|----------------------|---------------------|----------|----------|-----------|----------------------|
-    | chr1:208903875:G:A               | ND              | 1\|0  | 36                   | 0                   | 25       | 11       | ND        | ND=>ND               |
-    | chr2:12194398:A:C                | paternal        | 1\|0  | 2                    | 2                   | 2        | 0        | FM        | paternal=>paternal   |
-    | chr2:14986429:A:T                | paternal        | 1\|0  | 5                    | 5                   | 5        | 0        | FM        | paternal=>paternal   |
-    | chr2:50677044:C:T                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
-    | chr2:139840973:T:A               | paternal        | 0\|1  | 14                   | 14                  | 0        | 14       | MF        | paternal=>paternal   |
-    | chr2:154745781:T:C               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
-    | chr2:203705880:T:TTCTTTC         | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
-    | chr2:220449146:A:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
-    | chr3:14911256:G:C                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
-    | chr3:76410708:A:C                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
-    | chr3:185020246:C:T               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
-    | chr3:194728646:G:GTGTGTGTGTGTGTC | maternal        | 0\|1  | 6                    | 6                   | 6        | 0        | FM        | maternal=>maternal   |
-    | chr3:197879976:C:T               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
-    | chr3:197879978:C:A               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
-    | chr4:29657055:GC:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| VariantID                        | Parental Origin | Phase | Haplotype Block Size | # Informative Sites | FM count | MF count | FM status | Parent origin change |
+|----------------------------------|-----------------|-------|----------------------|---------------------|----------|----------|-----------|----------------------|
+| chr1:208903875:G:A               | ND              | 1\|0  | 36                   | 0                   | 25       | 11       | ND        | ND=>ND               |
+| chr2:12194398:A:C                | paternal        | 1\|0  | 2                    | 2                   | 2        | 0        | FM        | paternal=>paternal   |
+| chr2:14986429:A:T                | paternal        | 1\|0  | 5                    | 5                   | 5        | 0        | FM        | paternal=>paternal   |
+| chr2:50677044:C:T                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr2:139840973:T:A               | paternal        | 0\|1  | 14                   | 14                  | 0        | 14       | MF        | paternal=>paternal   |
+| chr2:154745781:T:C               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr2:203705880:T:TTCTTTC         | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr2:220449146:A:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr3:14911256:G:C                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr3:76410708:A:C                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr3:185020246:C:T               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr3:194728646:G:GTGTGTGTGTGTGTC | maternal        | 0\|1  | 6                    | 6                   | 6        | 0        | FM        | maternal=>maternal   |
+| chr3:197879976:C:T               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
+| chr3:197879978:C:A               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
+| chr4:29657055:GC:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
 
 <font size="+3">&#128214;</font> For most users, the first two columns provide essential information about parental origins of the predicted DNMs.
 
@@ -170,17 +171,18 @@ The perl script extracts the haplotype block containing the DNMs from the output
 
 + Descriptions for each output column.
 
-    | Column position | Column Header          | Description                                                   | Notes                                                                                                                |
-    |-----------------|------------------------|---------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
-    | 1               | VariantID              | Variant ID of DNM                                             |                                                                                                                      |
-    | 2               | Parental Origin        | Predicted parental origin                                     | ND (not determined)                                                                                                  |
-    | 3               | Phase                  | Phased genotype of DNMs (from phasing child)                  | Parental origin cannot be determined from the output from phasing child only.                                        |
-    | 4               | Haplotype Block Size   | Size of the haplotype block (from phasing child)              | Prediction from a large block is more reliable.                                                                      |
-    | 5               | # Informative Sites    | # informative sites in the haplotype block                    | Prediction is not reliable if # informative sites is 0.                                                              |
-    | 6               | FM count               | # phased variants supporting F\|M genotype                    |                                                                                                                      |
-    | 7               | MF count               | # phased variants supporting M\|F genotype                    |                                                                                                                      |
-    | 8               | FM status              | FM (for F\|M), MF (for M\|F), ND (not determined)             | FM status is ND if both FM and MF counts are bigger than 0.                                                          |
-    | 9               | Parental origin change | Prediction (wo phasing trios) => Prediction(wi phasing trios) | Generally, the prediction with phasing child only is consistent with that with both phasing child and phasing trios. |
+
+| Column position | Column Header          | Description                                                   | Notes                                                                                                                |
+|-----------------|------------------------|---------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| 1               | VariantID              | Variant ID of DNM                                             |                                                                                                                      |
+| 2               | Parental Origin        | Predicted parental origin                                     | ND (not determined)                                                                                                  |
+| 3               | Phase                  | Phased genotype of DNMs (from phasing child)                  | Parental origin cannot be determined from the output from phasing child only.                                        |
+| 4               | Haplotype Block Size   | Size of the haplotype block (from phasing child)              | Prediction from a large block is more reliable.                                                                      |
+| 5               | # Informative Sites    | # informative sites in the haplotype block                    | Prediction is not reliable if # informative sites is 0.                                                              |
+| 6               | FM count               | # phased variants supporting F\|M genotype                    |                                                                                                                      |
+| 7               | MF count               | # phased variants supporting M\|F genotype                    |                                                                                                                      |
+| 8               | FM status              | FM (for F\|M), MF (for M\|F), ND (not determined)             | FM status is ND if both FM and MF counts are bigger than 0.                                                          |
+| 9               | Parental origin change | Prediction (wo phasing trios) => Prediction(wi phasing trios) | Generally, the prediction with phasing child only is consistent with that with both phasing child and phasing trios. |
 
 
 
@@ -240,7 +242,7 @@ dnSVs are predicted jointly by two approaches in TriosCompass:
 + [smoove/lumpy-sv](https://github.com/brentp/smoove)
 + manta + GraphType2  
 
-![](img/TrioCompass_dnSV_dag.png)
+![](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/TrioCompass_dnSV_dag.png?raw=True)
 
 <font size="+3">&#128214;</font> Please note: 
 + Insertion is marked as translocation (i.e., "BND") in [smoove/lumpy-sv](https://github.com/arq5x/lumpy-sv/issues/160).
@@ -408,7 +410,7 @@ A resource bundle for hg38 is available at [here](https://zenodo.org/uploads/133
 
 ---
 
-#### Fastq/BAM input files
+#### Fastq and BAM input files
 
 [PEP](https://pep.databio.org/) is employed to import metadata of the NGS data, which can be either Fastq or BAM files. A PEP usually consists 3 files: 
 + One *yaml* file for the metadata.
@@ -615,7 +617,7 @@ TriosCompass_v2
 ---
 
 ### III. Configure files
-We have introduced PEP yaml file to [specify the NGS input files of TriosCompass](#fastqbam-input-files). There are two other yaml files, which play essential roles in Snakemake workflows:
+We have introduced PEP yaml file to [specify the NGS input files of TriosCompass](#fastq-and-bam-input-files). There are two other yaml files, which play essential roles in Snakemake workflows:
 + the profile config.yaml file
 + the configfile config.yaml file
 
@@ -626,7 +628,7 @@ The profile config.yaml file has [multiple function roles](https://snakemake.rea
 + Specify command-line options required to start Snakemake workflow properly. 
 + Submit Snakemake jobs to the cluster. 
 
-We have provided [an example profile](./workflow/profiles/slurm/config.yaml) to launch TriosCompass in a Slurm cluster.
+We have provided [an example profile](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/workflow/profiles/slurm/config.yaml) to launch TriosCompass in a Slurm cluster.
 
 <font size="+3">&#128214;</font> To separate the workspace from TriosCompass, we set $WORKSPACE as the working directory, where TriosCompass_v2 (the locally cloned repo) is a sub-folder of $WORKSPACE.  Accordingly, the command below is recommended:
 ```bash
@@ -639,7 +641,7 @@ snakemake --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCo
 
 #### config/config.yaml
 
-[This configure file](https://snakemake.readthedocs.io/en/v7.3.7/snakefiles/configuration.html?highlight=configfile#configuration) is for users to customized TriosCompass.  In particular, users may it to enable (or disable) certain optional components of TriosCompass. Most of sections of config.yaml have been already introduced in [the section *Inputs*](#ii-inputs).  [A complete example of config/config.yaml](config/config.yaml) has been provided for users as a template.   
+[This configure file](https://snakemake.readthedocs.io/en/v7.3.7/snakefiles/configuration.html?highlight=configfile#configuration) is for users to customized TriosCompass.  In particular, users may it to enable (or disable) certain optional components of TriosCompass. Most of sections of config.yaml have been already introduced in [the section *Inputs*](#ii-inputs).  [A complete example of config/config.yaml](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/config/config.yaml) has been provided for users as a template.   
 
 ---
 
@@ -793,7 +795,7 @@ t0612   SC260670        0       0       2       1
 t0612   SC260721        SC260720        SC260670        2       1
 ```
 
-From [the MonSTR prediction](./data/hipstr.filtered.tab), we have: 
+From [the MonSTR prediction](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/hipstr.filtered.tab), we have: 
 
 | chrom | pos      | period | child    | newallele | mutsize | child_gt | mat_gt | pat_gt |
 |-------|----------|--------|----------|-----------|---------|----------|--------|--------|
@@ -835,7 +837,8 @@ snakemake  --report TriosCompass_full_report.zip --profile TriosCompass_v2/workf
 ```
 
 + A snapshot of the report HTML page. 
-![](img/README_2024-09-06-11-43-08.png)
+
+![](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/README_2024-09-06-11-43-08.png?raw=true)
 
 ---
 
