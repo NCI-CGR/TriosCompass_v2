@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview &mdash; TriosCompass V2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/twemoji.css?v=2199c511" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=44a9346f"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js"></script>
+        <script src="_static/twemoji.js?v=a4381b3f"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to TriosCompass’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            TriosCompass
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#i-introduction">I. Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ii-dependencies">II. Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#iii-methods">III. Methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-call-dnms">A. Call DNMs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#b-phase-dnms">B. Phase DNMs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#c-call-dnstrs">C. Call dnSTRs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#d-call-dnsvs">D. Call dnSVs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#user-s-guides">User’s guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#i-installation">I. Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ii-inputs">II. Inputs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#reference-genome">Reference genome</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#preparation-of-the-callable-regions-of-dnms">Preparation of the callable regions of DNMs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-str-reference-panel-to-call-dnstrs">The STR reference panel to call dnSTRs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#regions-excluded-in-dnstr-calling">Regions excluded in dnSTR calling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#regions-excluded-in-dnsv-calling">Regions excluded in dnSV calling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#resource-bundle-for-hg38">Resource bundle for hg38</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fastq-and-bam-input-files">Fastq and BAM input files</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pep-example-for-fastq-input">PEP example for <em>fastq</em> input</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pep-example-for-bam-input">PEP example for <em>bam</em> input</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pedigree-files">Pedigree files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-folder-structure-of-the-final-workspace">Example folder structure of the final workspace</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#iii-configure-files">III. Configure files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#profile-config-yaml">profile/config.yaml</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">config/config.yaml</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v-run-trioscompass">V. Run TriosCompass</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#iv-outputs">IV. Outputs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#multiqc-report">MultiQC report</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dnm-predictions-parental-origins-and-visualizations">DNM predictions, parental origins and visualizations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dnm-predictions">DNM predictions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parental-origins-of-dnms">Parental origins of DNMs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jigv-visulization">JIGV visulization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dnstr-predictions-and-visulizations">dnSTR predictions and visulizations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dnstr-predictions-from-hipstr-monstr">dnSTR predictions from HipSTR/MonSTR</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dnstr-visulizations-by-vizaln">dnSTR visulizations by <em>VizAln</em></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dnsv-predictions">dnSV predictions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#snakemake-report-for-trioscompass">Snakemake report for TriosCompass</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">TriosCompass</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Overview</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/readme.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h1>
+<section id="i-introduction">
+<h2>I. Introduction<a class="headerlink" href="#i-introduction" title="Link to this heading"></a></h2>
+<p><em>TriosCompass</em> consists of four functional components:</p>
+<ul class="simple">
+<li><p>Call DNMs (de novo mutations) using <em>DeepVariant</em> and <em>GATK HaplotypeCaller</em></p></li>
+<li><p>Phase DNMs using <em>whatshap</em></p></li>
+<li><p>Call dnSTR (de novo simple tandem repeats) using HipSTR and MonSTR</p></li>
+<li><p>Call dnSV (de novo structural variants) using <em>Manta</em>, <em>GraphType2</em> and <em>smoove</em></p></li>
+</ul>
+<p>The overall workflow diagram of <em>TriosCompass</em> is as below:</p>
+<a class="reference external image-reference" href="img/TrioCompass_full_DAG.png"><img alt="" src="img/TrioCompass_full_DAG.png" /></a>
+</section>
+<hr class="docutils" />
+<section id="ii-dependencies">
+<h2>II. Dependencies<a class="headerlink" href="#ii-dependencies" title="Link to this heading"></a></h2>
+<p>All required bioinformatics tools are wrapped as conda, container and etc, so TriosCompass is portable and easy to be deployed.</p>
+<p>Nevertheless, there are still some basic dependencies required to start any Snakemake workflow (e.g., conda and python), which have been specified in <a class="reference external" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/environment.yaml">environment.yaml</a>.  Users can create a new <em>conda</em> env for TriosCompassV2:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yaml
+
+conda<span class="w"> </span>activate<span class="w"> </span>TriosCompassV2
+</pre></div>
+</div>
+<p>Besides, singularity needs to be installed globally, and the details of the TriosCompass installation can be found <a class="reference external" href="#i-installation">below</a>.</p>
+</section>
+<section id="iii-methods">
+<h2>III. Methods<a class="headerlink" href="#iii-methods" title="Link to this heading"></a></h2>
+<section id="a-call-dnms">
+<h3>A. Call DNMs<a class="headerlink" href="#a-call-dnms" title="Link to this heading"></a></h3>
+<p>The DNM candidates are jointly called by both <em>DeepVariant (DV)</em> and <em>GATK HaplotypeCaller (HC)</em> in the specified callable regions, then filtered using <a class="reference external" href="https://github.com/brentp/slivar">sliver</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;denovo:( \</span>
+<span class="s2">     ( \</span>
+<span class="s2">         (variant.CHROM == &#39;chrX&#39; &amp;&amp; kid.sex==&#39;male&#39;) &amp;&amp; \</span>
+<span class="s2">         kid.hom_alt &amp;&amp; kid.AB &gt; 0.98  \</span>
+<span class="s2">     ) || \</span>
+<span class="s2">     ( \</span>
+<span class="s2">         (!(variant.CHROM == &#39;chrX&#39; &amp;&amp; kid.sex==&#39;male&#39;)) &amp;&amp; \</span>
+<span class="s2">         kid.het &amp;&amp; kid.AB &gt; 0.25 &amp;&amp; kid.AB &lt; 0.75 \</span>
+<span class="s2">     ) \</span>
+<span class="s2">     ) &amp;&amp;  (kid.AD[0]+kid.AD[1]) &gt;= {params.min_dp}/(1+(variant.CHROM == &#39;chrX&#39; &amp;&amp; kid.sex == &#39;male&#39; ? 1 : 0)) &amp;&amp; \</span>
+<span class="s2">     mom.hom_ref &amp;&amp; dad.hom_ref \</span>
+<span class="s2">         &amp;&amp; (mom.AD[1] + dad.AD[1]) &lt;= 5 \</span>
+<span class="s2">         &amp;&amp; kid.GQ &gt;= {params.min_gq} &amp;&amp; mom.GQ &gt;= {params.min_gq} &amp;&amp; dad.GQ &gt;= {params.min_gq} \</span>
+<span class="s2">         &amp;&amp; (mom.AD[0]+mom.AD[1]) &gt;= {params.min_dp} &amp;&amp; (dad.AD[0]+dad.AD[1]) &gt;= {params.min_dp}/(1+(variant.CHROM == &#39;chrX&#39; ? 1 : 0))&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>(!(variant.CHROM == ‘chrX’ &amp;&amp; kid.sex==’male’)) &amp;&amp; kid.het &amp;&amp; kid.AB &gt; 0.25 &amp;&amp; kid.AB &lt; 0.75</p>
+<ul>
+<li><p>In the normal cases, select variants with genotype of “0/1” and allele balance in the range of 0.25 and 0.75.</p></li>
+</ul>
+</li>
+<li><p>(variant.CHROM == ‘chrX’ &amp;&amp; kid.sex==’male’) &amp;&amp; alt &amp;&amp; kid.AB &gt; 0.98</p>
+<ul>
+<li><p>In the special case (that is, variant in chrX in the male offspring), select variants with the genotype of “1/1” and allele balance &gt; 0.98.</p></li>
+</ul>
+</li>
+<li><p>(kid.AD[0]+kid.AD[1]) &gt;= {params.min_dp}/(1+(variant.CHROM == ‘chrX’ &amp;&amp; kid.sex == ‘male’ ? 1 : 0))</p>
+<ul>
+<li><p>The kid’s variant should have depth over the minimal read depth <em>{params.min_dp}</em>. If the variant is on chrX and the kid’s gender is male, the minimum read depth requirement is reduced to its half.</p></li>
+</ul>
+</li>
+<li><p>(mom.AD[0]+mom.AD[1]) &gt;= {params.min_dp} &amp;&amp; (dad.AD[0]+dad.AD[1]) &gt;= {params.min_dp}/(1+(variant.CHROM == ‘chrX’ ? 1 : 0))</p>
+<ul>
+<li><p>Similar read depth requirement is also applied for the parents.</p></li>
+</ul>
+</li>
+<li><p>mom.hom_ref &amp;&amp; dad.hom_ref</p>
+<ul>
+<li><p>The genotypes of the parents should both be “0/0”;</p></li>
+</ul>
+</li>
+<li><p>(mom.AD[1] + dad.AD[1]) &lt;= 5</p>
+<ul>
+<li><p>The total read support of the alternative allele (that is, the DNM) should be not bigger than 5 in parents.</p></li>
+</ul>
+</li>
+<li><p>kid.GQ &gt;= {params.min_gq} &amp;&amp; mom.GQ &gt;= {params.min_gq} &amp;&amp; dad.GQ &gt;= {params.min_gq}</p>
+<ul>
+<li><p>GQ score of the variants should be no less than {params.min_gq} in all the members of the trio.</p></li>
+</ul>
+</li>
+</ul>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> In the workflow, the parameters {params.min_dp} and {params.min_gq} can be configured via config/config.yaml, so are the callable regions:</p>
+<ul>
+<li><p>config/config.yaml</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>call_dnm:
+  interval: &quot;ref/hg38.wgs_interval.bed&quot; # DNM callable regions
+  dv:
+    min_gq: 3
+    min_dp: 20
+  hc:
+    min_gq: 20
+    min_dp: 30
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="b-phase-dnms">
+<h3>B. Phase DNMs<a class="headerlink" href="#b-phase-dnms" title="Link to this heading"></a></h3>
+<p>We identified parental origin of DNMs using <a class="reference external" href="https://github.com/whatshap/whatshap">*WhatsHap*</a>.</p>
+<p>There are two running modes in WhatsHap: individual and pedigree. In the individual mode, variants are phased into haplotype blocks by <em>WhatsHap</em>, without parental origin information.  Pedigree mode is ideal to identify parental origin of variants in the child.  However, WhatsHap does not phase DNMs in the pedigree mode, as DNMs do not follow mendelian inheritance. Therefore, phasing DNMs is not supported by WhatsHap at present (see this <a class="reference external" href="https://github.com/whatshap/whatshap/issues/82">issue</a> for the details). Nevertheless, a DNM could be phased with the other informative germline variants into the same haplotype block in the individual mode, and thereby all variants in the block share the same parental origin.  Therefore, we managed to run WhatsHap in both individual mode and pedigree mode, and extract parental original from the two outputs.</p>
+<p>We first explored to run WhatsHap on the whole genome using the workflow <a class="reference external" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/8trios/Snakefile_whatshap_WG">Snakefile_whatshap_WG</a>.  It turns out to be very slow: it took up to 7 days to process one trio family, and 2-3 days for each trio in average.  Finally,  we chose to phase a 10 Kb window around each DNM.</p>
+<a class="reference external image-reference" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/Trios_workflow_rulegraph_whatshap_100K.png?raw=True"><img alt="" src="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/Trios_workflow_rulegraph_whatshap_100K.png?raw=True" /></a>
+<p>We developed <a class="reference external" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/workflow/scripts/extract_parental_origin.pl">a Perl script</a> to identify the parental origin, and the aggregated results are output to the file: output/phase_DNMs/{Trios_ID}.parental_origin.tab.  The output file is a tab delimited text file, with 9 columns including variant id of DNM, parental origin prediction.</p>
+<p>The perl script extracts the haplotype block containing the DNMs from the output of WhatsHap phasing child (i.e., the individual mode), and collects the phased variants of child in the block.  The script also repeats the processing on the output of WhatsHap phasing trios.  The phase prediction from the latter is given as <em>F|M</em>, i.e, the first allele is the one inherited from the father (F) and the other in inherited from the mother (M). However, the parental origin prediction from the individual mode is not certain, that is, it could be F|M or M|F. Ideally, the phases of the variants in each haplotype block from WhatsHap phasing child only should be either all identical (FM count) or all opposite (MF count) to those from WhatsHap phasing trios. In such cases, we can certainly identify the parental origin of the block and so is that of the DNM in the same block.   We simply assign parental origin as <em>Not Determined</em> (ND) if there is inconsistency of FM statuses among the variants in the same block (i.e., both FM count &gt; 0 and MF count &gt; 0).</p>
+<ul class="simple">
+<li><p>Example of the output of extract_parental_origin.pl</p></li>
+</ul>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>VariantID</p></th>
+<th class="head"><p>Parental Origin</p></th>
+<th class="head"><p>Phase</p></th>
+<th class="head"><p>Haplotype Block Size</p></th>
+<th class="head"><p># Informative Sites</p></th>
+<th class="head"><p>FM count</p></th>
+<th class="head"><p>MF count</p></th>
+<th class="head"><p>FM status</p></th>
+<th class="head"><p>Parent origin change</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>chr1:208903875:G:A</p></td>
+<td><p>ND</p></td>
+<td><p>1|0</p></td>
+<td><p>36</p></td>
+<td><p>0</p></td>
+<td><p>25</p></td>
+<td><p>11</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+<tr class="row-odd"><td><p>chr2:12194398:A:C</p></td>
+<td><p>paternal</p></td>
+<td><p>1|0</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>0</p></td>
+<td><p>FM</p></td>
+<td><p>paternal=&gt;paternal</p></td>
+</tr>
+<tr class="row-even"><td><p>chr2:14986429:A:T</p></td>
+<td><p>paternal</p></td>
+<td><p>1|0</p></td>
+<td><p>5</p></td>
+<td><p>5</p></td>
+<td><p>5</p></td>
+<td><p>0</p></td>
+<td><p>FM</p></td>
+<td><p>paternal=&gt;paternal</p></td>
+</tr>
+<tr class="row-odd"><td><p>chr2:50677044:C:T</p></td>
+<td><p>ND</p></td>
+<td><p>0/1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+<tr class="row-even"><td><p>chr2:139840973:T:A</p></td>
+<td><p>paternal</p></td>
+<td><p>0|1</p></td>
+<td><p>14</p></td>
+<td><p>14</p></td>
+<td><p>0</p></td>
+<td><p>14</p></td>
+<td><p>MF</p></td>
+<td><p>paternal=&gt;paternal</p></td>
+</tr>
+<tr class="row-odd"><td><p>chr2:154745781:T:C</p></td>
+<td><p>ND</p></td>
+<td><p>0/1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+<tr class="row-even"><td><p>chr2:203705880:T:TTCTTTC</p></td>
+<td><p>ND</p></td>
+<td><p>0/1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+<tr class="row-odd"><td><p>chr2:220449146:A:G</p></td>
+<td><p>ND</p></td>
+<td><p>0/1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+<tr class="row-even"><td><p>chr3:14911256:G:C</p></td>
+<td><p>ND</p></td>
+<td><p>0/1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+<tr class="row-odd"><td><p>chr3:76410708:A:C</p></td>
+<td><p>ND</p></td>
+<td><p>0/1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+<tr class="row-even"><td><p>chr3:185020246:C:T</p></td>
+<td><p>ND</p></td>
+<td><p>0/1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+<tr class="row-odd"><td><p>chr3:194728646:G:GTGTGTGTGTGTGTC</p></td>
+<td><p>maternal</p></td>
+<td><p>0|1</p></td>
+<td><p>6</p></td>
+<td><p>6</p></td>
+<td><p>6</p></td>
+<td><p>0</p></td>
+<td><p>FM</p></td>
+<td><p>maternal=&gt;maternal</p></td>
+</tr>
+<tr class="row-even"><td><p>chr3:197879976:C:T</p></td>
+<td><p>paternal</p></td>
+<td><p>0|1</p></td>
+<td><p>3</p></td>
+<td><p>2</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>MF</p></td>
+<td><p>paternal=&gt;paternal</p></td>
+</tr>
+<tr class="row-odd"><td><p>chr3:197879978:C:A</p></td>
+<td><p>paternal</p></td>
+<td><p>0|1</p></td>
+<td><p>3</p></td>
+<td><p>2</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>MF</p></td>
+<td><p>paternal=&gt;paternal</p></td>
+</tr>
+<tr class="row-even"><td><p>chr4:29657055:GC:G</p></td>
+<td><p>ND</p></td>
+<td><p>0/1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>ND</p></td>
+<td><p>ND=&gt;ND</p></td>
+</tr>
+</tbody>
+</table>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> For most users, the first two columns provide essential information about parental origins of the predicted DNMs.</p>
+<ul class="simple">
+<li><p>Descriptions for each output column.</p></li>
+</ul>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column position</p></th>
+<th class="head"><p>Column Header</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>VariantID</p></td>
+<td><p>Variant ID of DNM</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>Parental Origin</p></td>
+<td><p>Predicted parental origin</p></td>
+<td><p>ND (not determined)</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>Phase</p></td>
+<td><p>Phased genotype of DNMs (from phasing child)</p></td>
+<td><p>Parental origin cannot be determined from the output from phasing child only.</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>Haplotype Block Size</p></td>
+<td><p>Size of the haplotype block (from phasing child)</p></td>
+<td><p>Prediction from a large block is more reliable.</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p># Informative Sites</p></td>
+<td><p># informative sites in the haplotype block</p></td>
+<td><p>Prediction is not reliable if # informative sites is 0.</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>FM count</p></td>
+<td><p># phased variants supporting F|M genotype</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>7</p></td>
+<td><p>MF count</p></td>
+<td><p># phased variants supporting M|F genotype</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>8</p></td>
+<td><p>FM status</p></td>
+<td><p>FM (for F|M), MF (for M|F), ND (not determined)</p></td>
+<td><p>FM status is ND if both FM and MF counts are bigger than 0.</p></td>
+</tr>
+<tr class="row-even"><td><p>9</p></td>
+<td><p>Parental origin change</p></td>
+<td><p>Prediction (wo phasing trios) =&gt; Prediction(wi phasing trios)</p></td>
+<td><p>Generally, the prediction with phasing child only is consistent with that with both phasing child and phasing trios.</p></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p>config.yaml setting for phasing</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>phasing:
+  window_size: 10000
+  # the perl script path relative to the working directory
+  perl_cmd: &quot;perl TriosCompass_v2/workflow/scripts/extract_parental_origin.pl &quot;
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="c-call-dnstrs">
+<h3>C. Call dnSTRs<a class="headerlink" href="#c-call-dnstrs" title="Link to this heading"></a></h3>
+<p>We had explored to call dnSTR candidates jointly by <em>HipSTR</em> and <em>GangSTR</em>. During the manual curation, we found that the joint predicts are good but much fewer than expected, and the HipSTR outperforms GangSTR in our manual evaluation.  Therefore, we gave up <em>GangSTR</em>, and employed <em>HipSTR/MonSTR</em> in the dnSTR prediction.</p>
+<p>At present, our dnSTR calling process is as below:</p>
+<ol class="arabic simple">
+<li><p>The STR reference panel is split into <em>N</em> chunks.</p></li>
+<li><p>For each chunk:
+a. STRs of all samples (from different trios) are jointly genotyped by <em>HipSTR</em>.
+b. Then, to be filtered by <em>dumpSTR</em>.
+c. <em>MonSTR</em> is applied to call dnSTRs.</p></li>
+<li><p>Chunks of <em>MonSTR</em> is merged and then filtered further.</p></li>
+</ol>
+<p>Besides, <em>VizAln</em> (from the <em>HipSTR</em> package) is employed to generated visualization in HTML format.</p>
+<p>Below is the configure setting for dnSTR in config/config.yaml:</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>dnSTR:
+  # split bed into chunks to speed up dnSTR call
+  split_n: 400
+  dup_reg: &quot;ref/STR/GRCh38GenomicSuperDup.bed.gz&quot; # come with GRCh38GenomicSuperDup.bed.gz.tbi
+  hipstr:
+    enable: True
+    ref_panel: &quot;ref/STR/hg38_ver13.hipstr_9.bed&quot;
+    monstr_filter: &quot; --min-span-coverage 3 --min-supp-reads 3 &quot;
+    dumpstr_call_args: &gt;
+            --hipstr-min-call-DP 15
+            --hipstr-max-call-DP 1000
+            --hipstr-min-call-Q 0.9 --drop-filtered
+            --vcftype hipstr --hipstr-min-supp-reads 1
+            --hipstr-max-call-flank-indel 0.15
+            --hipstr-max-call-stutter 0.15
+  # gangstr:
+  #   enable: False
+  #   ref_panel: &quot;ref/STR/hg38_ver13.le9.bed&quot;
+  #   filter: &quot; --max-perc-encl-parent 0.05 --min-encl-match 0.9 --min-total-encl 10 --gangstr &quot;
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="d-call-dnsvs">
+<h3>D. Call dnSVs<a class="headerlink" href="#d-call-dnsvs" title="Link to this heading"></a></h3>
+<p>dnSVs are predicted jointly by two approaches in TriosCompass:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/brentp/smoove">smoove/lumpy-sv</a></p></li>
+<li><p>manta + GraphType2</p></li>
+</ul>
+<a class="reference external image-reference" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/TrioCompass_dnSV_dag.png?raw=True"><img alt="" src="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/TrioCompass_dnSV_dag.png?raw=True" /></a>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> Please note:</p>
+<ul>
+<li><p>Insertion is marked as translocation (i.e., “BND”) in <a class="reference external" href="https://github.com/arq5x/lumpy-sv/issues/160">smoove/lumpy-sv</a>.</p></li>
+<li><p>Bam files (not <em>cram</em>) are recognized by <em>lumpy-sv</em>.</p></li>
+<li><p>Sample order in the ped file matters.</p>
+<p>By default, we had built ped files in the order as: father, mother, and child. Accordingly, the same order is remained in the jointly genotyped SV VCF file. Therefore, we used the <em>bcftools</em> command to identify dnSV as below:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>bcftools<span class="w"> </span>view<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;GT[2]=&quot;het&quot; &amp;&amp; GT[1]=&quot;RR&quot; &amp;&amp; GT[0]=&quot;RR&quot; &#39;</span><span class="w"> </span>-O<span class="w"> </span>v<span class="w">  </span><span class="o">{</span>input<span class="o">}</span><span class="w"> </span>-o<span class="w"> </span><span class="o">{</span>output<span class="o">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="user-s-guides">
+<h1>User’s guides<a class="headerlink" href="#user-s-guides" title="Link to this heading"></a></h1>
+<section id="i-installation">
+<h2>I. Installation<a class="headerlink" href="#i-installation" title="Link to this heading"></a></h2>
+<ul>
+<li><p>Install singularity globally.</p></li>
+<li><p>Install conda and mamba.</p></li>
+<li><p>Create the workspace directory $WORKSPACE and change directory to $WORKSPACE.</p></li>
+<li><p>Git clone the TriosCompass_v2 repository.
+.. code-block:: bash</p>
+<blockquote>
+<div><p>git clone <a class="reference external" href="https://github.com/NCI-CGR/TriosCompass_v2.git">https://github.com/NCI-CGR/TriosCompass_v2.git</a></p>
+</div></blockquote>
+</li>
+<li><p>Create new conda environment to run Snakemake workflow
+.. code-block:: bash</p>
+<blockquote>
+<div><p>mamba env create -f TriosCompass_v2/environment.yaml</p>
+</div></blockquote>
+</li>
+</ul>
+<p>Folder structure of your workspace is as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">$WORKSPACE</span>
+└──<span class="w"> </span>TriosCompass_v2
+</pre></div>
+</div>
+</section>
+<section id="ii-inputs">
+<h2>II. Inputs<a class="headerlink" href="#ii-inputs" title="Link to this heading"></a></h2>
+<section id="reference-genome">
+<h3>Reference genome<a class="headerlink" href="#reference-genome" title="Link to this heading"></a></h3>
+<p>User can put the reference genome any location under the folder $WORKSPACE and specify its relative location at config/config.yaml.</p>
+<p>For instance, we may put the hg38 human genome <em>Homo_sapiens_assembly38.fasta</em> under the folder $WORKSPACE/ref/.</p>
+<ul>
+<li><p>config/config.yaml</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>ref:
+  sequence: &quot;ref/Homo_sapiens_assembly38.fasta&quot;
+  build: &quot;hg38&quot;
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="preparation-of-the-callable-regions-of-dnms">
+<h3>Preparation of the callable regions of DNMs<a class="headerlink" href="#preparation-of-the-callable-regions-of-dnms" title="Link to this heading"></a></h3>
+<p>The interval file (in <em>bed</em> format) is to specify regions to call DNMs, which should be matched with the reference genome.  For instance, we used the file hg38.wgs_interval.bed for the reference genome <em>hg38</em>, which was converted from <em>resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list</em>. The latter is part of <a class="reference external" href="https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle">resource bundle hosted by the Broad Institute</a>. There are severals way to retrieve the interval file, for example, <a class="reference external" href="ftp://gsapubftp-anonymous&#64;ftp.broadinstitute.org/bundle/hg38/wgs_calling_regions.hg38.interval_list">ftp://gsapubftp-anonymous&#64;ftp.broadinstitute.org/bundle/hg38/wgs_calling_regions.hg38.interval_list</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">### Download calling region of hg38 from the Broad Institute</span>
+wget<span class="w"> </span>https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/wgs_calling_regions.hg38.interval_list<span class="w"> </span>-O<span class="w"> </span>ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list
+
+<span class="c1">### Then, convert the interval list to bed file using Picard</span>
+module<span class="w"> </span>load<span class="w"> </span>picard
+
+java<span class="w"> </span>-jar<span class="w"> </span><span class="nv">$PICARDJAR</span><span class="w"> </span>IntervalListToBed<span class="w"> </span>-I<span class="w"> </span>ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list<span class="w"> </span>-O<span class="w"> </span>ref/hg38.wgs_interval.bed
+</pre></div>
+</div>
+<p>Users can specify ref/hg38.wgs_interval.bed in config/config.yaml</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>call_dnm:
+  interval: &quot;ref/hg38.wgs_interval.bed&quot;
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="the-str-reference-panel-to-call-dnstrs">
+<h3>The STR reference panel to call dnSTRs<a class="headerlink" href="#the-str-reference-panel-to-call-dnstrs" title="Link to this heading"></a></h3>
+<p>We had developed joint call of dnSTR using both GangSTR and HipSTR, so we had prepared the same STR reference panels for both of the two programs.</p>
+<p>Both GangSTR and HipSTR use STRs specified in the STR reference panel, but with the different formats.  One paper suggested that there is good consistence between HipSTR and GangSTR.</p>
+<blockquote>
+<div><p>Oketch, J. W., Wain, L. V, Hollox, E. J., &amp; Hollox, E. (2022). A comparison of software for analysis of rare and common short tandem repeat (STR) variation using human genome sequences from clinical and population-based samples. 1–22. <a class="reference external" href="https://doi.org/10.1101/2022.05.25.493473">https://doi.org/10.1101/2022.05.25.493473</a></p>
+</div></blockquote>
+<p>We would like to have the STR genotypes predicted jointly by both of the two program, therefore we need create one common reference panel file for both of GangSTR and HipSTR.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">### Get the GangSTR reference panel</span>
+wget<span class="w"> </span>https://s3.amazonaws.com/gangstr/hg38/genomewide/hg38_ver13.bed.gz<span class="w"> </span>-O<span class="w"> </span>STR/hg38_ver13.bed.gz
+
+gzip<span class="w"> </span>-d<span class="w"> </span>STR/hg38_ver13.bed.gz
+
+<span class="c1">### reformat for HipSTR</span>
+awk<span class="w"> </span>-v<span class="w"> </span><span class="nv">OFS</span><span class="o">=</span><span class="s1">&#39;\t&#39;</span><span class="w"> </span><span class="s1">&#39;{print $1,$2,$3,$4,($3-$2+1)/$4,&quot;GangSTR_STR_&quot;NR,$5}&#39;</span><span class="w"> </span>STR/hg38_ver13.bed<span class="w">  </span>&gt;<span class="w">  </span>STR/hg38_ver13.hipstr.bed
+
+<span class="c1">### HipSTR cannot take STR with unit length &gt; 9 bp</span>
+awk<span class="w"> </span>-v<span class="w"> </span><span class="nv">OFS</span><span class="o">=</span><span class="s1">&#39;\t&#39;</span><span class="w"> </span><span class="s1">&#39;{if($4&lt;=9) print $0}&#39;</span><span class="w"> </span>STR/hg38_ver13.hipstr.bed<span class="w"> </span>&gt;<span class="w"> </span>STR/hg38_ver13.hipstr_9.bed
+
+<span class="c1">### We put the same length restrict to hg38_ver13.bed.gz, so that both of the two reference panels are consistent.</span>
+awk<span class="w"> </span>-v<span class="w"> </span><span class="nv">OFS</span><span class="o">=</span><span class="s1">&#39;\t&#39;</span><span class="w"> </span><span class="s1">&#39;{if($4&lt;=9) print $0}&#39;</span><span class="w"> </span>STR/hg38_ver13.bed<span class="w"> </span>&gt;<span class="w"> </span>STR/hg38_ver13.le9.bed
+</pre></div>
+</div>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span></p>
+<ul class="simple">
+<li><p>After manual curation, we chose to use <em>HipSTR</em> only for the dnSTR prediction.</p></li>
+<li><p>The STR reference panel is specified in config/config.yaml</p>
+<ul>
+<li><p>ref_panel: “ref/STR/hg38_ver13.hipstr_9.bed”</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="regions-excluded-in-dnstr-calling">
+<h3>Regions excluded in dnSTR calling<a class="headerlink" href="#regions-excluded-in-dnstr-calling" title="Link to this heading"></a></h3>
+<p>For the human genome hg38, the file GRCh38GenomicSuperDup.bed was obtained using the UCSC Table Browser (hg38.genomicSuperDups table).  It needs to be further sorted, compressed and indexed as shown below:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>bedtools<span class="w"> </span>sort<span class="w"> </span>-i<span class="w"> </span>GRCh38GenomicSuperDup.bed<span class="w"> </span><span class="p">|</span><span class="w"> </span>bgzip<span class="w"> </span>-c<span class="w"> </span>&gt;<span class="w"> </span>GRCh38GenomicSuperDup.bed.gz
+
+tabix<span class="w"> </span>-p<span class="w"> </span>bed<span class="w"> </span>GRCh38GenomicSuperDup.bed.gz
+</pre></div>
+</div>
+<ul>
+<li><p>The setting can also be customized in config/config.yaml</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>dnSTR:
+  # split bed into chunks to speed up dnSTR call
+  split_n: 400
+  dup_reg: &quot;ref/STR/GRCh38GenomicSuperDup.bed.gz&quot; # come with GRCh38GenomicSuperDup.bed.gz.tbi
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="regions-excluded-in-dnsv-calling">
+<h3>Regions excluded in dnSV calling<a class="headerlink" href="#regions-excluded-in-dnsv-calling" title="Link to this heading"></a></h3>
+<p>We used exclude.cnvnator_100bp.GRCh38.20170403.bed for regions to be excluded in dnSV calling, as suggested at <a class="reference external" href="https://github.com/brentp/smoove?tab=readme-ov-file#small-cohorts-n---40">brentp/smoove</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>https://raw.githubusercontent.com/hall-lab/speedseq/master/annotations/exclude.cnvnator_100bp.GRCh38.20170403.bed<span class="w"> </span>-O<span class="w"> </span>ref/exclude.cnvnator_100bp.GRCh38.20170403.bed
+</pre></div>
+</div>
+<ul>
+<li><p>Settings in config.yaml</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>dnSV:
+  enable: True
+  exclude_bed: &quot;ref/exclude.cnvnator_100bp.GRCh38.20170403.bed&quot;
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="resource-bundle-for-hg38">
+<h3>Resource bundle for hg38<a class="headerlink" href="#resource-bundle-for-hg38" title="Link to this heading"></a></h3>
+<p>After the installation of the above resource files required by TriosCompass to <em>ref/</em>, users may have the folder ref/ under $WORKSPACE as below:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">$WORKSPACE</span>/ref
+├──<span class="w"> </span>exclude.cnvnator_100bp.GRCh38.20170403.bed
+├──<span class="w"> </span>hg38.wgs_interval.bed
+├──<span class="w"> </span>Homo_sapiens_assembly38.fasta
+└──<span class="w"> </span>STR
+<span class="w">    </span>├──<span class="w"> </span>GRCh38GenomicSuperDup.bed.gz
+<span class="w">    </span>├──<span class="w"> </span>GRCh38GenomicSuperDup.bed.gz.tbi
+<span class="w">    </span>├──<span class="w"> </span>hg38_ver13.bed
+<span class="w">    </span>├──<span class="w"> </span>hg38_ver13.hipstr_9.bed
+<span class="w">    </span>└──<span class="w"> </span>hg38_ver13.le9.bed
+</pre></div>
+</div>
+<p>A resource bundle for hg38 is available at <a class="reference external" href="https://zenodo.org/uploads/13381196">here</a> as a reference for users of TriosCompass.</p>
+</section>
+<hr class="docutils" />
+<section id="fastq-and-bam-input-files">
+<h3>Fastq and BAM input files<a class="headerlink" href="#fastq-and-bam-input-files" title="Link to this heading"></a></h3>
+<p><a class="reference external" href="https://pep.databio.org/">PEP</a> is employed to import metadata of the NGS data, which can be either Fastq or BAM files. A PEP usually consists 3 files:</p>
+<ul class="simple">
+<li><p>One <em>yaml</em> file for the metadata.</p></li>
+<li><p>One <em>csv</em> file for the sample information.</p></li>
+<li><p>Another <em>yaml</em> (optional) to define schema to validate the metadata.</p></li>
+</ul>
+<section id="pep-example-for-fastq-input">
+<h4>PEP example for <em>fastq</em> input<a class="headerlink" href="#pep-example-for-fastq-input" title="Link to this heading"></a></h4>
+<ul>
+<li><p>config/fastq_pep.yaml</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>pep_version: 2.0.0
+sample_table: sample_fastq.csv
+
+# In manifest file, Sample_ID + Flowcell should be unique
+sample_modifiers:
+  append:
+    sample_name: &quot;sn&quot;
+  derive:
+    attributes: [sample_name]
+    sources:
+      sn: &quot;{SAMPLE_ID}_{FLOWCELL}&quot;
+</pre></div>
+</div>
+</li>
+<li><p>config/sample_fastq.csv</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>SAMPLE_ID,FLOWCELL,LANE,INDEX,R1,R2
+HG002,BH2JWTDSX5,1,CGGTTGTT-GTGGTATG,data/fq/HG002_NA24385_son_80X_R1.fq.gz,data/fq/HG002_NA24385_son_80X_R2.fq.gz
+HG003,BH2JWTDSX5,1,GCGTCATT-CAGACGTT,data/fq/HG003_NA24149_father_80X_R1.fq.gz,data/fq/HG003_NA24149_father_80X_R2.fq.gz
+HG004,BH2JWTDSX5,1,CTGTTGAC-ACCTCAGT,data/fq/HG004_NA24143_mother_80X_R1.fq.gz,data/fq/HG004_NA24143_mother_80X_R2.fq.gz
+</pre></div>
+</div>
+</li>
+<li><p>workflow/schemas/fastq_schema.yaml</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>description: A example schema for a pipeline.
+imports:
+  - http://schema.databio.org/pep/2.0.0.yaml
+  # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
+
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        SAMPLE_ID:
+          type: string
+          description: &quot;sample id&quot;
+        FLOWCELL:
+          type: string
+          description: &quot;Flowcell&quot;
+        INDEX:
+          type: string
+          description: &quot;Library index&quot;
+        LANE:
+          type: string
+          description: &quot;Lane number in flowcell&quot;
+          enum: [&quot;1&quot;, &quot;2&quot;]
+        R1:
+          type: string
+          description: &quot;path to the R1 fastq file&quot;
+        R2:
+          type: string
+          description: &quot;path to the R2 fastq file&quot;
+      required:
+        - FLOWCELL
+        - SAMPLE_ID
+        - INDEX
+        - R1
+        - R2
+</pre></div>
+</div>
+</li>
+</ul>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> In this example, 6 columns in the sample csv file are required: SAMPLE_ID, FLOWCELL, LANE, INDEX, R1, R2. Such information is mainly used to build RG (read group) tag in the bam file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@RG</span>    <span class="n">PL</span><span class="p">:</span><span class="n">ILLUMINA</span>    <span class="n">ID</span><span class="p">:{</span><span class="n">FLOWCELL</span><span class="p">}</span><span class="n">_</span><span class="p">{</span><span class="n">LANE</span><span class="p">}</span>    <span class="n">SM</span><span class="p">:{</span><span class="n">SAMPLE_ID</span><span class="p">}</span>    <span class="n">PU</span><span class="p">:{</span><span class="n">SAMPLE_ID</span><span class="p">}</span><span class="n">_</span><span class="p">{</span><span class="n">FLOWCELL</span><span class="p">}</span>    <span class="n">LB</span><span class="p">:{</span><span class="n">SAMPLE_ID</span><span class="p">}</span><span class="n">_</span><span class="p">{</span><span class="n">INDEX</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Users may put dummy data if some of the information is not available, and {SAMPLE_ID} needs not to be unique in the sample table (as some samples might be sequenced in multiple flow cells to meet the coverage requirement).  Nevertheless, the combination of {SAMPLE_ID} and {FLOWCELL} must be unique.</p>
+<p>Users may put additional meta information in the sample csv file, which, however, will be ignored by TriosCompass.</p>
+</section>
+<section id="pep-example-for-bam-input">
+<h4>PEP example for <em>bam</em> input<a class="headerlink" href="#pep-example-for-bam-input" title="Link to this heading"></a></h4>
+<p>The essential information for bam input is the sample id and the bam file location. Therefore, the metadata is much simpler compared to <em>fastq</em> input.</p>
+<ul>
+<li><p>config/bam_pep.yaml</p>
+<blockquote>
+<div><p><a href="#id2"><span class="problematic" id="id3">``</span></a><a href="#id4"><span class="problematic" id="id5">`</span></a>yml
+pep_version: 2.0.0
+sample_table: sample_bam.csv</p>
+</div></blockquote>
+</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>sample_modifiers:
+  append:
+    sample_name: &quot;sn&quot;
+  derive:
+    attributes: [sample_name]
+    sources:
+      sn: &quot;{SAMPLE_ID}&quot;
+```
+</pre></div>
+</div>
+<ul>
+<li><p>config/sample_bam.csv</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>SAMPLE_ID,BAM
+HG002,sorted_bam/HG002_NA24385_son_80X.bam
+HG003,sorted_bam/HG003_NA24149_father_80X.bam
+HG004,sorted_bam/HG004_NA24143_mother_80X.bam
+</pre></div>
+</div>
+</li>
+<li><p>workflow/schemas/bam_schema.yaml</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>description: A example schema for a pipeline.
+imports:
+  - http://schema.databio.org/pep/2.0.0.yaml
+  # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
+
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        SAMPLE_ID:
+          type: string
+          description: &quot;sample id&quot;
+        BAM:
+          type: string
+          description: &quot;path to the bam file&quot;
+      required:
+        - SAMPLE_ID
+        - BAM
+</pre></div>
+</div>
+</li>
+</ul>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> {SAMPLE_ID} should be unique and matched with the RG tag in the bam file in <em>TriosCompass</em>.  If the bam file has <em>RG</em> different from {SAMPLE_ID}, users may activate <em>reset_RG</em> option so as to update all <em>RG</em> tag properly in the bam files.</p>
+<ul>
+<li><p>config/config.yaml
+.. code-block:: yml</p>
+<blockquote>
+<div><p>bam_input:
+reset_RG: True</p>
+</div></blockquote>
+</li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="pedigree-files">
+<h3>Pedigree files<a class="headerlink" href="#pedigree-files" title="Link to this heading"></a></h3>
+<p>In addition to the NGS input data, another important input is pedigree files to define trios.</p>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> There are several requirements about pedigree files from TriosCompass:</p>
+<ul>
+<li><p>Each trio is specified by one pedigree file;</p></li>
+<li><p>All pedigree files are named by the unique family ID, with “.ped” as the file extension, under the directory which is specified by config/config.yaml:
+.. code-block:: yml</p>
+<blockquote>
+<div><p>ped_dir: “ped”</p>
+</div></blockquote>
+</li>
+<li><p>Rows for the trio members are in the order <em>father-mother-child</em> in the pedigree file.</p></li>
+<li><p>Trio member identifiers are matched with {SAMPLE_ID} as defined in the sample CSV filem and also matched with the RG tags of the bam files.</p></li>
+</ul>
+<p>Below is an example of the pedigree file for the GIAB AJ family:</p>
+<ul>
+<li><p>ped/AJ.ped</p>
+<div class="highlight-tab notranslate"><div class="highlight"><pre><span></span>AJ      HG003   0       0       1       1
+AJ      HG004   0       0       2       1
+AJ      HG002   HG003   HG004   1       1
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="example-folder-structure-of-the-final-workspace">
+<h3>Example folder structure of the final workspace<a class="headerlink" href="#example-folder-structure-of-the-final-workspace" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fastq/<span class="w"> </span><span class="c1"># for fastq input example</span>
+├──<span class="w"> </span>HG002_NA24385_son_80X_R1.fq.gz
+├──<span class="w"> </span>HG002_NA24385_son_80X_R2.fq.gz
+├──<span class="w"> </span>HG003_NA24149_father_80X_R1.fq.gz
+├──<span class="w"> </span>HG003_NA24149_father_80X_R2.fq.gz
+├──<span class="w"> </span>HG004_NA24143_mother_80X_R1.fq.gz
+└──<span class="w"> </span>HG004_NA24143_mother_80X_R2.fq.gz
+sorted_bam/<span class="w"> </span><span class="c1"># for bam input example</span>
+├──<span class="w"> </span>HG002_NA24385_son_80X.bam
+├──<span class="w"> </span>HG002_NA24385_son_80X.bam.bai
+├──<span class="w"> </span>HG003_NA24149_father_80X.bam
+├──<span class="w"> </span>HG003_NA24149_father_80X.bam.bai
+├──<span class="w"> </span>HG004_NA24143_mother_80X.bam
+└──<span class="w"> </span>HG004_NA24143_mother_80X.bam.bai
+ref/
+├──<span class="w"> </span>hg38.wgs_interval.bed
+├──<span class="w"> </span>Homo_sapiens_assembly38.fasta
+└──<span class="w"> </span>STR/
+ped/
+└──<span class="w"> </span>AJ.ped
+TriosCompass_v2
+├──<span class="w"> </span>config/
+├──<span class="w"> </span>data/
+├──<span class="w"> </span>environment.yaml
+├──<span class="w"> </span>img/
+├──<span class="w"> </span>LICENSE
+├──<span class="w"> </span>README.md
+└──<span class="w"> </span>workflow/
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="iii-configure-files">
+<h2>III. Configure files<a class="headerlink" href="#iii-configure-files" title="Link to this heading"></a></h2>
+<p>We have introduced PEP yaml file to <a class="reference external" href="#fastq-and-bam-input-files">specify the NGS input files of TriosCompass</a>. There are two other yaml files, which play essential roles in Snakemake workflows:</p>
+<ul class="simple">
+<li><p>the profile config.yaml file</p></li>
+<li><p>the configfile config.yaml file</p></li>
+</ul>
+<section id="profile-config-yaml">
+<h3>profile/config.yaml<a class="headerlink" href="#profile-config-yaml" title="Link to this heading"></a></h3>
+<p>The profile config.yaml file has <a class="reference external" href="https://snakemake.readthedocs.io/en/v7.3.7/executing/cli.html#profiles">multiple function roles</a> in <em>Snakemake</em>:</p>
+<ul class="simple">
+<li><p>Define computing resources and threads.</p></li>
+<li><p>Specify command-line options required to start Snakemake workflow properly.</p></li>
+<li><p>Submit Snakemake jobs to the cluster.</p></li>
+</ul>
+<p>We have provided <a class="reference external" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/workflow/profiles/slurm/config.yaml">an example profile</a> to launch TriosCompass in a Slurm cluster.</p>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> To separate the workspace from TriosCompass, we set $WORKSPACE as the working directory, where TriosCompass_v2 (the locally cloned repo) is a sub-folder of $WORKSPACE.  Accordingly, the command below is recommended:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--profile<span class="w"> </span>TriosCompass_v2/workflow/profiles/slurm<span class="w"> </span>--configfile<span class="w"> </span>TriosCompass_v2/config/config.yaml
+</pre></div>
+</div>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> There is a bug in the release of Snakemake we are testing (Version 7.3.7), so that the section <em>set-threads</em> does not work properly in the profile config.yaml file. We had used <a class="reference external" href="#configconfigyaml">config/config.yaml</a> as a work-around solution to specify threads for each Snakemake <em>rule</em>.</p>
+</section>
+<hr class="docutils" />
+<section id="id6">
+<h3>config/config.yaml<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<p><a class="reference external" href="https://snakemake.readthedocs.io/en/v7.3.7/snakefiles/configuration.html?highlight=configfile#configuration">This configure file</a> is for users to customized TriosCompass.  In particular, users may it to enable (or disable) certain optional components of TriosCompass. Most of sections of config.yaml have been already introduced in <a class="reference external" href="#ii-inputs">the section *Inputs*</a>.  <a class="reference external" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/config/config.yaml">A complete example of config/config.yaml</a> has been provided for users as a template.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="v-run-trioscompass">
+<h2>V. Run TriosCompass<a class="headerlink" href="#v-run-trioscompass" title="Link to this heading"></a></h2>
+<p>A check list to launch TriosCompass</p>
+<ul class="simple">
+<li><p>[ ] Install singularity to the front-end nodes and working nodes of the cluster.</p></li>
+<li><p>[ ] Create new directory as work space and change directory to it.</p></li>
+<li><p>[ ] Git clone TriosCompass_v2.</p></li>
+<li><p>[ ] Install conda/mamba and activate the conda environment <em>TriosCompassV2</em> using TriosCompass_v2/environment.txt</p></li>
+<li><p>[ ] Prepare and install resource bundle for the specific reference genome.</p></li>
+<li><p>[ ] Configure profile settings to submit jobs to the cluster.</p></li>
+<li><p>[ ] Move NGS input data under the work space.</p>
+<ul>
+<li><p>[ ] Prepare the proper PEP files for the NGS input.</p></li>
+</ul>
+</li>
+<li><p>[ ] Configure TriosCompass_v2/config/config.yaml for the new run.</p></li>
+</ul>
+<p>Finally, the command can be launched in this way:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">### Assume $WORKSPACE is your working directory</span>
+<span class="nb">cd</span><span class="w"> </span><span class="nv">$WORKSPACE</span>
+conda<span class="w"> </span>activate<span class="w"> </span>TriosCompassV2
+module<span class="w"> </span>load<span class="w"> </span>singularity<span class="w"> </span><span class="c1"># or load singularity is available in alternative way</span>
+
+mkdir<span class="w"> </span>-p<span class="w"> </span>TMP
+<span class="nb">export</span><span class="w"> </span><span class="nv">TMPDIR</span><span class="o">=</span><span class="nv">$WORKSPACE</span>/TMP
+
+snakemake<span class="w">  </span>--profile<span class="w"> </span>TriosCompass_v2/workflow/profiles/slurm<span class="w"> </span>--configfile<span class="w"> </span>TriosCompass_v2/config/config.yaml
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="iv-outputs">
+<h2>IV. Outputs<a class="headerlink" href="#iv-outputs" title="Link to this heading"></a></h2>
+<p>The location of the <em>output</em> directory is also specified by config/config.yaml:</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>output_dir: &quot;output&quot;
+</pre></div>
+</div>
+<p>Most of the output from TriosCompass will be saved to $WORKSPACE/output based on the configure setting above. Under the output folder, there are dozens of sub-folders for the (intermediate) outputs of TriosCompass.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span><span class="nv">$WORKSPACE</span>/output/
+benchmark<span class="w">               </span>dnSV<span class="w">               </span>gatk_genotype_gvcf_pb<span class="w">  </span>manta_sv<span class="w">       </span>splitted_panel
+call_JIGV<span class="w">               </span>dnSV_summary<span class="w">       </span>gatkhc_pb<span class="w">              </span>merge_monstr<span class="w">   </span>svimmer
+collectmultiplemetrics<span class="w">  </span>dumpstr_call<span class="w">       </span>glnexus<span class="w">                </span>merge_ped<span class="w">      </span>trio_manta_list
+collectwgsmetrics<span class="w">       </span>dumpstr_locus<span class="w">      </span>graphtyper<span class="w">             </span>monstr<span class="w">         </span>vizaln
+deepvariant_pb<span class="w">          </span>flagstat<span class="w">           </span>graphtyper_filter<span class="w">      </span>monstr_filter
+dnm_vcf<span class="w">                 </span>gatk_cgp<span class="w">           </span>hipstr<span class="w">                 </span>phase_DNMs
+dnm_vcf_summary<span class="w">         </span>gatk_combine_gvcf<span class="w">  </span>joint_dnSV<span class="w">             </span>slivar
+dnSTR_summary<span class="w">           </span>GATK_DV<span class="w">            </span>manta<span class="w">                  </span>smoove
+</pre></div>
+</div>
+<p>There are 4 major outputs from TriosCompass:</p>
+<ul class="simple">
+<li><p>MultiQC reports</p></li>
+<li><p>DNM predictions, parental origins and visualizations</p></li>
+<li><p>dnSTR predictions and visulizations</p></li>
+<li><p>dnSV predictions</p></li>
+</ul>
+<section id="multiqc-report">
+<h3>MultiQC report<a class="headerlink" href="#multiqc-report" title="Link to this heading"></a></h3>
+<p>The MultiQC report is a colletion of QC metrics of NGS data.</p>
+<p>Location of MultiQC output is specified by config[“multiqc”][“output_dir”]:</p>
+<div class="highlight-yml notranslate"><div class="highlight"><pre><span></span>multiqc:
+  enable: True
+  output_dir: &quot;MultiQC_output&quot;
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tree<span class="w"> </span>MultiQC_output/
+MultiQC_output/
+├──<span class="w"> </span>multiqc_data
+│<span class="w">   </span>├──<span class="w"> </span>multiqc_citations.txt
+│<span class="w">   </span>├──<span class="w"> </span>multiqc_data.json
+│<span class="w">   </span>├──<span class="w"> </span>multiqc_general_stats.txt
+│<span class="w">   </span>├──<span class="w"> </span>multiqc.log
+│<span class="w">   </span>├──<span class="w"> </span>multiqc_sources.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_alignment_readlength_plot.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_alignment_summary_Aligned_Bases.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_alignment_summary_Aligned_Reads.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_base_distribution_by_cycle__Adenine.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_base_distribution_by_cycle__Cytosine.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_base_distribution_by_cycle__Guanine.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_base_distribution_by_cycle__Thymine.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_base_distribution_by_cycle__Undetermined.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_gcbias_plot.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_insert_size_Counts.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_insert_size_Percentages.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_quality_by_cycle.txt
+│<span class="w">   </span>├──<span class="w"> </span>picard_quality_score_distribution.txt
+│<span class="w">   </span>├──<span class="w"> </span>samtools-flagstat-dp_Percentage_of_total.txt
+│<span class="w">   </span>├──<span class="w"> </span>samtools-flagstat-dp_Read_counts.txt
+│<span class="w">   </span>├──<span class="w"> </span>samtools-idxstats-mapped-reads-plot_Normalised_Counts.txt
+│<span class="w">   </span>├──<span class="w"> </span>samtools-idxstats-mapped-reads-plot_Observed_over_Expected_Counts.txt
+│<span class="w">   </span>├──<span class="w"> </span>samtools-idxstats-mapped-reads-plot_Raw_Counts.txt
+│<span class="w">   </span>└──<span class="w"> </span>samtools-idxstats-xy-plot.txt
+└──<span class="w"> </span>multiqc.html
+</pre></div>
+</div>
+</section>
+<section id="dnm-predictions-parental-origins-and-visualizations">
+<h3>DNM predictions, parental origins and visualizations<a class="headerlink" href="#dnm-predictions-parental-origins-and-visualizations" title="Link to this heading"></a></h3>
+<section id="dnm-predictions">
+<h4>DNM predictions<a class="headerlink" href="#dnm-predictions" title="Link to this heading"></a></h4>
+<p>The final DNM candidates are predicted by both DV and HC.  And we extract the variant information from DV output and save it as {output}/dnm_vcf/{fam}.dnm.vcf.gz, where {output} and {fam} are placeholders for the output directory and trio ID, respecitively.</p>
+<p>Besides, the counts of DNMs for all trios are summarised in the file {output}/dnm_vcf_summary/DNM_summary.txt.</p>
+</section>
+<section id="parental-origins-of-dnms">
+<h4>Parental origins of DNMs<a class="headerlink" href="#parental-origins-of-dnms" title="Link to this heading"></a></h4>
+<p>The output of parental origins of DNMs is a tab-delimited test file, availalbe at <em>{output}/phase_DNMs/{fam}.parental_origin.tab</em> .</p>
+<p>The format of this output is <a class="reference external" href="#b-phase-dnms">as described</a>, and most of users may just focus on first two columns of the file.</p>
+</section>
+<section id="jigv-visulization">
+<h4>JIGV visulization<a class="headerlink" href="#jigv-visulization" title="Link to this heading"></a></h4>
+<p><a class="reference external" href="https://github.com/brentp/jigv">JIGV</a> snapshots have generated for each DNM, available as <em>{output}/call_JIGV/{fam}.JIGV.html</em> .</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="dnstr-predictions-and-visulizations">
+<h3>dnSTR predictions and visulizations<a class="headerlink" href="#dnstr-predictions-and-visulizations" title="Link to this heading"></a></h3>
+<section id="dnstr-predictions-from-hipstr-monstr">
+<h4>dnSTR predictions from HipSTR/MonSTR<a class="headerlink" href="#dnstr-predictions-from-hipstr-monstr" title="Link to this heading"></a></h4>
+<p>The dnSTRs predicted by HipSTR/MonSTR are available as <em>{output}/monstr_filter/hipstr.filtered.tab</em> . The output format of the MonSTR prediction is described <a class="reference external" href="https://github.com/gymreklab/STRDenovoTools?tab=readme-ov-file#outprefixall_mutationstab">here</a>.</p>
+</section>
+<section id="dnstr-visulizations-by-vizaln">
+<h4>dnSTR visulizations by <em>VizAln</em><a class="headerlink" href="#dnstr-visulizations-by-vizaln" title="Link to this heading"></a></h4>
+<p>We have also generated visulization for dnSTR using <a class="reference external" href="https://github.com/tfwillems/HipSTR#alignment-visualization">VizAln (from HipSTR package)</a>. Each dnSTR of one trio has its own html file under <em>{output}/vizaln/{fam}/hipstr/variants/</em>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tree<span class="w"> </span>output/vizaln/t0311/hipstr
+output/vizaln/t0311/hipstr
+├──<span class="w"> </span>DONE
+└──<span class="w"> </span>variants
+<span class="w">    </span>├──<span class="w"> </span>chr10_103294239.dnm
+<span class="w">    </span>├──<span class="w"> </span>chr10_103294239.html
+<span class="w">    </span>├──<span class="w"> </span>chr10_34375054.dnm
+<span class="w">    </span>├──<span class="w"> </span>chr10_34375054.html
+<span class="w">    </span>├──<span class="w"> </span>chr10_46899557.dnm
+<span class="w">    </span>├──<span class="w"> </span>chr10_46899557.html
+<span class="w">    </span>├──<span class="w"> </span>chr10_50707597.dnm
+<span class="w">    </span>├──<span class="w"> </span>...
+</pre></div>
+</div>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> The “.dnm” files are dummy files for the use of Snakemake workflow in the process of scatter-gather dnSTRs.</p>
+<section id="example-of-vizaln-realignment-of-the-dnm-started-at-chr6-38571975-in-the-family-t0612">
+<h5>Example of VizAln realignment of the DNM (started at chr6:38571975) in the family <em>t0612</em><a class="headerlink" href="#example-of-vizaln-realignment-of-the-dnm-started-at-chr6-38571975-in-the-family-t0612" title="Link to this heading"></a></h5>
+<p>An example of VizAln realignment is available <a class="reference external" href="https://htmlpreview.github.io/?https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/chr6_38571975.html">here</a>.</p>
+<p>In this particular example, the identifiers of child, father and mother are SC260721, SC260720 and SC260670, respectively, from the family <em>t0612</em>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>ped_files/t0612.ped
+t0612<span class="w">   </span>SC260720<span class="w">        </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span><span class="m">1</span><span class="w">       </span><span class="m">1</span>
+t0612<span class="w">   </span>SC260670<span class="w">        </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span><span class="m">2</span><span class="w">       </span><span class="m">1</span>
+t0612<span class="w">   </span>SC260721<span class="w">        </span>SC260720<span class="w">        </span>SC260670<span class="w">        </span><span class="m">2</span><span class="w">       </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>From <a class="reference external" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/hipstr.filtered.tab">the MonSTR prediction</a>, we have:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>chrom</p></th>
+<th class="head"><p>pos</p></th>
+<th class="head"><p>period</p></th>
+<th class="head"><p>child</p></th>
+<th class="head"><p>newallele</p></th>
+<th class="head"><p>mutsize</p></th>
+<th class="head"><p>child_gt</p></th>
+<th class="head"><p>mat_gt</p></th>
+<th class="head"><p>pat_gt</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>38571975</p></td>
+<td><p>2</p></td>
+<td><p>SC260721</p></td>
+<td><p>13</p></td>
+<td><p>2</p></td>
+<td><p>13,13</p></td>
+<td><p>11,13</p></td>
+<td><p>11,11</p></td>
+</tr>
+</tbody>
+</table>
+<p>It suggests there is an de novo tandem repeat mutation started at the position chr6:38571975 in the subject SC260721.  The unit length of repeat (period) is 2, and has 13 repeat units (newallele) in the child <em>SC260721</em>, which is 2 more than the reference genome (mutsize; i.e., the wild type genotype is [11,11]).  The MonSTR prediction indicated that the genotypes of child, father and mother are [13,13], [11,11] and [11,13], respectively.</p>
+<p>In the VizAln html page, we have genotypes of the family members marked in different ways.  For example, “SC260670: 0|4” means one allele is wild type and another is 4 bp insertion. Negative values stands for deletion (read <a class="reference external" href="https://github.com/tfwillems/HipSTR/tree/master#alignment-visualization">this</a> for some details).  Therefore, “SC260721: 4|4”, “SC260720: 0|0” and  “SC260670: 0|4” are well matched with the MonSTR prediction: [13,13], [11,11] and [11,13] for child, father and mother,respectively,  in this example.</p>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> Please note that the alignments from VizAln were arranged by the alphabet order of the sample identifiers.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="dnsv-predictions">
+<h3>dnSV predictions<a class="headerlink" href="#dnsv-predictions" title="Link to this heading"></a></h3>
+<p>As aforementioned, dnSVs are jointly predicted by <em>Smoove</em> and <em>Manta/TypeGraph2</em>.  The results are merged VCF files generated by <em>SURVIVOR</em>: {output}/joint_dnSV/{fam}.dnSV.vcf:</p>
+<ul>
+<li><p>output/joint_dnSV/t0311.dnSV.vcf</p>
+<div class="highlight-tab notranslate"><div class="highlight"><pre><span></span>#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  SC501095        SC501095_1
+chr18   55923597        chr18:55923597:OG       N       ]chr11:13001662]N    239     PASS    SUPP=2;SUPP_VEC=11;SVLEN=0;SVTYPE=TRA;SVMETHOD=SURVIVOR1.0.7;CHR2=chr11;END=13001651;CIPOS=-107,0;CIEND=0,11;STRANDS=++ GT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO     0/1:NA:42921828:0,13:--:239:TRA:668279_2:NA:NA:chr18_55923490-chr11_13001662    0/1:NA:42921946:0,0:++:217:TRA:chr18_55923597_OG:NA:NA:chr18_55923597-chr11_13001651
+chr20   37068816        chr20:37068816:OG       N       ]chr11:5933976]N    255     PASS    SUPP=2;SUPP_VEC=11;SVLEN=0;SVTYPE=TRA;SVMETHOD=SURVIVOR1.0.7;CHR2=chr11;END=5933971;CIPOS=-32,0;CIEND=0,5;STRANDS=++    GT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO     0/1:NA:31134808:0,20:-+:80:TRA:668295_2:NA:NA:chr20_37068784-chr11_5933976      0/1:NA:31134845:0,0:++:255:TRA:chr20_37068816_OG:NA:NA:chr20_37068816-chr11_5933971
+</pre></div>
+</div>
+</li>
+</ul>
+<p><span class="raw-html-m2r"><font size="+3">&#128214;</font></span> Two sample columns are available for the child (e.g.,SC501095) in the example vcf output: the first one is from <em>Smoove</em> and the other is from <em>Manta/TypeGraph2</em></p>
+<p>Besides, a summary of dnSV count is available as <em>{output}/dnSV_summary/dnSV_summary.txt</em>.</p>
+</section>
+<hr class="docutils" />
+<section id="snakemake-report-for-trioscompass">
+<h3>Snakemake report for TriosCompass<a class="headerlink" href="#snakemake-report-for-trioscompass" title="Link to this heading"></a></h3>
+<p><a class="reference external" href="https://snakemake.readthedocs.io/en/v7.3.7/snakefiles/reporting.html">Reports</a> is a very useful feature of Snakemake. We utilized this feature to package TriosCompass outputs into a zip file and index them with the HTMP page.</p>
+<p>Below is an example command to generate reports for TriosCompass:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w">  </span>--report<span class="w"> </span>TriosCompass_full_report.zip<span class="w"> </span>--profile<span class="w"> </span>TriosCompass_v2/workflow/profiles/slurm<span class="w"> </span>--configfile<span class="w"> </span>TriosCompass_v2/config/config.yaml
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>A snapshot of the report HTML page.</p></li>
+</ul>
+<a class="reference external image-reference" href="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/README_2024-09-06-11-43-08.png?raw=true"><img alt="" src="https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/README_2024-09-06-11-43-08.png?raw=true" /></a>
+<hr class="docutils" />
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to TriosCompass’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Wei Zhu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
