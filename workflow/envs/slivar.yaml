@@ -1,7 +1,0 @@
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - slivar ==0.2.8
-  - bcftools 
-  - tabix

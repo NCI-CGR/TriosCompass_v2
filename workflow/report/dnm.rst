@@ -1,1 +1,0 @@
-De novo mutations `called by both DeepVariant and GATK HaptotypeCaller https://github.com/NCI-CGR/TriosCompass_v2?tab=readme-ov-file#dnm-predictions`_.
