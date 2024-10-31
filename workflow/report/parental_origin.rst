@@ -1,0 +1,1 @@
+The output of Parental origin prediction of DNMs is a tab-delimited text file.  The column descriptions are available at `here <https://github.com/NCI-CGR/TriosCompass_v2?tab=readme-ov-file#b-phase-dnms>`_ 

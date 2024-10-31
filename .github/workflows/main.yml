@@ -1,0 +1,77 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+
+jobs:
+  Formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Formatting
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_SNAKEMAKE_SNAKEFMT: true
+
+  Linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: create conda env
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        mamba-version: "*"
+        channels: conda-forge,bioconda,defaults
+        auto-activate-base: false
+        activate-environment: TriosCompassV2
+        environment-file: environment.yaml
+
+    - name: check env
+      shell: bash -el {0}
+      run: |
+        conda info
+        pip list | grep peds
+        which snakemake
+    
+    - name: Lint workflow alternatively
+      shell: bash -el {0}
+      run: |
+        snakemake  --lint --configfile config/config.yaml 
+        
+    - name: Lint workflow
+      uses: snakemake/snakemake-github-action@v1.24.0
+      with:
+        directory: .
+        snakefile: workflow/Snakefile
+        args: "--lint"
+
+  Testing:
+    runs-on: ubuntu-latest
+    needs: 
+      - Linting
+      - Formatting
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Test workflow
+      uses: snakemake/snakemake-github-action@v1.24.0
+      with:
+        directory: .test
+        snakefile: workflow/Snakefile
+        args: "--use-conda --show-failed-logs --cores 3 --conda-cleanup-pkgs cache --all-temp"
+
+    - name: Test report
+      uses: snakemake/snakemake-github-action@v1.24.0
+      with:
+        directory: .test
+        snakefile: workflow/Snakefile
+        args: "--report report.zip"
