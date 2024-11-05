@@ -42,10 +42,10 @@ call_dnm:
   interval: "ref/hg38.wgs_interval.bed"
   dv:
     min_gq: 3
-    min_dp: 20
+    min_dp: 20 # this is for 80X
   hc:
     min_gq: 20
-    min_dp: 30
+    min_dp: 30 # this is for 80X
 
 phasing:
   window_size: 10000
@@ -100,6 +100,7 @@ threads:
   svimmer: 4
   graphtyper: 40
   smoove: 20
+  replace_rg: 4
 
   
 
