@@ -59,4 +59,5 @@ if config["bam_qc"]["collectmultiplemetrics"]["enable"]:
         '''
     
     optional_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt", subj = subjs)) 
-    qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}", subj = subjs))
+    # qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}", subj = subjs))
+    qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt", subj = subjs))
