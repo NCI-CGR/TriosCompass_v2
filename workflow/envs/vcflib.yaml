@@ -2,6 +2,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - vcflib
+  - vcflib ==1.0.3
   - bcftools 
   - tabix
+  - tabixpp ==1.1.0
