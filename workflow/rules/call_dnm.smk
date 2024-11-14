@@ -11,8 +11,12 @@ rule call_dnm_dv:
     benchmark:
         output_dir +"/benchmark/slivar/DV_{fam}.tsv"
     params: 
-        min_gq=config["call_dnm"]["dv"]["min_gq"], 
-        min_dp=config["call_dnm"]["dv"]["min_dp"]
+        # params: min_gq=20, min_parent_gq=20, min_dp=20, max_dp=250
+        min_00_gq=config["call_dnm"]["dv"]["min_00_gq"], 
+        min_01_gq=config["call_dnm"]["dv"]["min_01_gq"], 
+        min_dp=config["call_dnm"]["dv"]["min_dp"],
+        max_dp=config["call_dnm"]["dv"]["max_dp"],
+        max_err=config["call_dnm"]["max_err"]
     conda: "../envs/slivar.yaml"
     shell: """
         
@@ -24,23 +28,53 @@ rule call_dnm_dv:
             --trio "denovo:( \
                 ( \
                     (variant.CHROM == 'chrX' && kid.sex=='male') && \
-                    kid.hom_alt && kid.AB > 0.98  \
+                    kid.PL[0]>20 && kid.PL[1]>20 && kid.PL[2]==0 && kid.AB > 0.98  \
                 ) || \
                 ( \
                     (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
-                    kid.het && kid.AB > 0.25 && kid.AB < 0.75 \
+                    kid.PL[0]>20 && kid.PL[1]==0 && kid.PL[2]>20 && kid.AB > 0.25 && kid.AB < 0.75 \
                 ) \
                 ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
-                mom.hom_ref && dad.hom_ref \
-                    && (mom.AD[1] + dad.AD[1]) <= 5 \
-                    && kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq} \
-                    && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0))"
+                (kid.AD[0]+kid.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+                mom.PL[0]==0 && mom.PL[1]>20 && mom.PL[2]>20 && dad.PL[0]==0 && dad.PL[1]>20 && dad.PL[2]>20 \
+                    &&  (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < {params.max_err} \
+                    &&  (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < {params.max_err} \
+                    && kid.GQ >= {params.min_01_gq} && mom.GQ >= {params.min_00_gq} && dad.GQ >= {params.min_00_gq} \
+                    && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (mom.AD[0]+mom.AD[1]) < {params.max_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) && (dad.AD[0]+dad.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) "
         bgzip -c {output.vcf} > {output.tmp}
         tabix {output.tmp}
         bcftools view -R {input.interval} {output.tmp} -O z -o {output.gz}
         tabix {output.gz}
     """
 
+    #     shell: """
+        
+    #     slivar expr  \
+    #         --vcf {input.vcf} \
+    #         --ped  {input.ped} \
+    #         --pass-only \
+    #         --out-vcf {output.vcf} \
+    #         --trio "denovo:( \
+    #             ( \
+    #                 (variant.CHROM == 'chrX' && kid.sex=='male') && \
+    #                 kid.hom_alt && kid.AB > 0.98  \
+    #             ) || \
+    #             ( \
+    #                 (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
+    #                 kid.het && kid.AB > 0.25 && kid.AB < 0.75 \
+    #             ) \
+    #             ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+    #             (kid.AD[0]+kid.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+    #             mom.hom_ref && dad.hom_ref \
+    #                 &&  (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < {params.max_err} \
+    #                 &&  (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < {params.max_err} \
+    #                 && kid.GQ >= {params.min_01_gq} && mom.GQ >= {params.min_00_gq} && dad.GQ >= {params.min_00_gq} \
+    #                 && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (mom.AD[0]+mom.AD[1]) < {params.max_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) && (dad.AD[0]+dad.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) "
+    #     bgzip -c {output.vcf} > {output.tmp}
+    #     tabix {output.tmp}
+    #     bcftools view -R {input.interval} {output.tmp} -O z -o {output.gz}
+    #     tabix {output.gz}
+    # """
 
 ### Call dnm from gatk
 use rule  call_dnm_dv as call_dnm_gatk with:
@@ -53,8 +87,11 @@ use rule  call_dnm_dv as call_dnm_gatk with:
        tmp = temp(output_dir +"/slivar/GATK_{fam}.tmp.vcf.gz"),
        gz = output_dir +"/slivar/GATK_{fam}.dnm.vcf.gz"
     params: 
-        min_gq=config["call_dnm"]["hc"]["min_gq"],
-        min_dp=config["call_dnm"]["hc"]["min_dp"]
+        min_00_gq=config["call_dnm"]["hc"]["min_00_gq"], 
+        min_01_gq=config["call_dnm"]["hc"]["min_01_gq"], 
+        min_dp=config["call_dnm"]["hc"]["min_dp"],
+        max_dp=config["call_dnm"]["hc"]["max_dp"],
+        max_err=config["call_dnm"]["max_err"]
     benchmark:
         output_dir +"/benchmark/slivar/GATK_{fam}.tsv"
 

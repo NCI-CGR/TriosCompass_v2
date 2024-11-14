@@ -40,12 +40,17 @@ deepvariant:
 
 call_dnm:
   interval: "ref/hg38.wgs_interval.bed"
+  max_err: 0.02 # max AF for parenets (AD[1]/AD) 
   dv:
-    min_gq: 3
+    min_00_gq: 0
+    min_01_gq: 0
     min_dp: 10
+    max_dp: 100
   hc:
-    min_gq: 20
-    min_dp: 15
+    min_00_gq: 0
+    min_01_gq: 0
+    min_dp: 10
+    max_dp: 100
 
 phasing:
   window_size: 10000
@@ -61,7 +66,7 @@ dnSTR:
     ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
     monstr_filter: " --min-span-coverage 3 --min-supp-reads 3 "
     dumpstr_call_args: >
-            --hipstr-min-call-DP 15 
+            --hipstr-min-call-DP 15  
             --hipstr-max-call-DP 1000 
             --hipstr-min-call-Q 0.9 --drop-filtered 
             --vcftype hipstr --hipstr-min-supp-reads 1 
