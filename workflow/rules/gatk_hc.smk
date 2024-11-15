@@ -66,13 +66,14 @@ rule gatk_genotype_gvcf_pb:
         tabix {output.gz}
     """
 
+# drop -ped {input.ped} --skip-population-priors
 rule gatk_cgp:
     input: 
         gvcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz",
-        ped=config["ped_dir"]+"/{fam}.ped",
+        # ped=config["ped_dir"]+"/{fam}.ped",
         ref=genome
     output: 
-        gvcf=output_dir+"/gatk_cgp/{fam}.cgp.g.vcf.gz",
+        # gvcf=output_dir+"/gatk_cgp/{fam}.cgp.g.vcf.gz",
         norm=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
     threads: config["threads"]["gatk_cgp"]
     conda: "../envs/gatk4.yaml"
@@ -80,9 +81,9 @@ rule gatk_cgp:
         output_dir + "/benchmark/gatk_cgp/{fam}.tsv"
     resources: 
     shell: """
-        gatk CalculateGenotypePosteriors \
-            -V {input.gvcf} \
-            -ped {input.ped} --skip-population-priors \
-            -O {output.gvcf} 
-        bcftools norm -f {input.ref} -m -  {output.gvcf} | bcftools view -i'ALT!="*"' -Oz -o {output.norm}
+        # gatk CalculateGenotypePosteriors \
+        #     -V {input.gvcf} \
+        #     -O {output.gvcf} 
+            
+        bcftools norm -f {input.ref} -m -  {input.gvcf} | bcftools view -i'ALT!="*"' | bcftools filter -i 'QD>=2 & FS<=60 & SOR<=3 & MQ>=40 & MQRankSum>= -12.5 & ReadPosRankSum >= -8 ' -Oz -o {output.norm}
     """
