@@ -42,23 +42,30 @@ call_dnm:
   interval: "ref/hg38.wgs_interval.bed"
   max_err: 0.02 # max AF for parenets (AD[1]/AD) 
   dv:
-    min_00_gq: 0
-    min_01_gq: 0
-    min_dp: 10
+    min_00_gq: 10
+    min_01_gq: 3
+    min_dp: 15
     max_dp: 100
+    min_PL: 20000
   hc:
-    min_00_gq: 0
-    min_01_gq: 0
-    min_dp: 10
+    min_00_gq: 3
+    min_01_gq: 20
+    min_dp: 15
     max_dp: 100
+    min_PL: 20000
 
 phasing:
+  enable: False
   window_size: 10000
   # the perl script path relative to the working directory
   perl_cmd: "perl TriosCompass_v2/workflow/scripts/extract_parental_origin.pl "
 
+JIGV: 
+  enable: True
+
 dnSTR:
   # split bed into chunks to speed up dnSTR call
+  enable: False
   split_n: 400
   dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
   hipstr:
