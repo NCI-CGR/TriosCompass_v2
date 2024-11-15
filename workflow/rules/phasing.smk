@@ -107,3 +107,5 @@ rule aggregate_phase:
     shell: """
         ( echo -e "VariantID\tParentalOrigin\tPhase\tHaplotypeBlockSize\t InformativeSiteCnt\tFM_count\tMF_count\tFM_status\tParentOriginChange" && cat {input} | sort -t ":"  -Vs -k1,1 -k2,2n ) > {output}
     """
+
+optional_output.append(expand(output_dir + "/phase_DNMs/{fam}.parental_origin.tab", fam=fam_ids))

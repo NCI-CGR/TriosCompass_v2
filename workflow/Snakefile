@@ -31,9 +31,15 @@ include: "rules/bam_qc.smk"
 include: "rules/gatk_hc.smk"
 include: "rules/deepvariant.smk"
 include: "rules/call_dnm.smk"
-include: "rules/jigv.smk"
-include: "rules/phasing.smk"
-include: "rules/dnSTR.smk"
+
+if config["JIGV"]["enable"]:
+    include: "rules/jigv.smk"
+
+if config["phasing"]["enable"]:    
+    include: "rules/phasing.smk"
+
+if config["dnSTR"]["enable"]:
+    include: "rules/dnSTR.smk"
 
 if config["dnSV"]["enable"]:
     include: "rules/dnSV.smk"
@@ -44,8 +50,6 @@ if config["multiqc"]["enable"]:
 rule all: 
     input: 
         output_dir + "/dnm_vcf_summary/DNM_summary.txt",
-        expand(output_dir + "/call_JIGV/{fam}.JIGV.html", fam=fam_ids),
-        expand(output_dir + "/phase_DNMs/{fam}.parental_origin.tab", fam=fam_ids),
         optional_output=optional_output,
         
         

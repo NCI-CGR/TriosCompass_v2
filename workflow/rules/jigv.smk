@@ -31,3 +31,5 @@ rule call_JIGV:
             --sites {input.sites} \
             {input.bam} > {output.html}
     """
+
+optional_output.append(expand(output_dir + "/call_JIGV/{fam}.JIGV.html", fam=fam_ids))
