@@ -16,7 +16,8 @@ rule call_dnm_dv:
         min_01_gq=config["call_dnm"]["dv"]["min_01_gq"], 
         min_dp=config["call_dnm"]["dv"]["min_dp"],
         max_dp=config["call_dnm"]["dv"]["max_dp"],
-        max_err=config["call_dnm"]["max_err"]
+        max_err=config["call_dnm"]["max_err"],
+        min_PL=config["call_dnm"]["dv"]["min_PL"],
     conda: "../envs/slivar.yaml"
     shell: """
         
@@ -28,18 +29,24 @@ rule call_dnm_dv:
             --trio "denovo:( \
                 ( \
                     (variant.CHROM == 'chrX' && kid.sex=='male') && \
-                    kid.PL[0]>20 && kid.PL[1]>20 && kid.PL[2]==0 && kid.AB > 0.98  \
+                    ((kid.GQ >= {params.min_01_gq} && kid.hom_alt) || \
+                     (kid.PL[0]>={params.min_PL} && kid.PL[1]>={params.min_PL} && kid.PL[2]==0)) \
+                    && kid.AB > 0.98  \
                 ) || \
                 ( \
                     (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
-                    kid.PL[0]>20 && kid.PL[1]==0 && kid.PL[2]>20 && kid.AB > 0.25 && kid.AB < 0.75 \
+                    ((kid.GQ >= {params.min_01_gq} && kid.het) || \
+                     (kid.PL[0]>={params.min_PL} && kid.PL[2]>={params.min_PL} && kid.PL[1]==0)) \
+                    && kid.AB > 0.25 && kid.AB < 0.75 \
                 ) \
                 ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
                 (kid.AD[0]+kid.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
-                mom.PL[0]==0 && mom.PL[1]>20 && mom.PL[2]>20 && dad.PL[0]==0 && dad.PL[1]>20 && dad.PL[2]>20 \
-                    &&  (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < {params.max_err} \
-                    &&  (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < {params.max_err} \
-                    && kid.GQ >= {params.min_01_gq} && mom.GQ >= {params.min_00_gq} && dad.GQ >= {params.min_00_gq} \
+                ((mom.GQ >= {params.min_00_gq} && mom.hom_ref) || \
+                 (mom.PL[0]==0 && mom.PL[1]>={params.min_PL} && mom.PL[2]>={params.min_PL})) && \
+                ((dad.GQ >= {params.min_00_gq} && dad.hom_ref) || \
+                 (dad.PL[0]==0 && dad.PL[1]>={params.min_PL} && dad.PL[2]>={params.min_PL})/) \
+                    && (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < {params.max_err} \
+                    && (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < {params.max_err} \
                     && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (mom.AD[0]+mom.AD[1]) < {params.max_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) && (dad.AD[0]+dad.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) "
         bgzip -c {output.vcf} > {output.tmp}
         tabix {output.tmp}
@@ -91,7 +98,8 @@ use rule  call_dnm_dv as call_dnm_gatk with:
         min_01_gq=config["call_dnm"]["hc"]["min_01_gq"], 
         min_dp=config["call_dnm"]["hc"]["min_dp"],
         max_dp=config["call_dnm"]["hc"]["max_dp"],
-        max_err=config["call_dnm"]["max_err"]
+        max_err=config["call_dnm"]["max_err"],
+        min_PL=config["call_dnm"]["hc"]["min_PL"],
     benchmark:
         output_dir +"/benchmark/slivar/GATK_{fam}.tsv"
 
