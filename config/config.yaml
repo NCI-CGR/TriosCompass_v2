@@ -1,7 +1,7 @@
-name: test_8trios
+name: 8trios
 
-pepfile: "config/fullbam_pep.yaml"
-pepschema: "../schemas/bam_schema.yaml"
+pepfile: "config/fullbam_pep.yaml" # relative to ./TriosCompass_v2
+pepschema: "../schemas/bam_schema.yaml" # relative to ./TriosCompass_v2/rules/premap.smk
 
 output_dir: "output"
 
@@ -38,22 +38,41 @@ deepvariant:
   # DeepVariantWGS 
   glnexus_config: "DeepVariant_unfiltered"
 
+gatk_hc: 
+  gatk_hard_filter: 
+    enable: True
+    filter: "QD>=2 & FS<=60 & SOR<4 & MQ>38 & MQRankSum>= -12.5 & ReadPosRankSum >= -8"
+    # filter: "QD>=2 & FS<=60 & SOR<=3 & MQ>=40 & MQRankSum>= -12.5 & ReadPosRankSum >= -8"
+    
 call_dnm:
   interval: "ref/hg38.wgs_interval.bed"
+  max_err: 0.02 # max AF for parenets (AD[1]/AD) 
+  AB: 0.3 # allele balance is btwn (AB, 1-AB)
   dv:
-    min_gq: 3
-    min_dp: 20 # this is for 80X
+    min_00_gq: 20
+    min_01_gq: 3 # for high depth
+    min_dp: 20
+    max_dp: 250
+    min_PL: 20
   hc:
-    min_gq: 20
-    min_dp: 30 # this is for 80X
+    min_00_gq: 20
+    min_01_gq: 20
+    min_dp: 30
+    max_dp: 250
+    min_PL: 20
 
 phasing:
+  enable: False
   window_size: 10000
   # the perl script path relative to the working directory
   perl_cmd: "perl TriosCompass_v2/workflow/scripts/extract_parental_origin.pl "
 
+JIGV: 
+  enable: True
+
 dnSTR:
   # split bed into chunks to speed up dnSTR call
+  enable: False
   split_n: 400
   dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
   hipstr:
@@ -61,7 +80,7 @@ dnSTR:
     ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
     monstr_filter: " --min-span-coverage 3 --min-supp-reads 3 "
     dumpstr_call_args: >
-            --hipstr-min-call-DP 15 
+            --hipstr-min-call-DP 15  
             --hipstr-max-call-DP 1000 
             --hipstr-min-call-Q 0.9 --drop-filtered 
             --vcftype hipstr --hipstr-min-supp-reads 1 
@@ -77,7 +96,7 @@ multiqc:
   output_dir: "MultiQC_output"
   
 dnSV:
-  enable: True
+  enable: False
   exclude_bed: "ref/exclude.cnvnator_100bp.GRCh38.20170403.bed"
 
 threads:
@@ -86,6 +105,7 @@ threads:
   fastq_screen: 8
   fq2bam: 48
   flagstat: 16
+  collectwgsmetrics: 16
   collectmultiplemetrics: 32
   gatkhc_pb: 24
   gatk_combine_gvcf: 16
@@ -95,12 +115,12 @@ threads:
   glnexus_dv: 8
   phase_child: 2
   phase_trios: 2
+  replace_rg: 4
   manta_call: 10
   uniq_svid: 4
   svimmer: 4
   graphtyper: 40
   smoove: 20
-  replace_rg: 4
 
   
 
