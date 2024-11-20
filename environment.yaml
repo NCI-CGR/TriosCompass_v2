@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - snakemake==7.3.7
+  - snakemake-wrapper-utils
   - pip==22.3.1
   - python==3.10.6
   # https://github.com/snakemake/snakemake/issues/1899
