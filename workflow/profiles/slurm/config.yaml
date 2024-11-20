@@ -67,7 +67,7 @@ set-resources:
   - gatkhc_pb:partition=gpu
   - gatkhc_pb:slurm=gres=gpu:v100x:1
   - gatk_combine_gvcf:mem_mb=10000
-  - gatk_combine_gvcf:runtime="3h"
+  - gatk_combine_gvcf:runtime="12h"
   - gatk_cgp:mem_mb=10000
   # - gatk_cgp:runtime="1d"
   # - gatk_genotype_gvcf_pb:runtime="1d"
