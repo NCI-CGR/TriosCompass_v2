@@ -24,11 +24,13 @@ if config["bam_qc"]["collectwgsmetrics"]["enable"]:
             bam= get_bam_by_subj,
             ref= genome
         output: output_dir + "/collectwgsmetrics/{subj}.collect_wgs_metrics.txt"
+        threads: config["threads"]["collectwgsmetrics"]
         benchmark:
             output_dir +"/benchmark/collectwgsmetrics/{subj}.tsv"
         singularity: "docker://quay.io/biocontainers/picard:2.27.3--hdfd78af_0"
         shell: """
             picard CollectWgsMetrics \
+                -XX:ParallelGCThreads={threads} \
                 I={input.bam} \
                 O={output} \
                 R={input.ref} 
