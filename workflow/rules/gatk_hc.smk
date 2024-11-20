@@ -66,24 +66,49 @@ rule gatk_genotype_gvcf_pb:
         tabix {output.gz}
     """
 
-# drop -ped {input.ped} --skip-population-priors
-rule gatk_cgp:
-    input: 
-        gvcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz",
-        # ped=config["ped_dir"]+"/{fam}.ped",
-        ref=genome
-    output: 
-        # gvcf=output_dir+"/gatk_cgp/{fam}.cgp.g.vcf.gz",
-        norm=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
-    threads: config["threads"]["gatk_cgp"]
-    conda: "../envs/gatk4.yaml"
-    benchmark:
-        output_dir + "/benchmark/gatk_cgp/{fam}.tsv"
-    resources: 
-    shell: """
-        # gatk CalculateGenotypePosteriors \
+# drop CalculateGenotypePosteriors completely
+# gatk CalculateGenotypePosteriors \
         #     -V {input.gvcf} \
         #     -O {output.gvcf} 
-            
-        bcftools norm -f {input.ref} -m -  {input.gvcf} | bcftools view -i'ALT!="*"' | bcftools filter -i 'QD>=2 & FS<=60 & SOR<=3 & MQ>=40 & MQRankSum>= -12.5 & ReadPosRankSum >= -8 ' -Oz -o {output.norm}
-    """
+        #     -ped {input.ped} --skip-population-priors
+
+
+if config["gatk_hc"]["gatk_hard_filter"]["enable"]:
+    rule gatk_cgp:
+        input: 
+            gvcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz",
+            # ped=config["ped_dir"]+"/{fam}.ped",
+            ref=genome
+        output: 
+            # gvcf=output_dir+"/gatk_cgp/{fam}.cgp.g.vcf.gz",
+            vcf=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
+            tbi=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz.tbi",
+        threads: config["threads"]["gatk_cgp"]
+        conda: "../envs/bcftools.yaml"
+        benchmark:
+            output_dir + "/benchmark/gatk_cgp/{fam}.tsv"
+        params: filter=config["gatk_hc"]["gatk_hard_filter"]["filter"]
+        resources: 
+        shell: """
+            bcftools norm -f {input.ref} -m -  {input.gvcf} | bcftools view -i'ALT!="*"' | bcftools filter -i '{params.filter}' -Oz -o {output.vcf}
+            tabix -p vcf {output.vcf}
+        """
+
+else: 
+    rule gatk_cgp:
+        input: 
+            gvcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz",
+            ped=config["ped_dir"]+"/{fam}.ped",
+            ref=genome
+        output: 
+            vcf=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
+            tbi=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz.tbi",
+        threads: config["threads"]["gatk_cgp"]
+        conda: "../envs/bcftools.yaml"
+        benchmark:
+            output_dir + "/benchmark/gatk_cgp/{fam}.tsv"
+        resources: 
+        shell: """
+            bcftools norm -f {input.ref} -m -  {output.gvcf} | bcftools view -i'ALT!="*"' -Oz -o {output.vcf}
+            tabix -p vcf {output.vcf}
+        """
