@@ -19,9 +19,9 @@ fastq_input:
   enable: False # process the fastq input; False if bam inputs are provided
   fastqc: 
     enable: True
-  fastq_screen:
-    enable: True
-    config: "ref/fastq_screen.abs.conf"
+  # fastq_screen:
+  #   enable: True
+  #   config: "ref/fastq_screen.abs.conf"
 
 bam_input:
   reset_RG: False
