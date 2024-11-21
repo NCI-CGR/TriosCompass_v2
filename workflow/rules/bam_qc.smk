@@ -29,8 +29,7 @@ if config["bam_qc"]["collectwgsmetrics"]["enable"]:
             output_dir +"/benchmark/collectwgsmetrics/{subj}.tsv"
         singularity: "docker://quay.io/biocontainers/picard:2.27.3--hdfd78af_0"
         shell: """
-            picard CollectWgsMetrics \
-                -XX:ParallelGCThreads={threads} \
+            picard CollectWgsMetrics -XX:ParallelGCThreads={threads} \
                 I={input.bam} \
                 O={output} \
                 R={input.ref} 
@@ -45,6 +44,7 @@ if config["bam_qc"]["collectmultiplemetrics"]["enable"]:
             bam = get_bam_by_subj,
             ref = genome
         output: output_dir +"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt"
+        threads: config["threads"]["collectmultiplemetrics"]
         benchmark:
             output_dir +"/benchmark/collectmultiplemetrics/{subj}.tsv"
         params: 
@@ -61,5 +61,4 @@ if config["bam_qc"]["collectmultiplemetrics"]["enable"]:
         '''
     
     optional_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt", subj = subjs)) 
-    # qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}", subj = subjs))
-    qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt", subj = subjs))
+    qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}", subj = subjs))
