@@ -1,0 +1,80 @@
+restart-times: 0
+jobscript: sge-jobscript.sh
+cluster: "sge-submit.py"
+cluster-status: "sge-status.py"
+cluster-cancel: "sge-cancel.py"
+cluster-cancel-nargs: 20
+max-jobs-per-second: 0.1
+max-status-checks-per-second: 0.017
+latency-wait: 180
+local-cores: 1
+
+configfile: TriosCompass_v2/config/bam_config.yaml
+snakefile: TriosCompass_v2/workflow/Snakefile
+verbose: True
+skip-script-cleanup: True
+reason: True
+show-failed-logs: True
+rerun-incomplete: True
+keep-incomplete: True
+keep-going: True
+jobs: 500
+use-conda: True
+use-singularity: True
+
+# Job resources
+set-resources:
+  - bwa_index:mem_mb=16000
+  - fastp:mem_mb=40000
+  - fastqc:mem_mb=10000
+  - fastq_screen:mem_mb=50000
+  - fq2bam:mem_mb=40000
+  - fq2bam:runtime=8:00:00
+  - fq2bam:v100=1
+  - flagstat:mem_mb=80000
+  - collectwgsmetrics:runtime=24:00:00
+  - collectwgsmetrics:mem_mb=64000
+  - collectmultiplemetrics:mem_mb=8000
+  - collectmultiplemetrics:v100=1
+  - gatkhc_pb:mem_mb=8000
+  - gatkhc_pb:runtime=24:00:00
+  - gatkhc_pb:v100=1
+  - gatk_combine_gvcf:mem_mb=80000
+  - gatk_combine_gvcf:runtime=144:00:00
+  - gatk_cgp:mem_mb=40000
+  - gatk_cgp:runtime=24:00:00
+  - gatk_genotype_gvcf_pb:runtime=24:00:00
+  - gatk_genotype_gvcf_pb:mem_mb=80000
+  - gatk_genotype_gvcf_pb:v100=1
+  - deepvariant_pb:mem_mb=80000
+  - deepvariant_pb:runtime=24:00:00
+  - deepvariant_pb:v100=1
+  - glnexus_dv:mem_mb=80000
+  - glnexus_dv:runtime=24:00:00
+  - call_dnm_dv:mem_mb=20000
+  - call_dnm_dv:runtime=24:00:00
+  - call_dnm_hc:mem_mb=20000
+  - call_dnm_hc:runtime=24:00:00
+  - call_JIGV:mem_mb=60000
+  - replace_rg:mem_mb=60000
+  - replace_rg:s_vmem=60000  
+  - replace_rg:runtime=24:00:00
+  - phase_child:mem_mb=40000
+  - phase_trios:mem_mb=40000
+  - split_bed_hipstr:mem_mb=10000
+  - hipstr:mem_mb=40000
+  - hipstr:runtime=200:00:00
+  - dumpstr_call_hipstr:mem_mb=40000
+  - dumpstr_locus:mem_mb=40000
+  - dumpstr_locus:runtime=20:00:00
+  - monstr:mem_mb=40000
+  - monstr:runtime=20:00:00
+  - merge_monstr:mem_mb=40000
+  - merge_monstr:runtime=20:00:00
+  - monstr_filter:mem_mb=20000
+  - hipstr_recall:mem_mb=10000
+
+# For some reasons time needs quotes to be read by snakemake
+default-resources:
+  - mem_mb=2000
+  - runtime="10:00:00"    

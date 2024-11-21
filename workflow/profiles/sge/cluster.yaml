@@ -1,0 +1,16 @@
+__resources__:
+  v100: 
+    - "gpu"
+    - "v100"  
+    - "nvidia_gpu"
+
+__options__:
+  jc:
+    - "jc"
+    - "jclass"
+    - "job_class"
+
+__default__:
+  pe: "def_slot " 
+  output: logs/{rulename}/{rulename}.{jobid}.out
+  error: logs/{rulename}/{rulename}.{jobid}.err
