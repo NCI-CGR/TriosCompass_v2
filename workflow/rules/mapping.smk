@@ -1,8 +1,14 @@
 ### One sample may have data from multiple flowcells 
 rule fq2bam:
     input: 
-        R1s=lambda w: expand(output_dir+"/fastp/{id}.R1.fastp.fastq.gz", id=[ w.SAMPLE_ID + '_'+ flowcell for flowcell in subj_flowcell_dict[w.SAMPLE_ID] ]),
-        R2s=lambda w: expand(output_dir+"/fastp/{id}.R2.fastp.fastq.gz", id=[ w.SAMPLE_ID + '_'+ flowcell for flowcell in subj_flowcell_dict[w.SAMPLE_ID] ]),
+        #R1s=lambda w: expand(output_dir+"/fastp/{id}.R1.fastp.fastq.gz", id=[ w.SAMPLE_ID + '_'+ flowcell + '_L' + str(lane) for flowcell,lane in subj_flowcell_dict[w.SAMPLE_ID]]),
+        R1s = lambda w: expand(output_dir+"/fastp/{id}.R1.fastp.fastq.gz", 
+                       id=[ w.SAMPLE_ID + '_'+ flowcell + '_L' + str(lane) 
+                            for flowcell, lane in subj_flowcell_dict[w.SAMPLE_ID]]),
+        #R2s=lambda w: expand(output_dir+"/fastp/{id}.R2.fastp.fastq.gz", id=[ w.SAMPLE_ID + '_'+ flowcell + '_L' + str(lane) for flowcell,lane in subj_flowcell_dict[w.SAMPLE_ID]]),
+        R2s = lambda w: expand(output_dir+"/fastp/{id}.R2.fastp.fastq.gz", 
+                       id=[ w.SAMPLE_ID + '_'+ flowcell + '_L' + str(lane) 
+                            for flowcell, lane in subj_flowcell_dict[w.SAMPLE_ID]]),
         ref=genome,
         idx=rules.bwa_index.output
     output: output_dir + "/fq2bam/{SAMPLE_ID}.bam"
