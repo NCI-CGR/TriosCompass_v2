@@ -1,0 +1,1 @@
+`TriosCompassV2 <https://github.com/NCI-CGR/TriosCompass_v2/tree/main>`_ is a snakemake workflow to identify de novo mutatios. 

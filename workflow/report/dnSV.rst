@@ -1,0 +1,1 @@
+`The joint dnSV predictions from manta + GraphTyper2 and smoove <https://github.com/NCI-CGR/TriosCompass_v2?tab=readme-ov-file#dnsv-predictions>`_.

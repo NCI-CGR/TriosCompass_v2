@@ -1,220 +1,89 @@
-<!-- omit in toc -->
-# TriosCompass_v2
-This is a trios analysis workflow written in Snakemake.
+<!-- omit in TOC -->
+# Snakemake workflow: TriosCompass
 
----
-- [Introduction](#introduction)
-- [Installation](#installation)
-  - [Locally installed bioinformatics tools](#locally-installed-bioinformatics-tools)
-    - [GangSTR](#gangstr)
-    - [WhatsHap](#whatshap)
-    - [HipSTR and revision (under TriosCompass\_v2 clone folder)](#hipstr-and-revision-under-trioscompass_v2-clone-folder)
-  - [Preparation of the calling regions of DNMs](#preparation-of-the-calling-regions-of-dnms)
-  - [The reference genome hg38](#the-reference-genome-hg38)
-  - [The reference panels for GangSTR and HipSTR](#the-reference-panels-for-gangstr-and-hipstr)
-- [Some details about the DNM calling](#some-details-about-the-dnm-calling)
-  - [*Slivar* expression to select DNMs](#slivar-expression-to-select-dnms)
-- [Development and benchmark of TriosCompass](#development-and-benchmark-of-trioscompass)
-  - [Benchmark on the GIAB trios](#benchmark-on-the-giab-trios)
-  - [Development and benchmark on the 8 trios from the Chernobyl data set](#development-and-benchmark-on-the-8-trios-from-the-chernobyl-data-set)
-- [Applications of TriosCompass on the real data](#applications-of-trioscompass-on-the-real-data)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥7.3.7-brightgreen.svg)](https://snakemake.github.io)
 
+
+A Snakemake workflow for DNM (de novo mutation) calling.
 
 ---
 
-## Introduction
-
-This Snakemake workflow takes fastq/bam files and pedigree files as input, and generate lists of de novo mutations (DNMs) for each trios in the end. We had employed NVIDIA Parabricks toolbox in the pipeline, to accelerate NGS analysis with GPUs.
-
-Briefly, there are 3 major components in the workflow:
-+ Call DNMs
-  1. Variant calling by GATK HaplotypeCaller, DeepVariant (and Strelka).
-  2. Identify DNMs by [Slivar](https://github.com/brentp/slivar).
-  3. Ensemble call. 
-  4. DNM candidates visualized by JIGV 
-+ Extract parental origin of DNMs
-+ Call mDNMs (microsatellites DNMs; or dnSTR for de novo short tandem repeat).
-
+- [Snakemake workflow: TriosCompass](#snakemake-workflow-trioscompass)
+  - [Overview](#overview)
+    - [I. Introduction](#i-introduction)
+    - [II. Dependencies](#ii-dependencies)
+    - [III. Methods](#iii-methods)
+      - [A. Call DNMs](#a-call-dnms)
+      - [B. Phase DNMs](#b-phase-dnms)
+      - [C. Call dnSTRs](#c-call-dnstrs)
+      - [D. Call dnSVs](#d-call-dnsvs)
+  - [User's guides](#users-guides)
+    - [I. Installation](#i-installation)
+    - [II. Inputs](#ii-inputs)
+      - [Reference genome](#reference-genome)
+      - [Preparation of the callable regions of DNMs](#preparation-of-the-callable-regions-of-dnms)
+      - [The STR reference panel to call dnSTRs](#the-str-reference-panel-to-call-dnstrs)
+      - [Regions excluded in dnSTR calling](#regions-excluded-in-dnstr-calling)
+      - [Regions excluded in dnSV calling](#regions-excluded-in-dnsv-calling)
+      - [Resource bundle for hg38](#resource-bundle-for-hg38)
+      - [Fastq and BAM input files](#fastq-and-bam-input-files)
+        - [PEP example for *fastq* input](#pep-example-for-fastq-input)
+        - [PEP example for *bam* input](#pep-example-for-bam-input)
+      - [Pedigree files](#pedigree-files)
+      - [Example folder structure of the final workspace](#example-folder-structure-of-the-final-workspace)
+    - [III. Configure files](#iii-configure-files)
+      - [profile/config.yaml](#profileconfigyaml)
+      - [config/config.yaml](#configconfigyaml)
+    - [V. Run TriosCompass](#v-run-trioscompass)
+    - [IV. Outputs](#iv-outputs)
+      - [MultiQC report](#multiqc-report)
+      - [DNM predictions, parental origins and visualizations](#dnm-predictions-parental-origins-and-visualizations)
+        - [DNM predictions](#dnm-predictions)
+        - [Parental origins of DNMs](#parental-origins-of-dnms)
+        - [JIGV visulization](#jigv-visulization)
+      - [dnSTR predictions and visulizations](#dnstr-predictions-and-visulizations)
+        - [dnSTR predictions from HipSTR/MonSTR](#dnstr-predictions-from-hipstrmonstr)
+        - [dnSTR visulizations by *VizAln*](#dnstr-visulizations-by-vizaln)
+          - [Example of VizAln realignment of the DNM (started at chr6:38571975) in the family *t0612*](#example-of-vizaln-realignment-of-the-dnm-started-at-chr638571975-in-the-family-t0612)
+      - [dnSV predictions](#dnsv-predictions)
+      - [Snakemake report for TriosCompass](#snakemake-report-for-trioscompass)
 
 ---
 
-## Installation
 
-The workflow has been tested under biowulf with snakemake version 7.3.7.  Snakemake is installed under conda, using a command like blow:
+## Overview
+
+### I. Introduction
+*TriosCompass* consists of four functional components:
++ Call DNMs (de novo mutations) using *DeepVariant* and *GATK HaplotypeCaller*
++ Phase DNMs using *whatshap*
++ Call dnSTR (de novo simple tandem repeats) using HipSTR and MonSTR
++ Call dnSV (de novo structural variants) using *Manta*, *GraphType2* and *smoove*
+
+The overall workflow diagram of *TriosCompass* is as below: 
+![](img/TrioCompass_full_DAG.png)
+
+---
+
+### II. Dependencies
+
+All required bioinformatics tools are wrapped as conda, container and etc, so TriosCompass is portable and easy to be deployed.
+
+Nevertheless, there are still some basic dependencies required to start any Snakemake workflow (e.g., conda and python), which have been specified in [environment.yaml](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/environment.yaml).  Users can create a new *conda* env for TriosCompassV2: 
 ```bash
-conda  create -c conda-forge -c bioconda -n snakemake snakemake=7.3.7
+
+mamba env create -f environment.yaml
+
+conda activate TriosCompassV2
 ```
 
-There are other dependencies required by the workflow, most of which are available as biowulf modules:
-+ Biowulf modules:
-  + bcftools/1.19
-  + bedtools/2.31.1
-  + fastp/0.23.2
-  + GATK/4.3.0.0
-  + glnexus/1.4.1
-  + hipstr/0.7
-  + igv/2.12.3 (optional)
-  + parabricks/4.0.0
-  + perl/5.38
-  + picard/2.27.3
-  + samtools/1.19
-  + singularity/4.0.1
-+ Conda packages (locally installed)
-  + csvtk (V0.28.0)
-  + dumpSTR (V5.0.2)
-  + [slivar](https://github.com/brentp/slivar) (V0.2.8 23df117c3809a2bf57eb0dd1fffdca0df06252a3)
-+ Locally installed
-  + GangSTR (V2.5.0)
-  + WhatsHap (V2.1)
-  + HipSTR (with revision)
-+ Containers
-  + docker://gymreklab/monstr (sha256:f5e90770d3a9dd1220764986c11f0cd8d345ed03955e36374bcbcdabfe8cb71d)
+Besides, singularity needs to be installed globally, and the details of the TriosCompass installation can be found [below](#i-installation).  
 
-Besides, some resources files are also needed:
-+ The reference genome
-  + Homo_sapiens_assembly38.fasta
-+ Calling regions of DNMs
-+ The reference panels for GangSTR and HipSTR
-+ GRCh38GenomicSuperDup.bed.gz
-  + Obtained from the UCSC Table Browser (hg38.genomicSuperDups table)
+### III. Methods
+#### A. Call DNMs
 
-### Locally installed bioinformatics tools
-#### GangSTR
-```bash
-wget https://github.com/gymreklab/GangSTR/releases/download/v2.5/GangSTR-2.5.0-Source.tar.gz
+The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK HaplotypeCaller (HC)* in the specified callable regions, then filtered using [sliver](https://github.com/brentp/slivar):
 
-tar xvfz GangSTR-2.5.0-Source.tar.gz
-cd GangSTR-2.5.0-Source
-
-mkdir build
-cd build
-cmake ..
-make 
-cmake --install . --prefix $HOME
--- Install configuration: ""
--- Installing: /home/zhuw10/bin/GangSTR
--- Set runtime path of "/home/zhuw10/bin/GangSTR" to ""
-
-which GangSTR
-~/bin/GangSTR
-```
-
-#### WhatsHap
-```bash
-pip3 install --user whatshap
-which whatshap
-~/.local/bin/whatshap
-```
-
-#### HipSTR and revision (under TriosCompass_v2 clone folder)
-By default, VizAln generates output html page as temporary file with random name.  We made revision so that the HTML output is written to the specific file using VizAln_rev. 
-```bash
-cd TrosCompass_v2
-git clone https://github.com/tfwillems/HipSTR.git
-
-cp scripts/VizAln_rev HipSTR/
-
-
-```
-
-+ diff HipSTR/VizAln_rev HipSTR/VizAln
-```diff
-3c3
-< # Usage: VizAln alns.html.gz output_html chrom start [sample]
----
-> # Usage: VizAln alns.html.gz chrom start [sample]
-8c8
-< if [ "$#" -eq 4 ] || [ "$#" -eq 5 ]; then
----
-> if [ "$#" -eq 3 ] || [ "$#" -eq 4 ]; then
-56,58c56,57
-<     f=$2
-<     chrom=$3
-<     start=$4
----
->     chrom=$2
->     start=$3
-60,61c59,60
-<     # f="/tmp/vizaln.$RANDOM.html"
-<     if [ "$#" -eq 4 ]
----
->     f="/tmp/vizaln.$RANDOM.html"
->     if [ "$#" -eq 3 ]
-65c64
-<       tabix $1 $chrom:$start-$stop -h | awk -v START=$start '$2 == START || $2 == "#"' | awk -v SAMPLE=$5 '$4 == SAMPLE || $4 == "ALL"' | cut -f 1-4 --complement | python ${parent_path}/scripts/generate_aln_html.py > $f
----
->       tabix $1 $chrom:$start-$stop -h | awk -v START=$start '$2 == START || $2 == "#"' | awk -v SAMPLE=$4 '$4 == SAMPLE || $4 == "ALL"' | cut -f 1-4 --complement | python ${parent_path}/scripts/generate_aln_html.py > $f
-68c67
-<     # open $f 2>/dev/null || { echo >&2 "VizAln successfully generated the alignment visualization file, but failed to open it. Please open $f using a web browser";}
----
->     open $f 2>/dev/null || { echo >&2 "VizAln successfully generated the alignment visualization file, but failed to open it. Please open $f using a web browser";}
-71c70
-< Usage: VizAln alns.html.gz output_html chrom start [sample]
----
-> Usage: VizAln alns.html.gz chrom start [sample]
-```
-
----
-
-### Preparation of the calling regions of DNMs
-The interval file is to include the selected regions only to call DNMs (via bcftools).  We used the file hg38.wgs_interval.bed in this study, which was converted from *resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list*. The latter is part of [resource bundle hosted by the Broad Institute](https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle). There are severals way to retrieve the interval file, for example, ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/wgs_calling_regions.hg38.interval_list.
-
-```bash
-### Download calling region of hg38 from the Broad Institute 
-wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/wgs_calling_regions.hg38.interval_list -O ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list
-
-### Then, convert the interval list to bed file using Picard
-module load picard 
-
-java -jar $PICARDJAR IntervalListToBed -I ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list -O ref/hg38.wgs_interval.bed
-
-bgzip -c ref/hg38.wgs_interval.bed > ref/hg38.wgs_interval.bed.gz
-tabix ref/hg38.wgs_interval.bed.gz
-
-
-```
-
-### The reference genome hg38
-Hg38 reference genome is used here, and it was indexed by bwa, samtools (.fai) and Picard CreateSequenceDictionary (.dict).
-```bash
--rw-r----- 1 zhuw10 DCEG_Trios     608628 Jul  3 08:39 Homo_sapiens_assembly38.dict
--rw-r----- 1 zhuw10 DCEG_Trios 3249912778 Jul  3 08:39 Homo_sapiens_assembly38.fasta
--rw-r----- 1 zhuw10 DCEG_Trios     487553 Jul  3 08:39 Homo_sapiens_assembly38.fasta.64.alt
--rw-r----- 1 zhuw10 DCEG_Trios      20199 Jul  3 08:39 Homo_sapiens_assembly38.fasta.64.amb
--rw-r----- 1 zhuw10 DCEG_Trios     455474 Jul  3 08:39 Homo_sapiens_assembly38.fasta.64.ann
--rw-r----- 1 zhuw10 DCEG_Trios 3217347004 Jul  3 08:39 Homo_sapiens_assembly38.fasta.64.bwt
--rw-r----- 1 zhuw10 DCEG_Trios  804336731 Jul  3 08:39 Homo_sapiens_assembly38.fasta.64.pac
--rw-r----- 1 zhuw10 DCEG_Trios 1608673512 Jul  3 08:39 Homo_sapiens_assembly38.fasta.64.sa
--rw-r----- 1 zhuw10 DCEG_Trios     160928 Jul  3 08:39 Homo_sapiens_assembly38.fasta.fai
-```
-
-### The reference panels for GangSTR and HipSTR
-Both GangSTR and HipSTR use STRs specified in one reference panel, but with the different format.  One paper suggested that there is good consistence between HpSTR and GangSTR.
->Oketch, J. W., Wain, L. V, Hollox, E. J., & Hollox, E. (2022). A comparison of software for analysis of rare and common short tandem repeat (STR) variation using human genome sequences from clinical and population-based samples. 1–22. https://doi.org/10.1101/2022.05.25.493473
-
-
-We would like to have the STR genotypes predicted jointly by both of the two program, therefore we need create one common reference panel file for both of GangSTR and HipSTR. 
-
-```bash
-### Get the GangSTR reference panel
-wget https://s3.amazonaws.com/gangstr/hg38/genomewide/hg38_ver13.bed.gz -O STR/hg38_ver13.bed.gz
-
-gzip -d STR/hg38_ver13.bed.gz
-
-### reformat for HipSTR
-awk -v OFS='\t' '{print $1,$2,$3,$4,($3-$2+1)/$4,"GangSTR_STR_"NR,$5}' STR/hg38_ver13.bed  >  STR/hg38_ver13.hipstr.bed
-
-### HipSTR cannot take STR with unit length > 9 bp
-awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.hipstr.bed > STR/hg38_ver13.hipstr_9.bed
-
-### We put the same length restrict to hg38_ver13.bed.gz, so that both of the two reference panels are consistent.
-awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.bed
-```
-
----
-
-## Some details about the DNM calling
-### [*Slivar*](https://github.com/brentp/slivar) expression to select DNMs
 ```bash
  "denovo:( \
       ( \
@@ -247,24 +116,729 @@ awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.b
 + kid.GQ >= {params.min_gq} && mom.GQ >= {params.min_gq} && dad.GQ >= {params.min_gq}
   + GQ score of the variants should be no less than {params.min_gq} in all the members of the trio.
 
-:bookmark: In the workflow, different settings of {params.min_dp} and {params.min_gq} are assigned for the callers, based on our benchmarking:
-+ min_gq=10, min_dp=20 for DeepVariant;
-+ min_gq=20, min_dp=30 for GATK and Strelka.
+<font size="+3">&#128214;</font> In the workflow, the parameters {params.min_dp} and {params.min_gq} can be configured via config/config.yaml, so are the callable regions:
+
++ config/config.yaml
+
+    ```yml
+    call_dnm:
+      interval: "ref/hg38.wgs_interval.bed" # DNM callable regions
+      dv:
+        min_gq: 3
+        min_dp: 20
+      hc:
+        min_gq: 20
+        min_dp: 30
+    ```
+
+---
+#### B. Phase DNMs
+We identified parental origin of DNMs using [*WhatsHap*](https://github.com/whatshap/whatshap). 
+
+There are two running modes in WhatsHap: individual and pedigree. In the individual mode, variants are phased into haplotype blocks by *WhatsHap*, without parental origin information.  Pedigree mode is ideal to identify parental origin of variants in the child.  However, WhatsHap does not phase DNMs in the pedigree mode, as DNMs do not follow mendelian inheritance. Therefore, phasing DNMs is not supported by WhatsHap at present (see this [issue](https://github.com/whatshap/whatshap/issues/82) for the details). Nevertheless, a DNM could be phased with the other informative germline variants into the same haplotype block in the individual mode, and thereby all variants in the block share the same parental origin.  Therefore, we managed to run WhatsHap in both individual mode and pedigree mode, and extract parental original from the two outputs.
+
+We first explored to run WhatsHap on the whole genome using the workflow [Snakefile_whatshap_WG](https://github.com/NCI-CGR/TriosCompass_v2/blob/8trios/Snakefile_whatshap_WG).  It turns out to be very slow: it took up to 7 days to process one trio family, and 2-3 days for each trio in average.  Finally,  we chose to phase a 10 Kb window around each DNM. 
+
+![](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/Trios_workflow_rulegraph_whatshap_100K.png?raw=True)
+
+We developed [a Perl script](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/workflow/scripts/extract_parental_origin.pl) to identify the parental origin, and the aggregated results are output to the file: output/phase_DNMs/{Trios_ID}.parental_origin.tab.  The output file is a tab delimited text file, with 9 columns including variant id of DNM, parental origin prediction.  
+
+The perl script extracts the haplotype block containing the DNMs from the output of WhatsHap phasing child (i.e., the individual mode), and collects the phased variants of child in the block.  The script also repeats the processing on the output of WhatsHap phasing trios.  The phase prediction from the latter is given as *F|M*, i.e, the first allele is the one inherited from the father (F) and the other in inherited from the mother (M). However, the parental origin prediction from the individual mode is not certain, that is, it could be F|M or M|F. Ideally, the phases of the variants in each haplotype block from WhatsHap phasing child only should be either all identical (FM count) or all opposite (MF count) to those from WhatsHap phasing trios. In such cases, we can certainly identify the parental origin of the block and so is that of the DNM in the same block.   We simply assign parental origin as *Not Determined* (ND) if there is inconsistency of FM statuses among the variants in the same block (i.e., both FM count > 0 and MF count > 0). 
+
++ Example of the output of extract_parental_origin.pl
+  
+| VariantID                        | Parental Origin | Phase | Haplotype Block Size | # Informative Sites | FM count | MF count | FM status | Parent origin change |
+|----------------------------------|-----------------|-------|----------------------|---------------------|----------|----------|-----------|----------------------|
+| chr1:208903875:G:A               | ND              | 1\|0  | 36                   | 0                   | 25       | 11       | ND        | ND=>ND               |
+| chr2:12194398:A:C                | paternal        | 1\|0  | 2                    | 2                   | 2        | 0        | FM        | paternal=>paternal   |
+| chr2:14986429:A:T                | paternal        | 1\|0  | 5                    | 5                   | 5        | 0        | FM        | paternal=>paternal   |
+| chr2:50677044:C:T                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr2:139840973:T:A               | paternal        | 0\|1  | 14                   | 14                  | 0        | 14       | MF        | paternal=>paternal   |
+| chr2:154745781:T:C               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr2:203705880:T:TTCTTTC         | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr2:220449146:A:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr3:14911256:G:C                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr3:76410708:A:C                | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr3:185020246:C:T               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+| chr3:194728646:G:GTGTGTGTGTGTGTC | maternal        | 0\|1  | 6                    | 6                   | 6        | 0        | FM        | maternal=>maternal   |
+| chr3:197879976:C:T               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
+| chr3:197879978:C:A               | paternal        | 0\|1  | 3                    | 2                   | 0        | 1        | MF        | paternal=>paternal   |
+| chr4:29657055:GC:G               | ND              | 0/1   | 0                    | 0                   | 0        | 0        | ND        | ND=>ND               |
+
+<font size="+3">&#128214;</font> For most users, the first two columns provide essential information about parental origins of the predicted DNMs.
+
+
+
++ Descriptions for each output column.
+
+
+| Column position | Column Header          | Description                                                   | Notes                                                                                                                |
+|-----------------|------------------------|---------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| 1               | VariantID              | Variant ID of DNM                                             |                                                                                                                      |
+| 2               | Parental Origin        | Predicted parental origin                                     | ND (not determined)                                                                                                  |
+| 3               | Phase                  | Phased genotype of DNMs (from phasing child)                  | Parental origin cannot be determined from the output from phasing child only.                                        |
+| 4               | Haplotype Block Size   | Size of the haplotype block (from phasing child)              | Prediction from a large block is more reliable.                                                                      |
+| 5               | # Informative Sites    | # informative sites in the haplotype block                    | Prediction is not reliable if # informative sites is 0.                                                              |
+| 6               | FM count               | # phased variants supporting F\|M genotype                    |                                                                                                                      |
+| 7               | MF count               | # phased variants supporting M\|F genotype                    |                                                                                                                      |
+| 8               | FM status              | FM (for F\|M), MF (for M\|F), ND (not determined)             | FM status is ND if both FM and MF counts are bigger than 0.                                                          |
+| 9               | Parental origin change | Prediction (wo phasing trios) => Prediction(wi phasing trios) | Generally, the prediction with phasing child only is consistent with that with both phasing child and phasing trios. |
+
+
+
++ config.yaml setting for phasing
+    ```yml
+    phasing:
+      window_size: 10000
+      # the perl script path relative to the working directory
+      perl_cmd: "perl TriosCompass_v2/workflow/scripts/extract_parental_origin.pl "
+    
+    ```
+
+---
+
+#### C. Call dnSTRs
+
+We had explored to call dnSTR candidates jointly by *HipSTR* and *GangSTR*. During the manual curation, we found that the joint predicts are good but much fewer than expected, and the HipSTR outperforms GangSTR in our manual evaluation.  Therefore, we gave up *GangSTR*, and employed *HipSTR/MonSTR* in the dnSTR prediction.
+
+At present, our dnSTR calling process is as below:
+1. The STR reference panel is split into *N* chunks.
+2. For each chunk:
+   a. STRs of all samples (from different trios) are jointly genotyped by *HipSTR*.
+   b. Then, to be filtered by *dumpSTR*.
+   c. *MonSTR* is applied to call dnSTRs.
+3. Chunks of *MonSTR* is merged and then filtered further.
+
+Besides, *VizAln* (from the *HipSTR* package) is employed to generated visualization in HTML format.
+ 
+Below is the configure setting for dnSTR in config/config.yaml:
+```yml
+dnSTR:
+  # split bed into chunks to speed up dnSTR call
+  split_n: 400
+  dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
+  hipstr:
+    enable: True
+    ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
+    monstr_filter: " --min-span-coverage 3 --min-supp-reads 3 "
+    dumpstr_call_args: >
+            --hipstr-min-call-DP 15 
+            --hipstr-max-call-DP 1000 
+            --hipstr-min-call-Q 0.9 --drop-filtered 
+            --vcftype hipstr --hipstr-min-supp-reads 1 
+            --hipstr-max-call-flank-indel 0.15 
+            --hipstr-max-call-stutter 0.15 
+  # gangstr:
+  #   enable: False
+  #   ref_panel: "ref/STR/hg38_ver13.le9.bed"
+  #   filter: " --max-perc-encl-parent 0.05 --min-encl-match 0.9 --min-total-encl 10 --gangstr "
+```
 
 
 ---
 
-## Development and benchmark of TriosCompass
-### [Benchmark on the GIAB trios](https://github.com/NCI-CGR/TriosCompass_v2/tree/GIAB_Trios)
+#### D. Call dnSVs
+dnSVs are predicted jointly by two approaches in TriosCompass:
++ [smoove/lumpy-sv](https://github.com/brentp/smoove)
++ manta + GraphType2  
 
-### [Development and benchmark on the 8 trios from the Chernobyl data set](https://github.com/NCI-CGR/TriosCompass_v2/tree/8trios)
+![](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/TrioCompass_dnSV_dag.png?raw=True)
 
-We selected 8 trios from the 340 Chernobyl samples, which had been published in Yeager et al; Science 2021. This small data set has been used to develop new features and benchmarked with the original DNM predicts which has been manually curated.
+<font size="+3">&#128214;</font> Please note: 
++ Insertion is marked as translocation (i.e., "BND") in [smoove/lumpy-sv](https://github.com/arq5x/lumpy-sv/issues/160).
++ Bam files (not *cram*) are recognized by *lumpy-sv*.
++ Sample order in the ped file matters.  
+  
+  By default, we had built ped files in the order as: father, mother, and child. Accordingly, the same order is remained in the jointly genotyped SV VCF file. Therefore, we used the *bcftools* command to identify dnSV as below:
+
+    ```bash
+    bcftools view -i 'GT[2]="het" && GT[1]="RR" && GT[0]="RR" ' -O v  {input} -o {output}
+    ``` 
 
 ---
 
-## Applications of TriosCompass on the real data
-+ [Processing 107 new CGR samples](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/Process_107_new_Chernobyl_data.md)
-+ [Re-processing 340 old Chernobyl samples](https://github.com/NCI-CGR/TriosCompass_v2/tree/old_chernobyl?tab=readme-ov-file)
+## User's guides
 
+### I. Installation 
++ Install singularity globally.
++ Install conda and mamba.
++ Create the workspace directory \$WORKSPACE and change directory to \$WORKSPACE.
++ Git clone the TriosCompass_v2 repository.
+  ```bash
+  git clone https://github.com/NCI-CGR/TriosCompass_v2.git
+  ```
++ Create new conda environment to run Snakemake workflow
+  ```bash
+  mamba env create -f TriosCompass_v2/environment.yaml
+  ``` 
+  
+Folder structure of your workspace is as follows:
+```bash
+$WORKSPACE
+└── TriosCompass_v2
+```
+ 
+### II. Inputs
+#### Reference genome
+
+User can put the reference genome any location under the folder $WORKSPACE and specify its relative location at config/config.yaml.  
+
+For instance, we may put the hg38 human genome *Homo_sapiens_assembly38.fasta* under the folder $WORKSPACE/ref/. 
+
++ config/config.yaml
+
+    ```yml
+    ref:
+      sequence: "ref/Homo_sapiens_assembly38.fasta"
+      build: "hg38"
+    ```
+
+---
+
+#### Preparation of the callable regions of DNMs
+
+The interval file (in *bed* format) is to specify regions to call DNMs, which should be matched with the reference genome.  For instance, we used the file hg38.wgs_interval.bed for the reference genome *hg38*, which was converted from *resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list*. The latter is part of [resource bundle hosted by the Broad Institute](https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle). There are severals way to retrieve the interval file, for example, ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/wgs_calling_regions.hg38.interval_list.
+
+```bash
+### Download calling region of hg38 from the Broad Institute 
+wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/wgs_calling_regions.hg38.interval_list -O ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list
+
+### Then, convert the interval list to bed file using Picard
+module load picard 
+
+java -jar $PICARDJAR IntervalListToBed -I ref/resources_broad_hg38_v0_wgs_calling_regions.hg38.interval_list -O ref/hg38.wgs_interval.bed
+
+```
+
+Users can specify ref/hg38.wgs_interval.bed in config/config.yaml
+```yml
+call_dnm:
+  interval: "ref/hg38.wgs_interval.bed"
+```
+---
+
+#### The STR reference panel to call dnSTRs
+
+We had developed joint call of dnSTR using both GangSTR and HipSTR, so we had prepared the same STR reference panels for both of the two programs.
+
+Both GangSTR and HipSTR use STRs specified in the STR reference panel, but with the different formats.  One paper suggested that there is good consistence between HipSTR and GangSTR.
+>Oketch, J. W., Wain, L. V, Hollox, E. J., & Hollox, E. (2022). A comparison of software for analysis of rare and common short tandem repeat (STR) variation using human genome sequences from clinical and population-based samples. 1–22. https://doi.org/10.1101/2022.05.25.493473
+
+
+We would like to have the STR genotypes predicted jointly by both of the two program, therefore we need create one common reference panel file for both of GangSTR and HipSTR. 
+
+```bash
+### Get the GangSTR reference panel
+wget https://s3.amazonaws.com/gangstr/hg38/genomewide/hg38_ver13.bed.gz -O STR/hg38_ver13.bed.gz
+
+gzip -d STR/hg38_ver13.bed.gz
+
+### reformat for HipSTR
+awk -v OFS='\t' '{print $1,$2,$3,$4,($3-$2+1)/$4,"GangSTR_STR_"NR,$5}' STR/hg38_ver13.bed  >  STR/hg38_ver13.hipstr.bed
+
+### HipSTR cannot take STR with unit length > 9 bp
+awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.hipstr.bed > STR/hg38_ver13.hipstr_9.bed
+
+### We put the same length restrict to hg38_ver13.bed.gz, so that both of the two reference panels are consistent.
+awk -v OFS='\t' '{if($4<=9) print $0}' STR/hg38_ver13.bed > STR/hg38_ver13.le9.bed
+```
+
+
+
+<font size="+3">&#128214;</font> 
++ After manual curation, we chose to use *HipSTR* only for the dnSTR prediction.
++ The STR reference panel is specified in config/config.yaml
+  + ref_panel: "ref/STR/hg38_ver13.hipstr_9.bed"
+
+---
+
+#### Regions excluded in dnSTR calling
+For the human genome hg38, the file GRCh38GenomicSuperDup.bed was obtained using the UCSC Table Browser (hg38.genomicSuperDups table).  It needs to be further sorted, compressed and indexed as shown below:
+
+```bash
+bedtools sort -i GRCh38GenomicSuperDup.bed | bgzip -c > GRCh38GenomicSuperDup.bed.gz
+
+tabix -p bed GRCh38GenomicSuperDup.bed.gz
+```
+
++ The setting can also be customized in config/config.yaml
+
+    ```yml
+    dnSTR:
+      # split bed into chunks to speed up dnSTR call
+      split_n: 400
+      dup_reg: "ref/STR/GRCh38GenomicSuperDup.bed.gz" # come with GRCh38GenomicSuperDup.bed.gz.tbi 
+    ```
+
+---
+
+#### Regions excluded in dnSV calling
+We used exclude.cnvnator_100bp.GRCh38.20170403.bed for regions to be excluded in dnSV calling, as suggested at [brentp/smoove](https://github.com/brentp/smoove?tab=readme-ov-file#small-cohorts-n---40):
+
+```bash
+wget https://raw.githubusercontent.com/hall-lab/speedseq/master/annotations/exclude.cnvnator_100bp.GRCh38.20170403.bed -O ref/exclude.cnvnator_100bp.GRCh38.20170403.bed
+```
+
++ Settings in config.yaml
+
+    ```yml
+    dnSV:
+      enable: True
+      exclude_bed: "ref/exclude.cnvnator_100bp.GRCh38.20170403.bed"
+    ```
+
+---
+
+#### Resource bundle for hg38
+
+After the installation of the above resource files required by TriosCompass to *ref/*, users may have the folder ref/ under $WORKSPACE as below:
+
+```bash
+$WORKSPACE/ref
+├── exclude.cnvnator_100bp.GRCh38.20170403.bed
+├── hg38.wgs_interval.bed
+├── Homo_sapiens_assembly38.fasta
+└── STR
+    ├── GRCh38GenomicSuperDup.bed.gz
+    ├── GRCh38GenomicSuperDup.bed.gz.tbi
+    ├── hg38_ver13.bed
+    ├── hg38_ver13.hipstr_9.bed
+    └── hg38_ver13.le9.bed
+```
+
+A resource bundle for hg38 is available at [here](https://zenodo.org/uploads/13381196) as a reference for users of TriosCompass.
+
+---
+
+#### Fastq and BAM input files
+
+[PEP](https://pep.databio.org/) is employed to import metadata of the NGS data, which can be either Fastq or BAM files. A PEP usually consists 3 files: 
++ One *yaml* file for the metadata.
++ One *csv* file for the sample information.
++ Another *yaml* (optional) to define schema to validate the metadata.
+
+##### PEP example for *fastq* input
++ config/fastq_pep.yaml
+
+    ```yml
+    pep_version: 2.0.0
+    sample_table: sample_fastq.csv
+    
+    # In manifest file, Sample_ID + Flowcell should be unique
+    sample_modifiers:
+      append:
+        sample_name: "sn"
+      derive:
+        attributes: [sample_name]
+        sources:
+          sn: "{SAMPLE_ID}_{FLOWCELL}"
+    ```
+
++ config/sample_fastq.csv
+
+    ```csv
+    SAMPLE_ID,FLOWCELL,LANE,INDEX,R1,R2
+    HG002,BH2JWTDSX5,1,CGGTTGTT-GTGGTATG,data/fq/HG002_NA24385_son_80X_R1.fq.gz,data/fq/HG002_NA24385_son_80X_R2.fq.gz
+    HG003,BH2JWTDSX5,1,GCGTCATT-CAGACGTT,data/fq/HG003_NA24149_father_80X_R1.fq.gz,data/fq/HG003_NA24149_father_80X_R2.fq.gz
+    HG004,BH2JWTDSX5,1,CTGTTGAC-ACCTCAGT,data/fq/HG004_NA24143_mother_80X_R1.fq.gz,data/fq/HG004_NA24143_mother_80X_R2.fq.gz
+    ```
+
++ workflow/schemas/fastq_schema.yaml
+
+    ```yml
+    description: A example schema for a pipeline.
+    imports:
+      - http://schema.databio.org/pep/2.0.0.yaml
+      # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
+      
+    properties:
+      samples:
+        type: array
+        items:
+          type: object
+          properties:
+            SAMPLE_ID:
+              type: string
+              description: "sample id"
+            FLOWCELL:
+              type: string
+              description: "Flowcell"
+            INDEX:
+              type: string
+              description: "Library index"
+            LANE:
+              type: string
+              description: "Lane number in flowcell"
+              enum: ["1", "2"]
+            R1:
+              type: string
+              description: "path to the R1 fastq file"
+            R2:
+              type: string
+              description: "path to the R2 fastq file"
+          required:
+            - FLOWCELL
+            - SAMPLE_ID
+            - INDEX
+            - R1
+            - R2
+    ```
+
+<font size="+3">&#128214;</font> In this example, 6 columns in the sample csv file are required: SAMPLE_ID, FLOWCELL, LANE, INDEX, R1, R2. Such information is mainly used to build RG (read group) tag in the bam file:  
+
+```
+@RG    PL:ILLUMINA    ID:{FLOWCELL}_{LANE}    SM:{SAMPLE_ID}    PU:{SAMPLE_ID}_{FLOWCELL}    LB:{SAMPLE_ID}_{INDEX}
+```
+Users may put dummy data if some of the information is not available, and {SAMPLE_ID} needs not to be unique in the sample table (as some samples might be sequenced in multiple flow cells to meet the coverage requirement).  Nevertheless, the combination of {SAMPLE_ID} and {FLOWCELL} must be unique.
+
+Users may put additional meta information in the sample csv file, which, however, will be ignored by TriosCompass.
+
+##### PEP example for *bam* input
+
+The essential information for bam input is the sample id and the bam file location. Therefore, the metadata is much simpler compared to *fastq* input.
+
++ config/bam_pep.yaml
+
+    ```yml
+    pep_version: 2.0.0
+    sample_table: sample_bam.csv
+    
+    
+    sample_modifiers:
+      append:
+        sample_name: "sn"
+      derive:
+        attributes: [sample_name]
+        sources:
+          sn: "{SAMPLE_ID}"
+    ```
+
++ config/sample_bam.csv
+  
+    ```csv
+    SAMPLE_ID,BAM
+    HG002,sorted_bam/HG002_NA24385_son_80X.bam
+    HG003,sorted_bam/HG003_NA24149_father_80X.bam
+    HG004,sorted_bam/HG004_NA24143_mother_80X.bam
+    ```
+
++ workflow/schemas/bam_schema.yaml
+    ```yml
+    description: A example schema for a pipeline.
+    imports:
+      - http://schema.databio.org/pep/2.0.0.yaml
+      # - TriosCompass_v2/workflow/schemas/2.0.0.yaml
+      
+    properties:
+      samples:
+        type: array
+        items:
+          type: object
+          properties:
+            SAMPLE_ID:
+              type: string
+              description: "sample id"
+            BAM:
+              type: string
+              description: "path to the bam file"
+          required:
+            - SAMPLE_ID
+            - BAM
+    ```
+
+<font size="+3">&#128214;</font> {SAMPLE_ID} should be unique and matched with the RG tag in the bam file in *TriosCompass*.  If the bam file has *RG* different from {SAMPLE_ID}, users may activate *reset_RG* option so as to update all *RG* tag properly in the bam files.
+
++ config/config.yaml
+```yml
+bam_input:
+  reset_RG: True
+```
+
+---
+
+#### Pedigree files
+In addition to the NGS input data, another important input is pedigree files to define trios. 
+
+<font size="+3">&#128214;</font> There are several requirements about pedigree files from TriosCompass:
++ Each trio is specified by one pedigree file;
++ All pedigree files are named by the unique family ID, with ".ped" as the file extension, under the directory which is specified by config/config.yaml:
+    ```yml
+    ped_dir: "ped"
+    ```
++ Rows for the trio members are in the order *father-mother-child* in the pedigree file.
++ Trio member identifiers are matched with {SAMPLE_ID} as defined in the sample CSV filem and also matched with the RG tags of the bam files.
+
+
+Below is an example of the pedigree file for the GIAB AJ family:
++ ped/AJ.ped 
+  
+    ```tab
+    AJ      HG003   0       0       1       1
+    AJ      HG004   0       0       2       1
+    AJ      HG002   HG003   HG004   1       1
+    ```
+
+---
+
+#### Example folder structure of the final workspace
+```bash
+fastq/ # for fastq input example
+├── HG002_NA24385_son_80X_R1.fq.gz
+├── HG002_NA24385_son_80X_R2.fq.gz
+├── HG003_NA24149_father_80X_R1.fq.gz
+├── HG003_NA24149_father_80X_R2.fq.gz
+├── HG004_NA24143_mother_80X_R1.fq.gz
+└── HG004_NA24143_mother_80X_R2.fq.gz
+sorted_bam/ # for bam input example
+├── HG002_NA24385_son_80X.bam
+├── HG002_NA24385_son_80X.bam.bai
+├── HG003_NA24149_father_80X.bam
+├── HG003_NA24149_father_80X.bam.bai
+├── HG004_NA24143_mother_80X.bam
+└── HG004_NA24143_mother_80X.bam.bai
+ref/
+├── hg38.wgs_interval.bed
+├── Homo_sapiens_assembly38.fasta
+└── STR/
+ped/
+└── AJ.ped
+TriosCompass_v2
+├── config/
+├── data/
+├── environment.yaml
+├── img/
+├── LICENSE
+├── README.md
+└── workflow/
+
+
+```
+
+---
+
+### III. Configure files
+We have introduced PEP yaml file to [specify the NGS input files of TriosCompass](#fastq-and-bam-input-files). There are two other yaml files, which play essential roles in Snakemake workflows:
++ the profile config.yaml file
++ the configfile config.yaml file
+
+#### profile/config.yaml
+
+The profile config.yaml file has [multiple function roles](https://snakemake.readthedocs.io/en/v7.3.7/executing/cli.html#profiles) in *Snakemake*: 
++ Define computing resources and threads.
++ Specify command-line options required to start Snakemake workflow properly. 
++ Submit Snakemake jobs to the cluster. 
+
+We have provided [an example profile](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/workflow/profiles/slurm/config.yaml) to launch TriosCompass in a Slurm cluster.
+
+<font size="+3">&#128214;</font> To separate the workspace from TriosCompass, we set $WORKSPACE as the working directory, where TriosCompass_v2 (the locally cloned repo) is a sub-folder of $WORKSPACE.  Accordingly, the command below is recommended:
+```bash
+snakemake --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCompass_v2/config/config.yaml
+```
+
+<font size="+3">&#128214;</font> There is a bug in the release of Snakemake we are testing (Version 7.3.7), so that the section *set-threads* does not work properly in the profile config.yaml file. We had used [config/config.yaml](#configconfigyaml) as a work-around solution to specify threads for each Snakemake *rule*. 
+
+---
+
+#### config/config.yaml
+
+[This configure file](https://snakemake.readthedocs.io/en/v7.3.7/snakefiles/configuration.html?highlight=configfile#configuration) is for users to customized TriosCompass.  In particular, users may it to enable (or disable) certain optional components of TriosCompass. Most of sections of config.yaml have been already introduced in [the section *Inputs*](#ii-inputs).  [A complete example of config/config.yaml](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/config/config.yaml) has been provided for users as a template.   
+
+---
+
+### V. Run TriosCompass
+
+A check list to launch TriosCompass
+- [ ] Install singularity to the front-end nodes and working nodes of the cluster.
+- [ ] Create new directory as work space and change directory to it.
+- [ ] Git clone TriosCompass_v2.
+- [ ] Install conda/mamba and activate the conda environment *TriosCompassV2* using TriosCompass_v2/environment.txt
+- [ ] Prepare and install resource bundle for the specific reference genome.
+- [ ] Configure profile settings to submit jobs to the cluster.
+- [ ] Move NGS input data under the work space.
+  - [ ] Prepare the proper PEP files for the NGS input.
+- [ ] Configure TriosCompass_v2/config/config.yaml for the new run.
+
+Finally, the command can be launched in this way: 
+```bash
+### Assume $WORKSPACE is your working directory
+cd $WORKSPACE
+conda activate TriosCompassV2
+module load singularity # or load singularity is available in alternative way
+
+mkdir -p TMP
+export TMPDIR=$WORKSPACE/TMP
+
+snakemake  --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCompass_v2/config/config.yaml
+```
+
+---
+
+### IV. Outputs
+The location of the *output* directory is also specified by config/config.yaml:
+
+```yml
+output_dir: "output"
+```
+
+Most of the output from TriosCompass will be saved to $WORKSPACE/output based on the configure setting above. Under the output folder, there are dozens of sub-folders for the (intermediate) outputs of TriosCompass.
+```bash
+ls $WORKSPACE/output/
+benchmark               dnSV               gatk_genotype_gvcf_pb  manta_sv       splitted_panel
+call_JIGV               dnSV_summary       gatkhc_pb              merge_monstr   svimmer
+collectmultiplemetrics  dumpstr_call       glnexus                merge_ped      trio_manta_list
+collectwgsmetrics       dumpstr_locus      graphtyper             monstr         vizaln
+deepvariant_pb          flagstat           graphtyper_filter      monstr_filter
+dnm_vcf                 gatk_cgp           hipstr                 phase_DNMs
+dnm_vcf_summary         gatk_combine_gvcf  joint_dnSV             slivar
+dnSTR_summary           GATK_DV            manta                  smoove
+```
+
+
+There are 4 major outputs from TriosCompass:
++ MultiQC reports
++ DNM predictions, parental origins and visualizations
++ dnSTR predictions and visulizations
++ dnSV predictions
+
+#### MultiQC report
+The MultiQC report is a colletion of QC metrics of NGS data.
+
+Location of MultiQC output is specified by config["multiqc"]["output_dir"]:
+
+```yml
+multiqc:
+  enable: True
+  output_dir: "MultiQC_output"
+```
+
+```bash
+tree MultiQC_output/
+MultiQC_output/
+├── multiqc_data
+│   ├── multiqc_citations.txt
+│   ├── multiqc_data.json
+│   ├── multiqc_general_stats.txt
+│   ├── multiqc.log
+│   ├── multiqc_sources.txt
+│   ├── picard_alignment_readlength_plot.txt
+│   ├── picard_alignment_summary_Aligned_Bases.txt
+│   ├── picard_alignment_summary_Aligned_Reads.txt
+│   ├── picard_base_distribution_by_cycle__Adenine.txt
+│   ├── picard_base_distribution_by_cycle__Cytosine.txt
+│   ├── picard_base_distribution_by_cycle__Guanine.txt
+│   ├── picard_base_distribution_by_cycle__Thymine.txt
+│   ├── picard_base_distribution_by_cycle__Undetermined.txt
+│   ├── picard_gcbias_plot.txt
+│   ├── picard_insert_size_Counts.txt
+│   ├── picard_insert_size_Percentages.txt
+│   ├── picard_quality_by_cycle.txt
+│   ├── picard_quality_score_distribution.txt
+│   ├── samtools-flagstat-dp_Percentage_of_total.txt
+│   ├── samtools-flagstat-dp_Read_counts.txt
+│   ├── samtools-idxstats-mapped-reads-plot_Normalised_Counts.txt
+│   ├── samtools-idxstats-mapped-reads-plot_Observed_over_Expected_Counts.txt
+│   ├── samtools-idxstats-mapped-reads-plot_Raw_Counts.txt
+│   └── samtools-idxstats-xy-plot.txt
+└── multiqc.html
+```
+
+#### DNM predictions, parental origins and visualizations
+##### DNM predictions
+The final DNM candidates are predicted by both DV and HC.  And we extract the variant information from DV output and save it as {output}/dnm_vcf/{fam}.dnm.vcf.gz, where {output} and {fam} are placeholders for the output directory and trio ID, respecitively.
+
+Besides, the counts of DNMs for all trios are summarised in the file {output}/dnm_vcf_summary/DNM_summary.txt.
+
+##### Parental origins of DNMs
+
+The output of parental origins of DNMs is a tab-delimited test file, availalbe at *{output}/phase_DNMs/{fam}.parental_origin.tab* .  
+
+The format of this output is [as described](#b-phase-dnms), and most of users may just focus on first two columns of the file.
+
+##### JIGV visulization
+[JIGV](https://github.com/brentp/jigv) snapshots have generated for each DNM, available as *{output}/call_JIGV/{fam}.JIGV.html* .
+
+---
+
+#### dnSTR predictions and visulizations
+##### dnSTR predictions from HipSTR/MonSTR
+The dnSTRs predicted by HipSTR/MonSTR are available as *{output}/monstr_filter/hipstr.filtered.tab* . The output format of the MonSTR prediction is described [here](https://github.com/gymreklab/STRDenovoTools?tab=readme-ov-file#outprefixall_mutationstab).
+
+##### dnSTR visulizations by *VizAln*
+We have also generated visulization for dnSTR using [VizAln (from HipSTR package)](https://github.com/tfwillems/HipSTR#alignment-visualization). Each dnSTR of one trio has its own html file under *{output}/vizaln/{fam}/hipstr/variants/*.
+
+```bash
+tree output/vizaln/t0311/hipstr
+output/vizaln/t0311/hipstr
+├── DONE
+└── variants
+    ├── chr10_103294239.dnm
+    ├── chr10_103294239.html
+    ├── chr10_34375054.dnm
+    ├── chr10_34375054.html
+    ├── chr10_46899557.dnm
+    ├── chr10_46899557.html
+    ├── chr10_50707597.dnm
+    ├── ...
+```
+
+<font size="+3">&#128214;</font> The ".dnm" files are dummy files for the use of Snakemake workflow in the process of scatter-gather dnSTRs.
+
+###### Example of VizAln realignment of the DNM (started at chr6:38571975) in the family *t0612*
+
+An example of VizAln realignment is available [here](https://htmlpreview.github.io/?https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/chr6_38571975.html).
+
+In this particular example, the identifiers of child, father and mother are SC260721, SC260720 and SC260670, respectively, from the family *t0612*.
+```bash
+cat ped_files/t0612.ped 
+t0612   SC260720        0       0       1       1
+t0612   SC260670        0       0       2       1
+t0612   SC260721        SC260720        SC260670        2       1
+```
+
+From [the MonSTR prediction](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/data/hipstr.filtered.tab), we have: 
+
+| chrom | pos      | period | child    | newallele | mutsize | child_gt | mat_gt | pat_gt |
+|-------|----------|--------|----------|-----------|---------|----------|--------|--------|
+| 6     | 38571975 | 2      | SC260721 | 13        | 2       | 13,13    | 11,13  | 11,11  |
+
+
+It suggests there is an de novo tandem repeat mutation started at the position chr6:38571975 in the subject SC260721.  The unit length of repeat (period) is 2, and has 13 repeat units (newallele) in the child *SC260721*, which is 2 more than the reference genome (mutsize; i.e., the wild type genotype is [11,11]).  The MonSTR prediction indicated that the genotypes of child, father and mother are [13,13], [11,11] and [11,13], respectively. 
+
+In the VizAln html page, we have genotypes of the family members marked in different ways.  For example, "SC260670: 0|4" means one allele is wild type and another is 4 bp insertion. Negative values stands for deletion (read [this](https://github.com/tfwillems/HipSTR/tree/master#alignment-visualization) for some details).  Therefore, "SC260721: 4|4", "SC260720: 0|0" and  "SC260670: 0|4" are well matched with the MonSTR prediction: [13,13], [11,11] and [11,13] for child, father and mother,respectively,  in this example.
+
+
+<font size="+3">&#128214;</font> Please note that the alignments from VizAln were arranged by the alphabet order of the sample identifiers. 
+
+---
+
+#### dnSV predictions
+As aforementioned, dnSVs are jointly predicted by *Smoove* and *Manta/TypeGraph2*.  The results are merged VCF files generated by *SURVIVOR*: {output}/joint_dnSV/{fam}.dnSV.vcf: 
++ output/joint_dnSV/t0311.dnSV.vcf
+  
+    ```tab
+    #CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  SC501095        SC501095_1
+    chr18   55923597        chr18:55923597:OG       N       ]chr11:13001662]N    239     PASS    SUPP=2;SUPP_VEC=11;SVLEN=0;SVTYPE=TRA;SVMETHOD=SURVIVOR1.0.7;CHR2=chr11;END=13001651;CIPOS=-107,0;CIEND=0,11;STRANDS=++ GT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO     0/1:NA:42921828:0,13:--:239:TRA:668279_2:NA:NA:chr18_55923490-chr11_13001662    0/1:NA:42921946:0,0:++:217:TRA:chr18_55923597_OG:NA:NA:chr18_55923597-chr11_13001651
+    chr20   37068816        chr20:37068816:OG       N       ]chr11:5933976]N    255     PASS    SUPP=2;SUPP_VEC=11;SVLEN=0;SVTYPE=TRA;SVMETHOD=SURVIVOR1.0.7;CHR2=chr11;END=5933971;CIPOS=-32,0;CIEND=0,5;STRANDS=++    GT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO     0/1:NA:31134808:0,20:-+:80:TRA:668295_2:NA:NA:chr20_37068784-chr11_5933976      0/1:NA:31134845:0,0:++:255:TRA:chr20_37068816_OG:NA:NA:chr20_37068816-chr11_5933971
+    ```
+
+<font size="+3">&#128214;</font> Two sample columns are available for the child (e.g.,SC501095) in the example vcf output: the first one is from *Smoove* and the other is from *Manta/TypeGraph2*
+
+Besides, a summary of dnSV count is available as *{output}/dnSV_summary/dnSV_summary.txt*.
+
+---
+
+#### Snakemake report for TriosCompass
+[Reports](https://snakemake.readthedocs.io/en/v7.3.7/snakefiles/reporting.html) is a very useful feature of Snakemake. We utilized this feature to package TriosCompass outputs into a zip file and index them with the HTMP page. 
+
+Below is an example command to generate reports for TriosCompass: 
+
+```bash
+snakemake  --report TriosCompass_full_report.zip --profile TriosCompass_v2/workflow/profiles/slurm --configfile TriosCompass_v2/config/config.yaml
+```
+
++ A snapshot of the report HTML page. 
+
+![](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/img/README_2024-09-06-11-43-08.png?raw=true)
+
+---
 

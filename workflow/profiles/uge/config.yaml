@@ -1,0 +1,12 @@
+cluster-sync: "uge_submit.py"
+jobscript: "uge_jobscript.sh"
+local-cores: 1
+latency-wait: "45"
+use-conda: "True"
+use-singularity: "True"
+keep-going: "True"
+restart-times: "1"
+jobs: "500"
+printshellcmds: "True"
+max-jobs-per-second: "1"
+max-status-checks-per-second: "0.017"
