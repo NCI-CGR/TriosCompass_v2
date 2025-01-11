@@ -136,8 +136,24 @@ if config["dnSTR"]["hipstr"]["enable"]:
                     --filter-posterior 0.8 
         """
 
+    rule childDict2table:
+        output: output_dir + "/dnSTR_summary/childDict.csv"
+        params: dict = CHILD_DICT
+        run: 
+            import csv
+
+            with open(str(output), 'w', newline='') as csvfile:
+                fieldnames = ['child', 'trio_id']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for key in params.dict:
+                    writer.writerow({'trio_id': key, 'child': params.dict[key]})
+
     rule dnSTR_summary:
-        input: output_dir + "/monstr_filter/{caller}.filtered.tab"
+        input: 
+            tab=output_dir + "/monstr_filter/{caller}.filtered.tab",
+            csv=output_dir + "/dnSTR_summary/childDict.csv"
         output: 
             report(
                 output_dir + "/dnSTR_summary/{caller}.dnSTR_summary.txt",
@@ -152,7 +168,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
             )
         conda: "../envs/csvtk.yaml"
         shell: """
-            csvtk summary -t -g family -f pos:countn {input} | csvtk rename -t -f 1,2 -n Family,Countn > {output}
+            csvtk join -t --na 0 -L -f child <(csvtk csv2tab {input.csv}) <(csvtk summary -t -g child -f pos:countn  {input.tab} | csvtk rename -t -f 1,2 -n child,countn) > {output}
         """
 
     ### Join hipstr and gangstr if both called
