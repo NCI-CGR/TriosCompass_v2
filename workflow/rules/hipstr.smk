@@ -11,7 +11,7 @@ rule split_bed_hipstr:
     shell: '''
         # split cannot take piped input, leading to the error of "cannot determine file size"
         # so we use tmpfile here to get around the issue
-        tmpfile=$(mktemp /tmp/abc-script.XXXXXX); grep -v -e "^chrX" -e "chrY" {input} > $tmpfile; split --numeric-suffixes=0 -n l/{params.split_total} --suffix-length=5  --additional-suffix=".bed" $tmpfile {params.prefix}
+        tmpfile=$(mktemp /tmp/abc-script.XXXXXX); grep -v -e "^chrX" -e "chrY" {input} > $tmpfile || true ; split --numeric-suffixes=0 -n l/{params.split_total} --suffix-length=5  --additional-suffix=".bed" $tmpfile {params.prefix}
     '''
 
 rule hipstr:
@@ -86,10 +86,18 @@ checkpoint scatter_chr_pos:
     input: 
         output_dir + "/vizaln/{fam}/{fam}.hipstr.vcf.gz"
     output:
-        directory(output_dir + "/vizaln/{fam}/hipstr/variants/")
+        tmp = temp(output_dir + "/vizaln/{fam}/hipstr/variants/tmp"),
+        dir = directory(output_dir + "/vizaln/{fam}/hipstr/variants/")
     shell: """
-        mkdir -p {output}
-        zgrep -v "^#" {input}  | awk -v FS='\\t' 'system("touch {output}/"$1"_"$2".dnm")'
+        mkdir -p {output.dir}
+        zgrep -v "^#" {input}  > {output.tmp} || true
+        if [ -s {output.tmp} ]; then 
+            awk -v FS='\\t' 'system("touch {output.dir}/"$1"_"$2".dnm")' {output.tmp}
+        else
+            # touch "$(dirname {output.dir})/DONE"
+            echo "Do noting now"
+        fi
+        
     """
 
 rule vizaln:
@@ -106,7 +114,7 @@ rule vizaln:
                 "chr": "{chr}",
                 "pos": "{pos}",
                 "Desc": "VizAln of dnSTR",
-                "File tyoe": "HTML"
+                "File type": "HTML"
             }
         )
     benchmark:
