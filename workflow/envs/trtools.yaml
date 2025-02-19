@@ -3,3 +3,5 @@ channels:
   - conda-forge
 dependencies:
   - trtools ==5.0.2
+  - pip:
+    - scipy==1.11.4

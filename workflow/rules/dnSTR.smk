@@ -20,7 +20,9 @@ if config["dnSTR"]["hipstr"]["enable"]:
         benchmark:
             output_dir + "/benchmark/dumpstr_call/{caller}_{chunk}.tsv"
         conda: "../envs/trtools.yaml"
+        # container: "docker://quay.io/biocontainers/trtools:latest"
         shell: """
+            mkdir -p $(dirname {params.prefix})	
             dumpSTR \
                 --vcf {input} \
                 --out {params.prefix} \
@@ -46,6 +48,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
         params:
             prefix = output_dir + "/dumpstr_locus/{caller}_{chunk}"
         conda: "../envs/trtools.yaml"
+        # container: "docker://quay.io/biocontainers/trtools:latest"
         shell: """
             dumpSTR --min-locus-hwep 0.00001 --min-locus-callrate 0.8 \
                 --filter-regions {input.dup_reg} \
