@@ -86,8 +86,8 @@ checkpoint scatter_chr_pos:
     input: 
         output_dir + "/vizaln/{fam}/{fam}.hipstr.vcf.gz"
     output:
-        tmp = temp(output_dir + "/vizaln/{fam}/hipstr/variants/tmp"),
-        dir = directory(output_dir + "/vizaln/{fam}/hipstr/variants/")
+        dir = directory(output_dir + "/vizaln/{fam}/hipstr/variants/"),
+        tmp = temp(output_dir + "/vizaln/{fam}/hipstr/variants/tmp")
     shell: """
         mkdir -p {output.dir}
         zgrep -v "^#" {input}  > {output.tmp} || true
