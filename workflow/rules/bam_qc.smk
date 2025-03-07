@@ -29,7 +29,8 @@ if config["bam_qc"]["collectwgsmetrics"]["enable"]:
             output_dir +"/benchmark/collectwgsmetrics/{subj}.tsv"
         singularity: "docker://quay.io/biocontainers/picard:2.27.3--hdfd78af_0"
         shell: """
-            picard CollectWgsMetrics -XX:ParallelGCThreads={threads} \
+            export  JAVA_TOOL_OPTIONS="-XX:+UseSerialGC -Xmx48G -Xms48G -XX:ParallelGCThreads=4 -XX:MaxRAMPercentage=90.0" 
+            picard CollectWgsMetrics \
                 I={input.bam} \
                 O={output} \
                 R={input.ref} 
