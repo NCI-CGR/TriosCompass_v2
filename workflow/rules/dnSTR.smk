@@ -35,7 +35,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
         output:
             output_dir + "/merge_ped/all.ped"
         shell: """
-            cat {input} | awk '{{if($3!=0 && $4!=0) print $0}}'   | sed -e 's/^\(t....\)c./\\1/' > {output}
+            cat {input} | awk '{{if($3!=0 && $4!=0) print $0}}'   | sed -E 's/^(.+)c.(\s)/\1\2/' > {output}
         """
 
     ### The same rule for both hipstr and gangtr
