@@ -8,4 +8,4 @@ sample_modifiers:
   derive:
     attributes: [sample_name]
     sources:
-      sn: "{SAMPLE_ID}_{FLOWCELL}"
+      sn: "{SAMPLE_ID}_{FLOWCELL}_L{LANE}"
