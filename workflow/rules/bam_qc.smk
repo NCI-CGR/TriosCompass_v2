@@ -29,8 +29,7 @@ if config["bam_qc"]["collectwgsmetrics"]["enable"]:
             output_dir +"/benchmark/collectwgsmetrics/{subj}.tsv"
         singularity: "docker://quay.io/biocontainers/picard:2.27.3--hdfd78af_0"
         shell: """
-            export  JAVA_TOOL_OPTIONS="-XX:+UseSerialGC -Xmx48G -Xms48G -XX:ParallelGCThreads=4 -XX:MaxRAMPercentage=90.0" 
-            picard CollectWgsMetrics \
+            picard CollectWgsMetrics -XX:ParallelGCThreads={threads} \
                 I={input.bam} \
                 O={output} \
                 R={input.ref} 
@@ -62,4 +61,7 @@ if config["bam_qc"]["collectmultiplemetrics"]["enable"]:
         '''
     
     optional_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt", subj = subjs)) 
-    qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}", subj = subjs))
+    
+    # qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}", subj = subjs))
+    qc_output.append( expand(output_dir+"/collectmultiplemetrics/{subj}/sequencingArtifact.pre_adapter_summary_metrics.txt", subj = subjs))
+
