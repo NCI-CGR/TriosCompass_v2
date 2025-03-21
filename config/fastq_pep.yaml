@@ -1,7 +1,7 @@
 pep_version: 2.0.0
 sample_table: sample_fastq.csv
 
-# In manifest file, Sample_ID + Flowcell should be unique
+# In manifest file, Sample_ID + Flowcell + Lane should be unique
 sample_modifiers:
   append:
     sample_name: "sn"
