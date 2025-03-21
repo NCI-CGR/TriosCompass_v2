@@ -13,8 +13,8 @@ samples = pep.sample_table
 flowcells = list(set(samples["FLOWCELL"].tolist()))
 subjs = list(set(samples["SAMPLE_ID"].tolist())) # 
 ids = samples["sample_name"].tolist() # ids for each fastq file
-subj_flowcell_dict=samples[['SAMPLE_ID','FLOWCELL']].drop_duplicates().groupby('SAMPLE_ID')['FLOWCELL'].apply(list).to_dict()
- 
+#subj_flowcell_dict=samples[['SAMPLE_ID','FLOWCELL']].drop_duplicates().groupby('SAMPLE_ID')['FLOWCELL'].apply(list).to_dict()
+subj_flowcell_dict = samples[['SAMPLE_ID', 'FLOWCELL', 'LANE']].drop_duplicates().groupby('SAMPLE_ID').apply(lambda x: list(zip(x['FLOWCELL'], x['LANE']))).to_dict()
 
 # fq2bam                  - Run bwa mem, co-ordinate sorting, marking duplicates, and Base Quality Score Recalibration
 rule fastp: 
