@@ -11,7 +11,7 @@ rule manta_create_run_script:
         output_dir + '/manta/{subj}/runWorkflow.py.config.pickle'
     params:
         prefix = output_dir + '/manta/{subj}'
-    singularity: 'library://weizhu365/mocca-sv/manta_1-4-0:1.0.0'
+    singularity: 'docker://halllab/manta:v1.4.0'
     shell:
         'configManta.py \
             --bam {input.bam} \
@@ -29,7 +29,7 @@ rule manta_call:
     threads: config["threads"]["manta_call"]
     benchmark:
         "benchmarks/manta_call/{sample}.tsv"
-    singularity: 'library://weizhu365/mocca-sv/manta_1-4-0:1.0.0'
+    singularity: 'docker://halllab/manta:v1.4.0'
     shell:
         '{input.cmd} -m local -j {threads}'
 
