@@ -20,7 +20,9 @@ if config["dnSTR"]["hipstr"]["enable"]:
         benchmark:
             output_dir + "/benchmark/dumpstr_call/{caller}_{chunk}.tsv"
         conda: "../envs/trtools.yaml"
+        # container: "docker://quay.io/biocontainers/trtools:latest"
         shell: """
+            mkdir -p $(dirname {params.prefix})	
             dumpSTR \
                 --vcf {input} \
                 --out {params.prefix} \
@@ -33,7 +35,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
         output:
             output_dir + "/merge_ped/all.ped"
         shell: """
-            cat {input} | awk '{{if($3!=0 && $4!=0) print $0}}'   | sed -e 's/^\(t....\)c./\\1/' > {output}
+            cat {input} | awk '{{if($3!=0 && $4!=0) print $0}}'   | sed -E 's/^(\S+)c[0-9]+(\s)/\\1\\2/'  > {output}
         """
 
     ### The same rule for both hipstr and gangtr
@@ -46,6 +48,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
         params:
             prefix = output_dir + "/dumpstr_locus/{caller}_{chunk}"
         conda: "../envs/trtools.yaml"
+        # container: "docker://quay.io/biocontainers/trtools:latest"
         shell: """
             dumpSTR --min-locus-hwep 0.00001 --min-locus-callrate 0.8 \
                 --filter-regions {input.dup_reg} \
@@ -136,8 +139,24 @@ if config["dnSTR"]["hipstr"]["enable"]:
                     --filter-posterior 0.8 
         """
 
+    rule childDict2table:
+        output: output_dir + "/dnSTR_summary/childDict.csv"
+        params: dict = CHILD_DICT
+        run: 
+            import csv
+
+            with open(str(output), 'w', newline='') as csvfile:
+                fieldnames = ['child', 'trio_id']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for key in params.dict:
+                    writer.writerow({'trio_id': key, 'child': params.dict[key]})
+
     rule dnSTR_summary:
-        input: output_dir + "/monstr_filter/{caller}.filtered.tab"
+        input: 
+            tab=output_dir + "/monstr_filter/{caller}.filtered.tab",
+            csv=output_dir + "/dnSTR_summary/childDict.csv"
         output: 
             report(
                 output_dir + "/dnSTR_summary/{caller}.dnSTR_summary.txt",
@@ -152,7 +171,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
             )
         conda: "../envs/csvtk.yaml"
         shell: """
-            csvtk summary -t -g family -f pos:countn {input} | csvtk rename -t -f 1,2 -n Family,Countn > {output}
+            csvtk join -t --na 0 -L -f child <(csvtk csv2tab {input.csv}) <(csvtk summary -t -g child -f pos:countn  {input.tab} | csvtk rename -t -f 1,2 -n child,countn) > {output}
         """
 
     ### Join hipstr and gangstr if both called

@@ -59,11 +59,11 @@ set-resources:
   - collectwgsmetrics:runtime="1d"
   - collectwgsmetrics:mem_mb=80000
   - collectmultiplemetrics:mem_mb=80000
-  - collectmultiplemetrics:runtime="1d"
+  - collectmultiplemetrics:runtime="36h"
   - collectmultiplemetrics:partition=gpu
   - collectmultiplemetrics:slurm=gres=gpu:v100x:1 
   - gatkhc_pb:mem_mb=200000
-  - gatkhc_pb:runtime="8h"
+  - gatkhc_pb:runtime="20h"
   - gatkhc_pb:partition=gpu
   - gatkhc_pb:slurm=gres=gpu:v100x:1
   - gatk_combine_gvcf:mem_mb=10000
@@ -75,7 +75,7 @@ set-resources:
   - gatk_genotype_gvcf_pb:partition=gpu
   - gatk_genotype_gvcf_pb:slurm=gres=gpu:v100x:1 
   - deepvariant_pb:mem_mb=180000
-  - deepvariant_pb:runtime="20h"
+  - deepvariant_pb:runtime="30h"
   - deepvariant_pb:slurm=gres=gpu:v100x:1
   - deepvariant_pb:partition=gpu
   - glnexus_dv:mem_mb=100000
