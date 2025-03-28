@@ -36,9 +36,10 @@ rule gatk_combine_gvcf:
     benchmark:
         output_dir + "/benchmark/gatk_combine_gvcf/{fam}.tsv"
     params: 
-        v=lambda w, input: " -V ".join(input.vcfs)
+        v=lambda w, input: " -V ".join(input.vcfs),
+        adjusted_mem=lambda wildcards, resources: int((resources.mem_mb / 1024) - 4)
     shell: """
-        gatk CombineGVCFs \
+        gatk --java-options "-Xmx{params.adjusted_mem}G" CombineGVCFs \
             -V {params.v} \
             -R {input.ref} \
             -O {output} 
