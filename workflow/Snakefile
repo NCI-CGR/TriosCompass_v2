@@ -42,7 +42,11 @@ if config["dnSTR"]["enable"]:
     include: "rules/dnSTR.smk"
 
 if config["dnSV"]["enable"]:
-    include: "rules/dnSV.smk"
+    if config["dnSV"]["GraphTyper2+smoove"]["enable"]:
+        include: "rules/dnSV.smk"
+        
+    if config["dnSV"]["Manta"]["enable"]:
+        include: "rules/dnSV_manta.smk"
 
 if config["multiqc"]["enable"]:
     include: "rules/multiqc.smk"
