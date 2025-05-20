@@ -19,4 +19,4 @@ The output of manta dnSV will be available at:
   + dnSV_manta/ 
   + dnSV_manta_summary/
 
-The launch script is similar as before except a new command-line argument "--latency-wait 600", which is to warrant sufficient latency time for *manta* to generate the targeted output.
+[The launch script](./data/launch_40X_dnSV.sh) is similar as before except a new command-line argument "--latency-wait 600", which is to warrant sufficient latency time for *manta* to generate the targeted output.
