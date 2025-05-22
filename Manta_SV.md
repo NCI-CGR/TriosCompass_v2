@@ -14,6 +14,9 @@ dnSV:
 
 ```
 
+The updated rulegraph diagram of TriosCompass:
+![](img/TrioCompass_manta_dnSV.png) 
+
 The output of manta dnSV will be available at:
 + {output_dir}/
   + dnSV_manta/ 
