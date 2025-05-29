@@ -2,11 +2,15 @@
 --- 
 ### Prepare GIAB 40X
 #### Download Illumina NGS data from GIAB
+GIAB Trio WGS fastq data (Illumina; 150bp paired-end reads; ~300X coverage) were downloaded from https://ftp-trace.ncbi.nlm.nih.gov. A detailed manifest file, including md5 checksum, is available at https://42basepairs.com/download/s3/giab/data_indexes/AshkenazimTrio/sequence.index.AJtrio_Illumina300X_wgs_07292015.  
+
 ```bash
 ### Get the manifest file
 wget https://raw.githubusercontent.com/genome-in-a-bottle/giab_data_indexes/master/AshkenazimTrio/sequence.index.AJtrio_Illumina300X_wgs_07292015
 
-### Download the fastq files in the manifest file and validate with md5checksum
+The above http link is dead but the same file is still available at https://42basepairs.com/download/s3/giab/data_indexes/AshkenazimTrio/sequence.index.AJtrio_Illumina300X_wgs_07292015 .
+
+### Download the fastq files in the manifest file from ftp-trace.ncbi.nlm.nih.gov and validate with md5checksum
 
 ```
 #### Downsampling to 40X
