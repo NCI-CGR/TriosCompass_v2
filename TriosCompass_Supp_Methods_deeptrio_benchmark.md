@@ -1,3 +1,27 @@
+
+--- 
+### Prepare GIAB 40X
+#### Download Illumina NGS data from GIAB
+```bash
+### Get the manifest file
+wget https://raw.githubusercontent.com/genome-in-a-bottle/giab_data_indexes/master/AshkenazimTrio/sequence.index.AJtrio_Illumina300X_wgs_07292015
+
+### Download the fastq files in the manifest file and validate with md5checksum
+
+```
+#### Downsampling to 40X
+The GIAB fastq data were trimmed by *fastp* and then aligned to the human reference genome hg38 using *parabricks fq2bam*. Aligned read counts *$X* were retrieved by *samtools idxstat*, the fraction to be downsampled was calculated using the formula: 
+
+  Fraction=3.3*10^9 * 40 /(148 * $X),
+
+where 3.3X10^9 is the size of the human genome, 40 is the target coverage, and 148 is the actual read length after *fastp* trimming.  
+
+*Sambamba* was utilized to downsample the resulting bam files to 40X coverage.  Further details regarding this data processing are provided within the Snakemake workflow available at https://github.com/NCI-CGR/TriosCompass_v2/blob/GIAB_Trios/Snakefile_parabricks. 
+
+
+---
+
+### Compare DeepTrio with TriosCompass
 #### Run DeepTrio (V1.8.0)
 + run_it_module_wg.sh
 ```bash
@@ -294,6 +318,9 @@ wc -l ../../truth_files/HG002_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10
 # substract nodenovo_slop50 from high conf regions 
 # => AJtrio_3.3.2.truth.bed
 bedtools subtract -a ../../truth_files/AJtrio_3.3.2_hc.bed -b ../../truth_files/HG002_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10XsentieonHC-SOLIDgatkHC_CHROM1-22_v.3.3.2_highconf_trioinconsistent_nodenovo_slop50.bed > AJtrio_3.3.2.truth.bed
+
+### AJtrio_truth.vcf.gz
+13M.call_dnm.md:bcftools view -s child  -R ../../truth_files/AJtrio_3.3.2_hc.bed  ../../truth_files/HG002_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10XsentieonHC-SOLIDgatkHC_CHROM1-22_v.3.3.2_highconf_trioinconsistent.vcf.gz -o AJtrio_truth.vcf.gz -O z
 
 zgrep -c -v "^#" AJtrio_truth.vcf.gz
 2494
