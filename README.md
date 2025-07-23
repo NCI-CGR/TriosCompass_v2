@@ -14,6 +14,10 @@ A Snakemake workflow for DNM (de novo mutation) calling.
     - [II. Dependencies](#ii-dependencies)
     - [III. Methods](#iii-methods)
       - [A. Call DNMs](#a-call-dnms)
+      - [Updated DNM calling](#updated-dnm-calling)
+        - [New slivar filtering](#new-slivar-filtering)
+        - [New config setting for high coverage (~80X)](#new-config-setting-for-high-coverage-80x)
+        - [New config setting for moderate coverage (~40X)](#new-config-setting-for-moderate-coverage-40x)
       - [B. Phase DNMs](#b-phase-dnms)
       - [C. Call dnSTRs](#c-call-dnstrs)
       - [D. Call dnSVs](#d-call-dnsvs)
@@ -130,6 +134,76 @@ The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK Haplo
         min_gq: 20
         min_dp: 30
     ```
+---
+
+#### Updated DNM calling
+We observed GQ scores from DeepVariant vary depending on the read depth and genotype, so we refined DNM calling accordingly.  The GQ scores might be improved in the future release of DeepVariant.
+
+##### New slivar filtering
+```bash
+"denovo:( \
+                ( \
+                    (variant.CHROM == 'chrX' && kid.sex=='male') && \
+                    ((kid.GQ >= {params.min_01_gq} && kid.hom_alt) || \
+                     (kid.PL[0]>={params.min_PL} && kid.PL[1]>={params.min_PL} && kid.PL[2]==0)) \
+                    && kid.AB > 0.98  \
+                ) || \
+                ( \
+                    (!(variant.CHROM == 'chrX' && kid.sex=='male')) && \
+                    ((kid.GQ >= {params.min_01_gq} && kid.het) || \
+                     (kid.PL[0]>={params.min_PL} && kid.PL[2]>={params.min_PL} && kid.PL[1]==0)) \
+                    && kid.AB > {params.AB} && kid.AB < 1-{params.AB} \
+                ) \
+                ) &&  (kid.AD[0]+kid.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+                (kid.AD[0]+kid.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' && kid.sex == 'male' ? 1 : 0)) && \
+                ((mom.GQ >= {params.min_00_gq} && mom.hom_ref) || \
+                 (mom.PL[0]==0 && mom.PL[1]>={params.min_PL} && mom.PL[2]>={params.min_PL})) && \
+                ((dad.GQ >= {params.min_00_gq} && dad.hom_ref) || \
+                 (dad.PL[0]==0 && dad.PL[1]>={params.min_PL} && dad.PL[2]>={params.min_PL})) \
+                    && (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < {params.max_err} \
+                    && (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < {params.max_err} \
+                    && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (mom.AD[0]+mom.AD[1]) < {params.max_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) && (dad.AD[0]+dad.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) "
+```
+
+##### New config setting for high coverage (~80X)
+```yml
+call_dnm:
+  interval: "ref/hg38.wgs_interval.bed"
+  max_err: 0.02 # max AF for parenets (AD[1]/AD) 
+  AB: 0.3 # allele balance is btwn (AB, 1-AB)
+  dv:
+    min_00_gq: 20
+    min_01_gq: 3 # 3 for high depth
+    min_dp: 20
+    max_dp: 250
+    min_PL: 20
+  hc:
+    min_00_gq: 20
+    min_01_gq: 20
+    min_dp: 30
+    max_dp: 250
+    min_PL: 20
+```
+
+##### New config setting for moderate coverage (~40X)
+```yml
+call_dnm:
+  interval: "ref/hg38.wgs_interval.bed"
+  max_err: 0.02 # max AF for parenets (AD[1]/AD) 
+  AB: 0.25 # allele balance is btwn (AB, 1-AB)
+  dv:
+    min_00_gq: 20
+    min_01_gq: 15 # 3 for high depth
+    min_dp: 15
+    max_dp: 125
+    min_PL: 20
+  hc:
+    min_00_gq: 20
+    min_01_gq: 20
+    min_dp: 15
+    max_dp: 125
+    min_PL: 20
+```
 
 ---
 #### B. Phase DNMs
