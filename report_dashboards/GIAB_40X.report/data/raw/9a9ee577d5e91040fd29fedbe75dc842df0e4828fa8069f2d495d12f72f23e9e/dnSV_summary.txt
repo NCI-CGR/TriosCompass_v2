@@ -1,0 +1,2 @@
+TrioID	dnSTR_Cnt
+GIAB	250

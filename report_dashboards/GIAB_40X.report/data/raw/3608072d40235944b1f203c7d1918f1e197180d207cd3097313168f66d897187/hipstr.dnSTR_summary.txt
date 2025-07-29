@@ -1,0 +1,2 @@
+child	trio_id	countn
+HG002_NA24385_son	GIAB	138
