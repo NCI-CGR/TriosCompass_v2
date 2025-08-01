@@ -255,6 +255,7 @@ grep -c -v "^#" HG002.dnm.vcf
 slivar --version
 # > slivar version: 0.2.8 23df117c3809a2bf57eb0dd1fffdca0df06252a3
 
+# Ref: https://github.com/NCI-CGR/TriosCompass_v2/blob/manuscript/config/GIAB_40X.yaml#L47-L62
 slivar expr  --vcf output_GIAB40X_module_WG/HG002_trio_merged.norm.vcf.gz \
              --ped  GIAB.ped     \
              --pass-only \
@@ -280,6 +281,25 @@ tabix HG002_silvar_final.dnm.vcf.gz
 zgrep -c -v "^#" HG002_silvar_final.dnm.vcf.gz
 #1635
 
+# The processing for 80X is similar, except some changes in the slivar expression 
+# ref: https://github.com/NCI-CGR/TriosCompass_v2/blob/manuscript/config/GIAB_80X.yaml#L47-L62
+slivar expr  --vcf ${OUTPUT_DIR}/HG002_trio_merged.80X_norm.vcf.gz \
+             --ped  GIAB.ped     \
+             --pass-only \
+             --out-vcf HG002_slivar.80X_dnm.vcf \
+             --trio "denovo:( \
+              kid.GQ >= 13 && kid.het && \
+              kid.AB > 0.3 && kid.AB < 1-0.3 && \
+              (kid.AD[0]+kid.AD[1]) >= 20 && (kid.AD[0]+kid.AD[1]) < 250 && \
+              (mom.GQ >= 20 && mom.hom_ref) && \
+              (dad.GQ >= 20 && dad.hom_ref) && \
+              mom.AD[1]/(mom.AD[0]+mom.AD[1]) < 0.02 && \
+              dad.AD[1]/(dad.AD[0]+dad.AD[1]) < 0.02 && \
+              (mom.AD[0]+mom.AD[1]) >= 20 && (mom.AD[0]+mom.AD[1]) < 250 && \
+              (dad.AD[0]+dad.AD[1]) >= 20 && (dad.AD[0]+dad.AD[1]) < 250 \
+            )"
+# sample  denovo
+# HG002   1653
 ```
 
 ### Benchmark using hap.py
