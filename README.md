@@ -14,20 +14,22 @@ This *manuscript* branch, along with its dedicated documentation, supports the m
 
 #### Workspace folder structure 
 The recommended folder structure for your analysis workspace is as follows:
+<code>
 [Workspace]
 ├── bam/...
 ├── input
-│   ├── [40X_bam.csv](./data/input/40X_bam.csv)
-│   ├── [40X_pep.yaml](./data/input/40X_pep.yaml)
-│   ├── [80X_bam.csv](./data/input/80X_bam.csv)
-│   ├── [80X_pep.yaml](./data/input/80X_pep.yaml)
+│   ├── <a href="./data/input/40X_bam.csv">40X_bam.csv</a>
+│   ├── <a href="./data/input/40X_pep.yaml">40X_pep.yaml</a>
+│   ├── <a href="./data/input/80X_bam.csv">80X_bam.csv</a>
+│   ├── <a href="./data/input/80X_pep.yaml">80X_pep.yaml</a>
 │   └── ped
-├── [GIAB_40X.yaml](./config/GIAB_40X.yaml)
-├── [GIAB_80X.yaml](./config/GIAB_80X.yaml)
-├── [launch_40X.sh](./data/launch_40X.sh) 
-├── [launch_80X.sh](./data/launch_80X.sh) 
+├── <a href="./config/GIAB_40X.yaml">GIAB_40X.yaml</a>
+├── <a href="./config/GIAB_80X.yaml">GIAB_80X.yaml</a>
+├── <a href="./data/launch_40X.sh">launch_40X.sh</a>
+├── <a href="./data/launch_80X.sh">launch_80X.sh</a>
 ├── ref/...
 └── TriosCompass_v2/...
+</code>
 
 #### Launch TriosCompass
 After setting up your workspace, execute TriosCompass using the following commands. These examples assume activation of the *TriosCompassV2* Conda environment.
