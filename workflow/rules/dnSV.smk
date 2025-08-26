@@ -73,7 +73,7 @@ rule svimmer:
     #     cmd = workflow.basedir + "/scripts/svimmer"
     singularity: "docker://bioinformatics/svimmer:latest"
     shell: """
-        svimmer {input} chr{{1..22}} --ids --max_distance 50 --max_size_difference 100  > {output.vcf}
+        svimmer {input} chr{{1..22}} --ids --max_distance 50 --max_size_difference 100  --output {output.vcf}
     """
 
 rule vcfgz:
