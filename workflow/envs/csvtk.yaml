@@ -2,4 +2,4 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - csvtk ==0.28.0
+  - csvtk ==0.31.0
