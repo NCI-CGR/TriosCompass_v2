@@ -51,6 +51,11 @@ A Snakemake workflow for DNM (de novo mutation) calling.
           - [Example of VizAln realignment of the DNM (started at chr6:38571975) in the family *t0612*](#example-of-vizaln-realignment-of-the-dnm-started-at-chr638571975-in-the-family-t0612)
       - [dnSV predictions](#dnsv-predictions)
       - [Snakemake report for TriosCompass](#snakemake-report-for-trioscompass)
+    - [V. Test dataset](#v-test-dataset)
+      - [Uncompressing the Zip File](#uncompressing-the-zip-file)
+      - [Installation](#installation)
+      - [Configuring the Snakemake Profile](#configuring-the-snakemake-profile)
+      - [Expected Output](#expected-output)
 
 ---
 
@@ -916,3 +921,146 @@ snakemake  --report TriosCompass_full_report.zip --profile TriosCompass_v2/workf
 
 ---
 
+### V. Test dataset
+
+We've created [a test dataset](https://doi.org/10.5281/zenodo.7084147) to help you run the workflow, which includes the following components:
+
+  * A resource bundle for the **GRCh38** human reference genome.
+  * The **TriosCompass** workflow.
+  * A small **BAM** file extracted from GIAB data (chr22:43000000-46000000).
+
+The test dataset is available at https://doi.org/10.5281/zenodo.7084147 .
+
+#### Uncompressing the Zip File
+First, uncompress the provided zip file using the following command:
+
+```bash
+unzip TriosCompass_test_case.zip
+```
+
+Once uncompressed, the directory structure and file sizes are as follows:
+
+```bash
+du -hs test_case/*
+220M    test_case/bam
+1.3G    test_case/expected_output
+3.0K    test_case/GIAB_40X.yaml
+2.5K    test_case/input
+512     test_case/launch_40X.sh
+15G     test_case/ref
+739M    test_case/TriosCompass_v2
+
+ls -altr  test_case
+total 4
+drwxrwsr-x. 2 zhuw10 DCEG_Trios 4096 Feb 23  2025 input
+-rwxrwxr-x. 1 zhuw10 DCEG_Trios  482 Feb 23  2025 launch_40X.sh
+drwxrwsr-x. 2 zhuw10 DCEG_Trios 4096 Apr 25 10:35 ref
+drwxrwsr-x. 2 zhuw10 DCEG_Trios 4096 Jul 28 14:16 TriosCompass_v2
+drwxr-s---. 2 zhuw10 DCEG_Trios 4096 Aug 25 20:12 bam
+-rwxrwxr-x. 1 zhuw10 DCEG_Trios 2839 Aug 26 09:09 GIAB_40X.yaml
+drwxr-s---. 2 zhuw10 DCEG_Trios 4096 Aug 26 13:02 expected_output
+drwxr-s---. 2 zhuw10 DCEG_Trios 4096 Aug 26 13:11 .
+drwxrwsr-x. 2 zhuw10 DCEG_Trios 4096 Aug 26 13:25 ..
+```
+
+#### Installation
+
+Before running the workflow, you'll need to install the following dependencies:
+
+  * **Singularity**
+  * **Conda** or **Mamba**
+  * The **conda environment `TriosCompassV2`**
+
+You can find detailed installation instructions in the [TriosCompass v2 documentation](https://github.com/NCI-CGR/TriosCompass_v2?tab=readme-ov-file#i-installation).
+
+ 
+
+#### Configuring the Snakemake Profile
+
+The TriosCompass workflow uses **Nvidia Parabricks**, which requires GPUs. These GPU requirements are specified in the Snakemake profiles for different computing environments, such as [SLURM](https://github.com/NCI-CGR/TriosCompass_v2/blob/main/workflow/profiles/slurm) and [SGE](https://github.com/NCI-CGR/TriosCompass_v2/tree/main/workflow/profiles/sge).
+
+For example, the **SLURM** profile's `config.yaml` specifies these requirements:
+
+```yaml
+  - fq2bam:mem_mb=40000
+  - fq2bam:runtime="8h"
+  - fq2bam:partition=gpu
+  - fq2bam:slurm=gres=gpu:v100x:1
+```
+
+You may need to adjust these settings based on your available computing resources. The `launch_40X.sh` file is an example script for running the workflow on the NIH Biowulf SLURM cluster, where `singularity` is loaded as a module.
+
+```bash
+#!/bin/bash
+#SBATCH --time=200:00:00
+#SBATCH -o ${PWD}/snakemake.%j.out
+#SBATCH -e ${PWD}/snakemake.%j.err
+
+### or make sure singularity is available in an alternative way
+module load singularity
+
+mkdir -p TMP
+export TMPDIR=TMP
+
+snakemake --profile TriosCompass_v2/workflow/profiles/slurm --configfile GIAB_40X.yaml --conda-frontend mamba
+```
+
+For instance, if you have `conda` and `singularity` installed on an SGE cluster, you could launch the workflow like this:
+
+```bash
+conda activate TriosCompassV2
+
+mkdir -p TMP
+export TMPDIR=TMP
+
+snakemake --profile TriosCompass_v2/workflow/profiles/sge --configfile GIAB_40X.yaml --conda-frontend conda
+```
+
+-----
+
+#### Expected Output
+
+After the workflow successfully completes, you can generate a Snakemake report.
+
+```bash
+# Generate report
+snakemake  --report GIAB_40X.report.zip --profile TriosCompass_v2/workflow/profiles/slurm --configfile GIAB_40X.yaml
+```
+
+The working directory will contain the expected output files:
+
+```bash
+ls -altr
+total 1861
+drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Feb 23  2025 input
+-rwxrwxr-x 1 zhuw10 DCEG_Trios     482 Feb 23  2025 launch_40X.sh
+drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Apr 25 10:35 ref
+drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Jul 28 14:16 TriosCompass_v2
+drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Aug 25 16:50 ..
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 25 20:12 bam
+-rwxrwxr-x 1 zhuw10 DCEG_Trios    2839 Aug 26 09:09 GIAB_40X.yaml
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:34 MultiQC__40X_output
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:45 benchmarks
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:50 logs
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:51 output_40X
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:51 TMP
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:51 .snakemake
+-rw-r----- 1 zhuw10 DCEG_Trios  493518 Aug 26 11:51 slurm-65870893.out
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 12:56 .
+
+# We have copied the expected output to the subfolder expected_output/
+mv MultiQC__40X_output benchmarks logs output_40X slurm-65870893.out GIAB_40X.report.zip expected_output/
+
+ls -altr expected_output/
+total 1857
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 11:34 MultiQC__40X_output
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 11:45 benchmarks
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 11:50 logs
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 11:51 output_40X
+-rw-r-----. 1 zhuw10 DCEG_Trios  493518 Aug 26 11:51 slurm-65870893.out
+-rw-r-----. 1 zhuw10 DCEG_Trios 1407748 Aug 26 12:56 GIAB_40X.report.zip
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 13:02 .
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 13:11 ..
+```
+
+The expected output is also available within the `TriosCompass_test_case.zip` file under the `test_case/expected_output/` subdirectory.
