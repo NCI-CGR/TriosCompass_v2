@@ -91,7 +91,7 @@ Besides, singularity needs to be installed globally, and the details of the Trio
 ### III. Methods
 #### A. Call DNMs
 
-The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK HaplotypeCaller (HC)* in the specified callable regions, then filtered using [sliver](https://github.com/brentp/slivar):
+The DNM candidates are jointly called by both *DeepVariant (DV)* and *GATK HaplotypeCaller (HC)* in the specified callable regions, then filtered using [slivar](https://github.com/brentp/slivar):
 
 ```bash
  "denovo:( \
