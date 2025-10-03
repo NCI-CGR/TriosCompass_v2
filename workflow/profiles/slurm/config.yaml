@@ -103,7 +103,9 @@ set-resources:
   # - hipstr_recall:mem_mb=10000
   - manta_create_run_script:mem_mb=10000
   - manta_call:mem_mb=60000
-  - manta_call:runtime="3d"
+  - manta_call:runtime="1d"
+  - run_manta_joint_call:mem_mb=60000
+  - run_manta_joint_call:runtime="1d"
   - uniq_svid:mem_mb=40000
   - svimmer:runtime="24h"
   - svimmer:mem_mb=60000  

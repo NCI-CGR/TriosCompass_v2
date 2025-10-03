@@ -1,19 +1,19 @@
-name: cesium_cram
+name: GIAB_40X
 
-pepfile: "../Cesium_pep_cram.yaml" # relative to ./TriosCompass_v2
+pepfile: "../input/40X_pep.yaml" # relative to ./TriosCompass_v2
 pepschema: "../schemas/bam_schema.yaml" # relative to ./TriosCompass_v2/rules/premap.smk
 
-output_dir: "output"
+output_dir: "output_40X"
 
 
 ref:
-  sequence: "ref/GRCh38_full_analysis_set_plus_decoy_hla.fa"
+  sequence: "ref/Homo_sapiens_assembly38.fasta"
   build: "hg38"
 
-ped_dir: "cesium_ped"
+ped_dir: "input/ped"
 
 parabricks:
-  singularity_cmd: " singularity exec --pwd /mnt --nv -B `pwd`:/mnt docker://nvcr.io/nvidia/clara/clara-parabricks:4.0.0-1 "
+  singularity_cmd: " singularity exec --pwd /mnt --nv -B `pwd`:/mnt -B /vf,/spin1,/data,/fdb,/gpfs,/lscratch docker://nvcr.io/nvidia/clara/clara-parabricks:4.0.0-1 "
 
 fastq_input:
   enable: False # process the fastq input; False if bam inputs are provided
@@ -43,7 +43,7 @@ gatk_hc:
     enable: True
     filter: "QD>=2 & FS<=60 & SOR<4 & MQ>38 & MQRankSum>= -12.5 & ReadPosRankSum >= -8"
     # filter: "QD>=2 & FS<=60 & SOR<=3 & MQ>=40 & MQRankSum>= -12.5 & ReadPosRankSum >= -8"
-
+    
 call_dnm:
   interval: "ref/hg38.wgs_interval.bed"
   max_err: 0.02 # max AF for parenets (AD[1]/AD) 
@@ -86,18 +86,19 @@ dnSTR:
             --vcftype hipstr --hipstr-min-supp-reads 1 
             --hipstr-max-call-flank-indel 0.15 
             --hipstr-max-call-stutter 0.15 
-  # gangstr:
-  #   enable: False
-  #   ref_panel: "ref/STR/hg38_ver13.le9.bed"
-  #   filter: " --max-perc-encl-parent 0.05 --min-encl-match 0.9 --min-total-encl 10 --gangstr "
 
 multiqc:
   enable: True
-  output_dir: "MultiQC_output"
+  output_dir: "MultiQC__40X_output"
   
 dnSV:
-  enable: False
-  exclude_bed: "ref/exclude.cnvnator_100bp.GRCh38.20170403.bed"
+  enable: True
+  GraphTyper2+smoove:
+    enable: True
+    exclude_bed: "ref/exclude.cnvnator_100bp.GRCh38.20170403.bed"
+  Manta:
+    enable: True
+  
 
 threads:
   bwa_index: 16
@@ -123,6 +124,7 @@ threads:
   smoove: 20
 
   
+
 
 
 

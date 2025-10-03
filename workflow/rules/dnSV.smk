@@ -1,5 +1,5 @@
 # call de novo SV using manta+GraphTyper2 and smoove
-EXCLUDE_BED=config["dnSV"]["exclude_bed"]
+EXCLUDE_BED=config["dnSV"]["GraphTyper2+smoove"]["exclude_bed"]
 SV_CALLERS=["smoove", "gt2"]
 
 rule manta_create_run_script:
@@ -11,7 +11,7 @@ rule manta_create_run_script:
         output_dir + '/manta/{subj}/runWorkflow.py.config.pickle'
     params:
         prefix = output_dir + '/manta/{subj}'
-    singularity: 'docker://halllab/manta:v1.4.0'
+    singularity: 'docker://szarate/manta:v1.6.0'
     shell:
         'configManta.py \
             --bam {input.bam} \
@@ -29,7 +29,7 @@ rule manta_call:
     threads: config["threads"]["manta_call"]
     benchmark:
         "benchmarks/manta_call/{sample}.tsv"
-    singularity: 'docker://halllab/manta:v1.4.0'
+    singularity: 'docker://szarate/manta:v1.6.0'
     shell:
         '{input.cmd} -m local -j {threads}'
 
@@ -191,7 +191,7 @@ rule joint_dnSV:
         vcf = report(
             output_dir + "/joint_dnSV/{fam}.dnSV.vcf",
             caption="../report/dnSV.rst",
-            category="De novo SVs",
+            category="De novo SVs/GraphTyper2+smoove",
             subcategory="Predictions",
             labels={
                 "Family": "{fam}",
@@ -212,7 +212,7 @@ rule dnSV_summary:
     output:
         report(
             output_dir + "/dnSV_summary/dnSV_summary.txt",
-            category="De novo SVs",
+            category="De novo SVs/GraphTyper2+smoove",
             subcategory="Summary",
             labels={
                 "Desc": "Count of dnSVs",    
