@@ -78,8 +78,9 @@ set-resources:
   - deepvariant_pb:runtime="30h"
   - deepvariant_pb:slurm=gres=gpu:v100x:1
   - deepvariant_pb:partition=gpu
-  - glnexus_dv:mem_mb=100000
+  - glnexus_dv:mem_mb=200000
   - glnexus_dv:runtime="1d"
+  - aggregate_phase:mem_mb=20000
   # - call_dnm_dv:mem_mb=20000
   # - call_dnm_dv:runtime="1d"
   # - call_dnm_hc:mem_mb=20000
