@@ -1,5 +1,37 @@
+<!-- omit in TOC -->
+# Supplemental Methods
 
---- 
+---
+
+- [Supplemental Methods](#supplemental-methods)
+  - [Benchmark performance of TriosCompass, DeepTrio and Dragen](#benchmark-performance-of-trioscompass-deeptrio-and-dragen)
+    - [Prepare GIAB 40X](#prepare-giab-40x)
+      - [Download Illumina NGS data from GIAB](#download-illumina-ngs-data-from-giab)
+      - [Downsampling to 40X](#downsampling-to-40x)
+    - [Call DNMs using DeepTrio](#call-dnms-using-deeptrio)
+      - [Run DeepTrio (V1.8.0)](#run-deeptrio-v180)
+      - [Merge VCFs using GLnexus](#merge-vcfs-using-glnexus)
+      - [Call DNMs from DeepTrio results](#call-dnms-from-deeptrio-results)
+        - [Approach 1. Call DNMs using RTG](#approach-1-call-dnms-using-rtg)
+        - [Approach 2. Call DNMs using slivar](#approach-2-call-dnms-using-slivar)
+    - [Call DNMs using Dragen (v4.4)](#call-dnms-using-dragen-v44)
+      - [Call gvcfs for each sample (40X and 80)](#call-gvcfs-for-each-sample-40x-and-80)
+      - [Make joint genotype call](#make-joint-genotype-call)
+      - [Filtering DNMs](#filtering-dnms)
+        - [Filter 1: DQ\[0\]\>0](#filter-1-dq00)
+        - [Filter 2: DQ\[0\]\>3.01](#filter-2-dq0301)
+  - [De novo mutations (DNMs) were identified from whole-genome sequencing (WGS) data of the trio (proband: HG002, father: HG003, mother: HG004) using the Illumina DRAGEN Bio-IT Platform (v4.4). Sequence reads for each individual were processed to generate hard-filtered gVCF files, which were subsequently input into the DRAGEN joint genotyping module. This joint calling leveraged the family pedigree (GIAB.ped) to enable accurate de novo scoring. Prior to filtering, the resulting multi-sample VCF was normalized and left-aligned using bcftools norm against the GRCh38 reference, and the VCF header's AD (Allelic Depth) FORMAT field description was corrected to Number=R. High-confidence DNMs were selected using bcftools filter based on DRAGEN’s integrated de novo metrics, focusing on the proband (index \[0\]). The base criteria required the proband’s genotype filter status (FT\[0\]) to be 'PASS', the de novo status (DN\[0\]) to be 'DeNovo', the proband's genotype (GT\[0\]) to be heterozygous ('het'), and both parents' genotypes (GT\[1\] and GT\[2\]) to be homozygous reference ('RR'). The final stringent set of DNMs was defined by applying a De Novo Quality score threshold of $\\text{DQ} \> 3.01$, which corresponds to a posterior probability of $P\_{\\text{denovo}} \> 50%$ ($\\text{-10}\\log\_{10}(0.5) \\approx 3.01$). The final VCF was subsetted to contain only the proband's genotype data.](#de-novo-mutations-dnms-were-identified-from-whole-genome-sequencing-wgs-data-of-the-trio-proband-hg002-father-hg003-mother-hg004-using-the-illumina-dragen-bio-it-platform-v44-sequence-reads-for-each-individual-were-processed-to-generate-hard-filtered-gvcf-files-which-were-subsequently-input-into-the-dragen-joint-genotyping-module-this-joint-calling-leveraged-the-family-pedigree-giabped-to-enable-accurate-de-novo-scoring-prior-to-filtering-the-resulting-multi-sample-vcf-was-normalized-and-left-aligned-using-bcftools-norm-against-the-grch38-reference-and-the-vcf-headers-ad-allelic-depth-format-field-description-was-corrected-to-numberr-high-confidence-dnms-were-selected-using-bcftools-filter-based-on-dragens-integrated-de-novo-metrics-focusing-on-the-proband-index-0-the-base-criteria-required-the-probands-genotype-filter-status-ft0-to-be-pass-the-de-novo-status-dn0-to-be-denovo-the-probands-genotype-gt0-to-be-heterozygous-het-and-both-parents-genotypes-gt1-and-gt2-to-be-homozygous-reference-rr-the-final-stringent-set-of-dnms-was-defined-by-applying-a-de-novo-quality-score-threshold-of-textdq-301-which-corresponds-to-a-posterior-probability-of-p_textdenovo-50-text-10log_1005-approx-301-the-final-vcf-was-subsetted-to-contain-only-the-probands-genotype-data)
+    - [Benchmark using hap.py](#benchmark-using-happy)
+      - [Prepare the truth file](#prepare-the-truth-file)
+      - [Test the DNM calling from DeepTrio + RTG](#test-the-dnm-calling-from-deeptrio-rtg)
+      - [Test the DNM calling from Deeptrio + Slivar](#test-the-dnm-calling-from-deeptrio-slivar)
+      - [Bencharmk the results from Dragen](#bencharmk-the-results-from-dragen)
+      - [Benchmark the results from TriosCompass](#benchmark-the-results-from-trioscompass)
+
+
+---
+
+## Benchmark performance of TriosCompass, DeepTrio and Dragen 
 ### Prepare GIAB 40X
 #### Download Illumina NGS data from GIAB
 GIAB Trio WGS fastq data (Illumina; 150bp paired-end reads; ~300X coverage) were downloaded from https://ftp-trace.ncbi.nlm.nih.gov. A detailed manifest file, including md5 checksum, is available at https://42basepairs.com/download/s3/giab/data_indexes/AshkenazimTrio/sequence.index.AJtrio_Illumina300X_wgs_07292015.  
@@ -25,7 +57,7 @@ where 3.3X10^9 is the size of the human genome, 40 is the target coverage, and 1
 
 ---
 
-### Compare DeepTrio with TriosCompass
+### Call DNMs using DeepTrio
 #### Run DeepTrio (V1.8.0)
 + run_it_module_wg.sh
 ```bash
@@ -219,7 +251,7 @@ module load bcftools
 bcftools norm -f ../GIAB/ref/Homo_sapiens_assembly38.fasta -m - -O z -o ${OUTPUT_DIR}/HG002_trio_merged.norm.vcf.gz ${OUTPUT_DIR}/HG002_trio_merged.vcf.gz
 ```
 
-#### Call DNMs 
+#### Call DNMs from DeepTrio results
 ##### Approach 1. Call DNMs using RTG
 + Ref: https://github.com/google/deepvariant/blob/r1.8/docs/deeptrio-wgs-case-study.md
 ```bash
@@ -250,7 +282,7 @@ grep -c -v "^#" HG002.dnm.vcf
 14053
 ```
 
-#### Approach 2. Call DNMs using slivar
+##### Approach 2. Call DNMs using slivar
 ```bash
 slivar --version
 # > slivar version: 0.2.8 23df117c3809a2bf57eb0dd1fffdca0df06252a3
@@ -301,6 +333,53 @@ slivar expr  --vcf ${OUTPUT_DIR}/HG002_trio_merged.80X_norm.vcf.gz \
 # sample  denovo
 # HG002   1653
 ```
+
+---
+
+### Call DNMs using Dragen (v4.4)
+#### Call gvcfs for each sample (40X and 80)
++ [run_dragen_gvcf.sh](./data/run_dragen_gvcf.sh)
+```bash
+sbatch  --mem=0 --cpus-per-task=64 --partition=nci-dragen run_dragen_gvcf.sh bam/HG002_NA24385_son_40X.bam HG002_NA24385_son dragen_output_40X
+
+sbatch  --mem=0 --cpus-per-task=64 --partition=nci-dragen run_dragen_gvcf.sh bam/HG003_NA24149_father_40X.bam   HG003_NA24149_father dragen_output_40X
+
+sbatch  --mem=0 --cpus-per-task=64 --partition=nci-dragen run_dragen_gvcf.sh bam/HG004_NA24143_mother_40X.bam HG004_NA24143_mother dragen_output_40X
+```
+
+#### Make joint genotype call
++ [dragen_joint_genotyping.sh](data/dragen_joint_genotyping.sh)
+```bash
+cd /data/DCEG_Trios/TriosCompass_Manuscript/GIAB
+
+tree -L 1 dragen_output_*0X/
+dragen_output_40X/
+├── HG002_NA24385_son
+├── HG003_NA24149_father
+└── HG004_NA24143_mother
+
+mkdir -p dragen_output_40X/joint_genotyping
+
+sbatch  --mem=0 --cpus-per-task=64 --partition=nci-dragen dragen_joint_genotyping.sh dragen_output_40X/HG002_NA24385_son/HG002_NA24385_son.hard-filtered.gvcf.gz dragen_output_40X/HG003_NA24149_father/HG003_NA24149_father.hard-filtered.gvcf.gz dragen_output_40X/HG004_NA24143_mother/HG004_NA24143_mother.hard-filtered.gvcf.gz input/ped/GIAB.ped dragen_out_40X/joint_genotyping GIAB
+
+### fix AD and norm VCF
+zcat dragen_output_40X/joint_genotyping/GIAB.vcf.gz | sed -e 's/ID=AD,Number=\./ID=AD,Number=R/' |bcftools norm -f ref/Homo_sapiens_assembly38.fasta -m - -O z -o dragen_output_40X/joint_genotyping/GIAB_norm.vcf.gz -W=tbi --threads 20
+
+```
+
+#### Filtering DNMs
+##### Filter 1: DQ[0]>0
+```bash
+bcftools filter  -i "DN[0] = 'DeNovo' && FT[0] = 'PASS' && DQ[0]>0 && GT[0]='het' && GT[1]='RR' && GT[2]='RR' " dragen_output_40X/joint_genotyping/GIAB_norm.vcf.gz -Ov --threads 20 | bcftools view -s HG002_NA24385_son -Oz -o dragen_dnm/Dragen.40X_joint_F0.vcf.gz -W=tbi 
+```
+
+##### Filter 2: DQ[0]>3.01 
++ −10log 10 (0.5) = 3.01
+```bash
+bcftools filter  -i "DN[0] = 'DeNovo' && FT[0] = 'PASS' && DQ[0]>3.01 && GT[0]='het' && GT[1]='RR' && GT[2]='RR' " dragen_output_40X/joint_genotyping/GIAB_norm.vcf.gz -Ov --threads 20 | bcftools view -s HG002_NA24385_son -Oz -o dragen_dnm/Dragen.40X_joint_F1.vcf.gz -W=tbi
+```
+De novo mutations (DNMs) were identified from whole-genome sequencing (WGS) data of the trio (proband: HG002, father: HG003, mother: HG004) using the Illumina DRAGEN Bio-IT Platform (v4.4). Sequence reads for each individual were processed to generate hard-filtered gVCF files, which were subsequently input into the DRAGEN joint genotyping module. This joint calling leveraged the family pedigree (GIAB.ped) to enable accurate de novo scoring. Prior to filtering, the resulting multi-sample VCF was normalized and left-aligned using bcftools norm against the GRCh38 reference, and the VCF header's AD (Allelic Depth) FORMAT field description was corrected to Number=R. High-confidence DNMs were selected using bcftools filter based on DRAGEN’s integrated de novo metrics, focusing on the proband (index [0]). The base criteria required the proband’s genotype filter status (FT[0]) to be 'PASS', the de novo status (DN[0]) to be 'DeNovo', the proband's genotype (GT[0]) to be heterozygous ('het'), and both parents' genotypes (GT[1] and GT[2]) to be homozygous reference ('RR'). The final stringent set of DNMs was defined by applying a De Novo Quality score threshold of $\text{DQ} > 3.01$, which corresponds to a posterior probability of $P_{\text{denovo}} > 50\%$ ($\text{-10}\log_{10}(0.5) \approx 3.01$). The final VCF was subsetted to contain only the proband's genotype data.
+---
 
 ### Benchmark using hap.py
 #### Prepare the truth file
@@ -353,7 +432,7 @@ zgrep -c -v "^#" AJtrio_truth.vcf.gz
 ```
 
 
-#### Test the DNM calling Approach 1 
+#### Test the DNM calling from DeepTrio + RTG  
 
 ```bash
 module load bcftools rtg-tools hap.py
@@ -369,7 +448,7 @@ hap.py $GIAB/giab_output/AJtrio_truth.vcf.gz \
     --engine=vcfeval --threads 4  --fixchr --bcftools-norm
 ```
 
-#### Test the DNM calling Approach 
+#### Test the DNM calling from Deeptrio + Slivar 
 ```bash
 hap.py $GIAB/giab_output/AJtrio_truth.vcf.gz \
    HG002_silvar_final.dnm.vcf.gz \
@@ -378,6 +457,24 @@ hap.py $GIAB/giab_output/AJtrio_truth.vcf.gz \
     -o happy_out/HG002_silvar_final \
     --engine=vcfeval --threads 4  --fixchr --bcftools-norm
 ```
+
+#### Bencharmk the results from Dragen
+```bash
+hap.py $GIAB/giab_output/AJtrio_truth.vcf.gz \
+   dragen_dnm/Dragen.40X_joint_F0.vcf.gz  \
+    -f  $GIAB/giab_output/AJtrio_3.3.2.truth.bed \
+    -r $GIAB/giab_output/ref/Homo_sapiens_assembly38.fasta \
+    -o happy_out/dragen_40X_joint_F0 \
+    --engine=vcfeval --threads 4 --fixchr --bcftools-norm
+
+hap.py $GIAB/giab_output/AJtrio_truth.vcf.gz \
+   dragen_dnm/Dragen.40X_joint_F1.vcf.gz  \
+    -f  $GIAB/giab_output/AJtrio_3.3.2.truth.bed \
+    -r $GIAB/giab_output/ref/Homo_sapiens_assembly38.fasta \
+    -o happy_out/dragen_40X_joint_F1 \
+    --engine=vcfeval --threads 4 --fixchr --bcftools-norm
+```
+
 
 #### Benchmark the results from TriosCompass
 ```bash
