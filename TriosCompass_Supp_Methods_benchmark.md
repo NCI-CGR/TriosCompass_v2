@@ -22,8 +22,7 @@
         - [Filter 2: DQ\[0\]\>3.01](#filter-2-dq0301)
     - [Benchmark using hap.py](#benchmark-using-happy)
       - [Prepare the truth file](#prepare-the-truth-file)
-      - [Test the DNM calling from DeepTrio + RTG](#test-the-dnm-calling-from-deeptrio-rtg)
-      - [Test the DNM calling from Deeptrio + Slivar](#test-the-dnm-calling-from-deeptrio-slivar)
+      - [Benchmark the results form DeepTrio](#benchmark-the-results-form-deeptrio)
       - [Bencharmk the results from Dragen](#bencharmk-the-results-from-dragen)
       - [Benchmark the results from TriosCompass](#benchmark-the-results-from-trioscompass)
 
@@ -433,8 +432,9 @@ zgrep -c -v "^#" AJtrio_truth.vcf.gz
 ```
 
 
-#### Test the DNM calling from DeepTrio + RTG  
+#### Benchmark the results form DeepTrio 
 
++ DeepTrio + RTG
 ```bash
 module load bcftools rtg-tools hap.py
 # [+] Loading bedtools  2.31.1 
@@ -449,7 +449,7 @@ hap.py $GIAB/giab_output/AJtrio_truth.vcf.gz \
     --engine=vcfeval --threads 4  --fixchr --bcftools-norm
 ```
 
-#### Test the DNM calling from Deeptrio + Slivar 
++ DeepTrio + Slivar
 ```bash
 hap.py $GIAB/giab_output/AJtrio_truth.vcf.gz \
    HG002_silvar_final.dnm.vcf.gz \
