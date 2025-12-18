@@ -1,0 +1,2 @@
+TrioID	DNM_Cnt
+GIAB	1551
