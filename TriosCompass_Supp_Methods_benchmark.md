@@ -10,6 +10,7 @@
       - [Downsampling to 40X](#downsampling-to-40x)
     - [Call DNMs using DeepTrio](#call-dnms-using-deeptrio)
       - [Run DeepTrio (V1.8.0)](#run-deeptrio-v180)
+      - [Computing resources used by DeepTrio](#computing-resources-used-by-deeptrio)
       - [Merge VCFs using GLnexus](#merge-vcfs-using-glnexus)
       - [Call DNMs from DeepTrio results](#call-dnms-from-deeptrio-results)
         - [Approach 1. Call DNMs using RTG](#approach-1-call-dnms-using-rtg)
@@ -20,6 +21,7 @@
       - [Filtering DNMs](#filtering-dnms)
         - [Filter 1: DQ\[0\]\>0](#filter-1-dq00)
         - [Filter 2: DQ\[0\]\>3.01](#filter-2-dq0301)
+      - [Computing resources used by Dragen](#computing-resources-used-by-dragen)
     - [Benchmark using hap.py](#benchmark-using-happy)
       - [Prepare the truth file](#prepare-the-truth-file)
       - [Benchmark the results form DeepTrio](#benchmark-the-results-form-deeptrio)
@@ -112,6 +114,7 @@ export TMPDIR=$MYTMP
     --output_gvcf_parent2 "${OUTPUT_DIR}/${SAMPLE_PARENT2}.g.vcf.gz" 
 ```
 
+#### Computing resources used by DeepTrio
 ```bash
 cd /data/DCEG_Trios/TriosCompass_Manuscript/test_deeptrio
 
@@ -378,6 +381,71 @@ bcftools filter  -i "DN[0] = 'DeNovo' && FT[0] = 'PASS' && DQ[0]>0 && GT[0]='het
 ```bash
 bcftools filter  -i "DN[0] = 'DeNovo' && FT[0] = 'PASS' && DQ[0]>3.01 && GT[0]='het' && GT[1]='RR' && GT[2]='RR' " dragen_output_40X/joint_genotyping/GIAB_norm.vcf.gz -Ov --threads 20 | bcftools view -s HG002_NA24385_son -Oz -o dragen_dnm/Dragen.40X_joint_F1.vcf.gz -W=tbi
 ```
+
+#### Computing resources used by Dragen
+The DRAGEN platform's computational efficiency stems from its architecture, which necessitates the use of specialized hardware (Field-Programmable Gate Arrays, or FPGAs) for acceleration. This hardware dependency is a key consideration, but it enables dramatically faster processing times compared to traditional software-only pipelines.
+
+```bash
+### Call gVCF on each sample
+head -n 20  dragen_output_[48]0X/HG002_NA24385_son/HG002_NA24385_son.time_metrics.csv
+==> dragen_output_40X/HG002_NA24385_son/HG002_NA24385_son.time_metrics.csv <==
+RUN TIME,,Time loading reference,00:00:53.397,53.40
+RUN TIME,,Time aligning reads,00:27:47.512,1667.51
+RUN TIME,,Time aligning HLA anchored reads,00:00:13.221,13.22
+RUN TIME,,Time analyzing HLA alignments,00:00:24.602,24.60
+RUN TIME,,Time duplicate marking,00:01:40.328,100.33
+RUN TIME,,Time sorting and marking duplicates,00:14:18.483,858.48
+RUN TIME,,Time DRAGStr calibration,00:00:16.083,16.08
+RUN TIME,,Time saving map/align output,00:14:56.438,896.44
+RUN TIME,,Time variant calling,00:14:53.633,893.63
+RUN TIME,,Time calculating target counts,00:14:23.242,863.24
+RUN TIME,,Time correcting GC bias,00:00:33.092,33.09
+RUN TIME,,Time normalizing case sample,00:00:32.285,32.29
+RUN TIME,,Time patching normalized counts,00:00:37.781,37.78
+RUN TIME,,Time performing segmentation,00:00:01.880,1.88
+RUN TIME,,Time generating CNV calls,00:00:16.044,16.04
+RUN TIME,,Time generating CNV track files,00:00:14.375,14.38
+RUN TIME,,Time running RH caller,00:27:36.579,1656.58
+RUN TIME,,Time running Targeted caller,00:27:37.110,1657.11
+RUN TIME,,Time running Targeted VCF reporter,00:00:00.179,0.18
+RUN TIME,,Time partitioning,00:27:34.213,1654.21
+
+==> dragen_output_80X/HG002_NA24385_son/HG002_NA24385_son.time_metrics.csv <==
+RUN TIME,,Time loading reference,00:01:13.871,73.87
+RUN TIME,,Time aligning reads,00:51:40.385,3100.39
+RUN TIME,,Time aligning HLA anchored reads,00:00:25.656,25.66
+RUN TIME,,Time analyzing HLA alignments,00:00:49.484,49.48
+RUN TIME,,Time duplicate marking,00:01:59.044,119.04
+RUN TIME,,Time sorting and marking duplicates,00:40:38.524,2438.52
+RUN TIME,,Time DRAGStr calibration,00:00:18.690,18.69
+RUN TIME,,Time saving map/align output,00:40:54.573,2454.57
+RUN TIME,,Time variant calling,00:40:51.897,2451.90
+RUN TIME,,Time calculating target counts,00:40:39.795,2439.80
+RUN TIME,,Time correcting GC bias,00:00:32.192,32.19
+RUN TIME,,Time normalizing case sample,00:01:16.393,76.39
+RUN TIME,,Time patching normalized counts,00:00:39.157,39.16
+RUN TIME,,Time performing segmentation,00:00:02.022,2.02
+RUN TIME,,Time generating CNV calls,00:00:18.951,18.95
+RUN TIME,,Time generating CNV track files,00:00:14.169,14.17
+RUN TIME,,Time running RH caller,00:51:25.595,3085.60
+RUN TIME,,Time running Targeted caller,00:51:26.156,3086.16
+RUN TIME,,Time running Targeted VCF reporter,00:00:00.082,0.08
+RUN TIME,,Time partitioning,00:51:17.502,3077.50
+
+### Joint call
+head dragen_output_[48]0X/joint_genotyping/GIAB.time_metrics.csv 
+==> dragen_output_40X/joint_genotyping/GIAB.time_metrics.csv <==
+RUN TIME,,Time loading FASTA reference,00:00:00.000,0.00
+RUN TIME,,Time joint genotyping,00:02:07.526,127.53
+RUN TIME,,Total runtime,00:02:25.860,145.86
+
+==> dragen_output_80X/joint_genotyping/GIAB.time_metrics.csv <==
+RUN TIME,,Time loading FASTA reference,00:00:00.000,0.00
+RUN TIME,,Time joint genotyping,00:02:00.780,120.78
+RUN TIME,,Total runtime,00:03:09.827,189.83
+
+```
+
 
 ---
 
