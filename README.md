@@ -927,7 +927,7 @@ We've created [a test dataset](https://doi.org/10.5281/zenodo.7084147) to help y
 
   * A resource bundle for the **GRCh38** human reference genome.
   * The **TriosCompass** workflow.
-  * A small **BAM** file extracted from GIAB data (chr22:43000000-46000000).
+  * A small **BAM** file extracted from GIAB data (chr17:36000000-54000000).
 
 The test dataset is available at https://doi.org/10.5281/zenodo.7084147 .
 
