@@ -939,28 +939,35 @@ unzip TriosCompass_test_case.zip
 ```
 
 Once uncompressed, the directory structure and file sizes are as follows:
-
++ bam/: Mini-bam files extracted from GIAB 40X (region: chr17:36000000-54000000) for the test case
++ GIAB_40X.yaml: Configure file to launch *TriosCompass* for GIAB 40X
++ input/: Input files to launch *TriosCompass* for GIAB 40X
++ aunch_40X.sh: The wrapper of the script to submit Snakemake workflow TriosCompass to *Slurm*.
++ ref/: Resource bundle of hg38 for *TriosCompass*
++ TriosCompass_v2/: Check out of the latest *TriosCompass* (main branch commit: 55605b1)
++ expected_output/: The expected output after running this test case succeccsfully.
+  
 ```bash
-du -hs test_case/*
-220M    test_case/bam
-1.3G    test_case/expected_output
-3.0K    test_case/GIAB_40X.yaml
-2.5K    test_case/input
-512     test_case/launch_40X.sh
-15G     test_case/ref
-739M    test_case/TriosCompass_v2
+ls -al ./test_case2/
+total 16
+drwxr-x---   9 zhuw10  NIH\Domain Users   288 Dec 18 09:17 .
+drwxr-xr-x   7 zhuw10  NIH\Domain Users   224 Dec 21 21:42 ..
+drwxr-x---   8 zhuw10  NIH\Domain Users   256 Dec  5 14:55 bam
+drwxr-x---   9 zhuw10  NIH\Domain Users   288 Dec 18 09:17 expected_output
+-rwxrwxr-x   1 zhuw10  NIH\Domain Users  2906 Dec 17 09:40 GIAB_40X.yaml
+drwxrwxr-x   7 zhuw10  NIH\Domain Users   224 Feb 23  2025 input
+-rwxrwxr-x   1 zhuw10  NIH\Domain Users   482 Feb 23  2025 launch_40X.sh
+drwxrwxr-x  20 zhuw10  NIH\Domain Users   640 Apr 25  2025 ref
+drwxr-x---  12 zhuw10  NIH\Domain Users   384 Dec 18 08:38 TriosCompass_v2
 
-ls -altr  test_case
-total 4
-drwxrwsr-x. 2 zhuw10 DCEG_Trios 4096 Feb 23  2025 input
--rwxrwxr-x. 1 zhuw10 DCEG_Trios  482 Feb 23  2025 launch_40X.sh
-drwxrwsr-x. 2 zhuw10 DCEG_Trios 4096 Apr 25 10:35 ref
-drwxrwsr-x. 2 zhuw10 DCEG_Trios 4096 Jul 28 14:16 TriosCompass_v2
-drwxr-s---. 2 zhuw10 DCEG_Trios 4096 Aug 25 20:12 bam
--rwxrwxr-x. 1 zhuw10 DCEG_Trios 2839 Aug 26 09:09 GIAB_40X.yaml
-drwxr-s---. 2 zhuw10 DCEG_Trios 4096 Aug 26 13:02 expected_output
-drwxr-s---. 2 zhuw10 DCEG_Trios 4096 Aug 26 13:11 .
-drwxrwsr-x. 2 zhuw10 DCEG_Trios 4096 Aug 26 13:25 ..
+du -hs test_case2/*
+1.5G    test_case2/bam
+440M    test_case2/expected_output
+4.0K    test_case2/GIAB_40X.yaml
+ 20K    test_case2/input
+4.0K    test_case2/launch_40X.sh
+ 15G    test_case2/ref
+2.7M    test_case2/TriosCompass_v2
 ```
 
 #### Installation
@@ -1030,37 +1037,40 @@ snakemake  --report GIAB_40X.report.zip --profile TriosCompass_v2/workflow/profi
 The working directory will contain the expected output files:
 
 ```bash
-ls -altr
-total 1861
+ls -altr 
+total 2420
 drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Feb 23  2025 input
 -rwxrwxr-x 1 zhuw10 DCEG_Trios     482 Feb 23  2025 launch_40X.sh
-drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Apr 25 10:35 ref
-drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Jul 28 14:16 TriosCompass_v2
-drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Aug 25 16:50 ..
-drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 25 20:12 bam
--rwxrwxr-x 1 zhuw10 DCEG_Trios    2839 Aug 26 09:09 GIAB_40X.yaml
-drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:34 MultiQC__40X_output
-drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:45 benchmarks
-drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:50 logs
-drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:51 output_40X
-drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:51 TMP
-drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 11:51 .snakemake
--rw-r----- 1 zhuw10 DCEG_Trios  493518 Aug 26 11:51 slurm-65870893.out
-drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Aug 26 12:56 .
+drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Apr 25  2025 ref
+drwxrwsr-x 2 zhuw10 DCEG_Trios    4096 Dec  5 13:46 ..
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Dec  5 14:55 bam
+-rwxrwxr-x 1 zhuw10 DCEG_Trios    2906 Dec 17 09:40 GIAB_40X.yaml
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Dec 17 10:17 benchmarks
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Dec 17 10:20 MultiQC__40X_output
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Dec 17 10:58 output_40X
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Dec 17 11:17 logs
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Dec 17 11:43 TMP
+-rw-r----- 1 zhuw10 DCEG_Trios  732403 Dec 17 11:43 slurm-7148345.out
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Dec 18 08:38 TriosCompass_v2
+-rw-r----- 1 zhuw10 DCEG_Trios 1741769 Dec 18 08:58 GIAB_40X.report.zip
+drwxr-s--- 2 zhuw10 DCEG_Trios    4096 Dec 18 09:13 .
 
 # We have copied the expected output to the subfolder expected_output/
-mv MultiQC__40X_output benchmarks logs output_40X slurm-65870893.out GIAB_40X.report.zip expected_output/
+mkdir expected_output
+
+mv MultiQC__40X_output benchmarks TMP logs output_40X slurm-*.out GIAB_40X.report.zip expected_output/
 
 ls -altr expected_output/
-total 1857
-drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 11:34 MultiQC__40X_output
-drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 11:45 benchmarks
-drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 11:50 logs
-drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 11:51 output_40X
--rw-r-----. 1 zhuw10 DCEG_Trios  493518 Aug 26 11:51 slurm-65870893.out
--rw-r-----. 1 zhuw10 DCEG_Trios 1407748 Aug 26 12:56 GIAB_40X.report.zip
-drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 13:02 .
-drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Aug 26 13:11 ..
+total 2417
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Dec 17 10:17 benchmarks
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Dec 17 10:20 MultiQC__40X_output
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Dec 17 10:58 output_40X
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Dec 17 11:17 logs
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Dec 17 11:43 TMP
+-rw-r-----. 1 zhuw10 DCEG_Trios  732403 Dec 17 11:43 slurm-7148345.out
+-rw-r-----. 1 zhuw10 DCEG_Trios 1741769 Dec 18 08:58 GIAB_40X.report.zip
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Dec 18 09:17 ..
+drwxr-s---. 2 zhuw10 DCEG_Trios    4096 Dec 18 09:17 .
 ```
 
-The expected output is also available within the `TriosCompass_test_case.zip` file under the `test_case/expected_output/` subdirectory.
+The expected output is also available within the `TriosCompass_test_case.zip` file under the `test_case2/expected_output/` subdirectory.
