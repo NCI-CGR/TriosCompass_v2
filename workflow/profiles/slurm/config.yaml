@@ -53,34 +53,34 @@ set-resources:
   - fastq_screen:mem_mb=50000
   - fq2bam:mem_mb=40000
   - fq2bam:runtime="8h"
-  - fq2bam:partition=gpu
-  - fq2bam:slurm=gres=gpu:v100x:1 
+  - fq2bam:partition=gpuq
+  - fq2bam:slurm=gres=gpu:a100:1 
   - flagstat:mem_mb=80000
   - collectwgsmetrics:runtime="1d"
   - collectwgsmetrics:mem_mb=80000
   - collectmultiplemetrics:mem_mb=80000
   - collectmultiplemetrics:runtime="36h"
-  - collectmultiplemetrics:partition=gpu
-  - collectmultiplemetrics:slurm=gres=gpu:v100x:1 
+  - collectmultiplemetrics:partition=gpuq
+  - collectmultiplemetrics:slurm=gres=gpu:a100:1 
   - gatkhc_pb:mem_mb=200000
   - gatkhc_pb:runtime="20h"
-  - gatkhc_pb:partition=gpu
-  - gatkhc_pb:slurm=gres=gpu:v100x:1
+  - gatkhc_pb:partition=gpuq
+  - gatkhc_pb:slurm=gres=gpu:a100:1
   - gatk_combine_gvcf:mem_mb=10000
   - gatk_combine_gvcf:runtime="12h"
   - gatk_cgp:mem_mb=10000
   # - gatk_cgp:runtime="1d"
   # - gatk_genotype_gvcf_pb:runtime="1d"
   # - gatk_genotype_gvcf_pb:mem_mb=8000
-  - gatk_genotype_gvcf_pb:partition=gpu
-  - gatk_genotype_gvcf_pb:slurm=gres=gpu:v100x:1 
+  - gatk_genotype_gvcf_pb:partition=gpuq
+  - gatk_genotype_gvcf_pb:slurm=gres=gpu:a100:1 
   - deepvariant_pb:mem_mb=180000
   - deepvariant_pb:runtime="30h"
-  - deepvariant_pb:slurm=gres=gpu:v100x:1
-  - deepvariant_pb:partition=gpu
+  - deepvariant_pb:slurm=gres=gpu:a100:1
+  - deepvariant_pb:partition=gpuq
   - glnexus_dv:mem_mb=200000
   - glnexus_dv:runtime="1d"
-  - aggregate_phase:mem_mb=20000
+  - aggregate_phase:mem_mb=100000
   # - call_dnm_dv:mem_mb=20000
   # - call_dnm_dv:runtime="1d"
   # - call_dnm_hc:mem_mb=20000
@@ -104,9 +104,9 @@ set-resources:
   # - hipstr_recall:mem_mb=10000
   - manta_create_run_script:mem_mb=10000
   - manta_call:mem_mb=60000
-  - manta_call:runtime="1d"
+  - manta_call:runtime="7d"
   - run_manta_joint_call:mem_mb=60000
-  - run_manta_joint_call:runtime="1d"
+  - run_manta_joint_call:runtime="7d"
   - uniq_svid:mem_mb=40000
   - svimmer:runtime="24h"
   - svimmer:mem_mb=60000  
@@ -115,6 +115,7 @@ set-resources:
   - graphtyper_filter:mem_mb=20000
   - smoove:runtime="24h"
   - smoove:mem_mb=100000
+  - scatter_dnms:runtime="1d"
 
 # Define the number of threads used by rules
 # buggy about this setting parse (see 121M)
