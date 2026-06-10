@@ -29,8 +29,7 @@ rule fastp:
     benchmark:
         output_dir + "/benchmark/fastp/{sample_name}.tsv"
     threads: config["threads"]["fastp"]
-    conda:
-        "../envs/fastp.yaml"
+    container: CONTAINERS["fastp"]
     shell: """
         fastp \
                 --in1 {input.R1} \
@@ -61,6 +60,7 @@ if config["fastq_input"]["fastqc"]["enable"]:
         resources:
             mem_mb=10000,
             runtime=600
+        container: CONTAINERS["fastqc"]
         wrapper:
             "v2.1.1/bio/fastqc"     
     

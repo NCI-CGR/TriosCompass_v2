@@ -4,11 +4,8 @@ rule gatkhc_pb:
         ref=genome,
         ref_dict=genome_dict
     output:
-        gvcf=output_dir +"/gatkhc_pb/{subj}.gatk.g.vcf",
-        gz=output_dir +"/gatkhc_pb/{subj}.gatk.g.vcf.gz",
-        tbi=output_dir +"/gatkhc_pb/{subj}.gatk.g.vcf.gz.tbi"
+        gvcf=output_dir +"/gatkhc_pb/{subj}.gatk.g.vcf"
     threads: config["threads"]["gatkhc_pb"]
-    conda: "../envs/tabix.yaml"
     params: 
         singularity_cmd = config["parabricks"]["singularity_cmd"]
     benchmark:
@@ -19,9 +16,19 @@ rule gatkhc_pb:
             --gvcf \
             --ref {input.ref} \
             --in-bam {input.bam} \
-            --out-variants {output.gvcf}   
-        bgzip -c {output.gvcf} > {output.gz}
-        tabix {output.gz}     
+            --out-variants {output.gvcf}
+    """
+
+rule gatkhc_pb_index:
+    input:
+        gvcf=output_dir +"/gatkhc_pb/{subj}.gatk.g.vcf"
+    output:
+        gz=output_dir +"/gatkhc_pb/{subj}.gatk.g.vcf.gz",
+        tbi=output_dir +"/gatkhc_pb/{subj}.gatk.g.vcf.gz.tbi"
+    container: CONTAINERS["tabix"]
+    shell: """
+        bgzip -c {input.gvcf} > {output.gz}
+        tabix {output.gz}
     """
 
 rule gatk_combine_gvcf:
@@ -32,7 +39,7 @@ rule gatk_combine_gvcf:
         fai=genome_fai,
     output: output_dir+"/gatk_combine_gvcf/{fam}.combine_gvcf.g.vcf.gz"
     threads: config["threads"]["gatk_combine_gvcf"]
-    conda: "../envs/gatk4.yaml"
+    container: CONTAINERS["gatk4"]
     benchmark:
         output_dir + "/benchmark/gatk_combine_gvcf/{fam}.tsv"
     params: 
@@ -50,10 +57,8 @@ rule gatk_genotype_gvcf_pb:
         gvcf=output_dir+"/gatk_combine_gvcf/{fam}.combine_gvcf.g.vcf.gz",
         ref=genome
     output:
-        vcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf",
-        gz=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz",
+        vcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf"
     threads: config["threads"]["gatk_genotype_gvcf_pb"]
-    conda: "../envs/tabix.yaml"
     benchmark:
         output_dir + "/benchmark/gatk_genotype_gvcf_pb/{fam}.tsv"
     params: singularity_cmd = config["parabricks"]["singularity_cmd"]
@@ -62,8 +67,19 @@ rule gatk_genotype_gvcf_pb:
         pbrun genotypegvcf \
             --in-gvcf {input.gvcf} \
             --ref {input.ref} \
-            --out-vcf {output.vcf} 
-        bgzip -@ {threads} -c {output.vcf}> {output.gz} && \
+            --out-vcf {output.vcf}
+    """
+
+rule gatk_genotype_gvcf_pb_index:
+    input:
+        vcf=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf"
+    output:
+        gz=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz",
+        tbi=output_dir+"/gatk_genotype_gvcf_pb/{fam}.genotype_gvcf.g.vcf.gz.tbi"
+    threads: config["threads"]["gatk_genotype_gvcf_pb"]
+    container: CONTAINERS["tabix"]
+    shell: """
+        bgzip -@ {threads} -c {input.vcf} > {output.gz}
         tabix {output.gz}
     """
 
@@ -85,7 +101,7 @@ if config["gatk_hc"]["gatk_hard_filter"]["enable"]:
             vcf=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
             tbi=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz.tbi",
         threads: config["threads"]["gatk_cgp"]
-        conda: "../envs/bcftools.yaml"
+        container: CONTAINERS["bcftools"]
         benchmark:
             output_dir + "/benchmark/gatk_cgp/{fam}.tsv"
         params: filter=config["gatk_hc"]["gatk_hard_filter"]["filter"]
@@ -105,7 +121,7 @@ else:
             vcf=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
             tbi=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz.tbi",
         threads: config["threads"]["gatk_cgp"]
-        conda: "../envs/bcftools.yaml"
+        container: CONTAINERS["bcftools"]
         benchmark:
             output_dir + "/benchmark/gatk_cgp/{fam}.tsv"
         resources: 

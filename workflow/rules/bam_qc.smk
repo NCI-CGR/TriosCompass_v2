@@ -8,7 +8,7 @@ if config["bam_qc"]["flagstat"]["enable"]:
         threads: config["threads"]["flagstat"]
         # conda:
         #     "../envs/samtools.yaml"
-        singularity: "docker://euformatics/samtools:1.19.2"
+        container: CONTAINERS["samtools"]
         shell: """
             samtools flagstat -@ {threads} {input} > {output.flagstat}
             samtools idxstat {input} > {output.idxstat}
@@ -27,7 +27,7 @@ if config["bam_qc"]["collectwgsmetrics"]["enable"]:
         threads: config["threads"]["collectwgsmetrics"]
         benchmark:
             output_dir +"/benchmark/collectwgsmetrics/{subj}.tsv"
-        singularity: "docker://quay.io/biocontainers/picard:2.27.3--hdfd78af_0"
+        container: CONTAINERS["picard"]
         shell: """
             picard CollectWgsMetrics -XX:ParallelGCThreads={threads} \
                 I={input.bam} \

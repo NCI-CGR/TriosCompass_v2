@@ -25,7 +25,7 @@ rule hipstr:
     log: output_dir + "/hipstr/{chunk}.log"
     benchmark:
         output_dir + "/benchmark/hipstr/{chunk}.tsv"
-    singularity: "docker://cgrlab/hipstr:latest"
+    container: CONTAINERS["hipstr"]
     params: 
         bams=lambda w, input: ",".join(input.bams)
     shell: """
@@ -73,7 +73,7 @@ rule hipstr_recall:
     log: output_dir + "/vizaln/{fam}/{fam}.hipstr.hipstr.log"
     params:
         bams=lambda w, input: ",".join(input.bams)
-    singularity: "docker://cgrlab/hipstr:latest"
+    container: CONTAINERS["hipstr"]
     benchmark:
         output_dir +"/benchmark/hipstr_recall/{fam}_hipstr.tsv"
     shell: """
@@ -119,7 +119,7 @@ rule vizaln:
         )
     benchmark:
         output_dir +"/benchmark/vizaln/{fam}_hipstr.{chr}_{pos}.tsv"
-    singularity: "docker://cgrlab/hipstr:latest"
+    container: CONTAINERS["hipstr"]
     shell: """
         VizAln_rev {input.viz} {output} {wildcards.chr} {wildcards.pos}
     """

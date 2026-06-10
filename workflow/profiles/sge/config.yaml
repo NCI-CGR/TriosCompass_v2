@@ -19,7 +19,7 @@ rerun-incomplete: True
 keep-incomplete: True
 keep-going: True
 jobs: 500
-use-conda: True
+use-conda: False
 use-singularity: True
 
 # Job resources

@@ -1,4 +1,6 @@
 name: TriosCompassV2
+# Launcher-only environment for Snakemake and project metadata parsing.
+# Rule tools are provided by Docker/Singularity images in workflow/envs/containers.yaml.
 channels:
   - bioconda
   - conda-forge

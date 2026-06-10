@@ -8,7 +8,7 @@ rule config_manta_joint_call:
     params:
         prefix = output_dir + '/manta_joint/{fam}',
         bams = lambda w, input: " --bam ".join(input.bams)
-    singularity: 'docker://kfdrc/manta:1.6.0'
+    container: CONTAINERS["manta_kfdrc"]
     shell:
         '/manta-1.6.0.centos6_x86_64/bin/configManta.py \
             --bam {params.bams} \
@@ -26,7 +26,7 @@ rule run_manta_joint_call:
     threads: config["threads"]["manta_call"]
     benchmark:
         "benchmarks/run_manta_joint_call/{fam}.tsv"
-    singularity: 'docker://kfdrc/manta:1.6.0'
+    container: CONTAINERS["manta_kfdrc"]
     shell:
         '{input.cmd} -m local -j {threads}'
 
@@ -46,7 +46,7 @@ rule dnSV_manta:
                 "File type": "VCF"
             }
         )
-    conda: "../envs/slivar.yaml"
+    container: CONTAINERS["slivar"]
     shell: """
         slivar expr  \
             --vcf {input.vcf} \
