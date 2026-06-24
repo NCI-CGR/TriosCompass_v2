@@ -11,7 +11,7 @@ rule manta_create_run_script:
         output_dir + '/manta/{subj}/runWorkflow.py.config.pickle'
     params:
         prefix = output_dir + '/manta/{subj}'
-    singularity: 'docker://szarate/manta:v1.6.0'
+    container: CONTAINERS["manta_szarate"]
     shell:
         'configManta.py \
             --bam {input.bam} \
@@ -29,7 +29,7 @@ rule manta_call:
     threads: config["threads"]["manta_call"]
     benchmark:
         "benchmarks/manta_call/{sample}.tsv"
-    singularity: 'docker://szarate/manta:v1.6.0'
+    container: CONTAINERS["manta_szarate"]
     shell:
         '{input.cmd} -m local -j {threads}'
 
@@ -41,7 +41,7 @@ rule uniq_svid:
         gz = output_dir + "/manta_sv/{sample}.vcf.gz",
         tbi = output_dir + "/manta_sv/{sample}.vcf.gz.tbi"
     threads: config["threads"]["uniq_svid"]
-    conda: "../envs/bcftools.yaml"
+    container: CONTAINERS["bcftools"]
     shell: """
         bcftools annotate --threads {threads} -I '{wildcards.sample}:%ID' {input} -Oz -o {output.gz}
         tabix -p vcf {output.gz}
@@ -71,7 +71,7 @@ rule svimmer:
         "benchmarks/svimmer/{fam}.tsv"
     # params: 
     #     cmd = workflow.basedir + "/scripts/svimmer"
-    singularity: "docker://bioinformatics/svimmer:latest"
+    container: CONTAINERS["svimmer"]
     shell: """
         svimmer {input} chr{{1..22}} --ids --max_distance 50 --max_size_difference 100  --output {output.vcf}
     """
@@ -81,36 +81,63 @@ rule vcfgz:
     output: 
         vcf = output_dir + "/svimmer/{fam}.merged.vcf.gz",
         tbi = output_dir + "/svimmer/{fam}.merged.vcf.gz.tbi"
-    conda: "../envs/tabix.yaml"
+    container: CONTAINERS["tabix"]
     shell: """
         bgzip -c {input} > {output.vcf}
         tabix -p vcf {output.vcf}
     """
     
-rule graphtyper:
+rule graphtyper_genotype:
     input: 
         bams = get_bams_by_family,
         ref = genome,
         vcf = output_dir + "/svimmer/{fam}.merged.vcf.gz"
     output:
         bam_lst = output_dir+"/graphtyper/{fam}/{fam}.bam.lst",
-        vcf_lst = output_dir+"/graphtyper/{fam}/{fam}.vcf.lst",
-        vcf = output_dir+"/graphtyper/{fam}.gt2.vcf.gz",
-        tbi = output_dir+"/graphtyper/{fam}.gt2.vcf.gz.tbi"
+        done = touch(output_dir+"/graphtyper/{fam}/.genotype.done")
     threads: config["threads"]["graphtyper"]
     benchmark:
         "benchmarks/graphtyper/{fam}.tsv"
-    conda: "../envs/graphtyper.yaml"
-    params: 
+    container: CONTAINERS["graphtyper"]
+    params:
         prefix = output_dir + "/graphtyper/{fam}"
     shell: """
-        # ls {input.bams} > {output.bam_lst}
-        # To keep the sample in the order:father, mother, child
-        echo {input.bams} | tr ' ' '\\n' > {output.bam_lst}
+        mkdir -p {params.prefix}
+        echo {input.bams} | tr ' ' '\n' > {output.bam_lst}
 
-        seq 1 22 | sed -e "s/^/chr/" | parallel  'graphtyper genotype_sv {input.ref} {input.vcf} --sams={output.bam_lst} --threads=2 --region={{}} --output={params.prefix}'
+        threads={threads}
+        per_job_threads=2
+        if [ "$threads" -lt 2 ]; then per_job_threads=1; fi
+        jobs=$(( threads / per_job_threads ))
+        if [ "$jobs" -lt 1 ]; then jobs=1; fi
 
-        echo chr{{1..22}} | tr ' ' '\\n' | while read chrom; do if [[ ! -d {params.prefix}/${{chrom}} ]]; then continue; fi; find {params.prefix}/${{chrom}} -name "*.vcf.gz" | sort; done > {output.vcf_lst}
+        pids=()
+        for chrom in $(seq 1 22 | sed -e "s/^/chr/"); do
+            graphtyper genotype_sv {input.ref} {input.vcf} --sams={output.bam_lst} --threads="$per_job_threads" --region="$chrom" --output={params.prefix} &
+            pids+=($!)
+            if [ "${{#pids[@]}}" -ge "$jobs" ]; then
+                wait "${{pids[0]}}"
+                pids=("${{pids[@]:1}}")
+            fi
+        done
+        for pid in "${{pids[@]}}"; do
+            wait "$pid"
+        done
+    """
+
+rule graphtyper:
+    input:
+        bam_lst = output_dir+"/graphtyper/{fam}/{fam}.bam.lst",
+        done = output_dir+"/graphtyper/{fam}/.genotype.done"
+    output:
+        vcf_lst = output_dir+"/graphtyper/{fam}/{fam}.vcf.lst",
+        vcf = output_dir+"/graphtyper/{fam}.gt2.vcf.gz",
+        tbi = output_dir+"/graphtyper/{fam}.gt2.vcf.gz.tbi"
+    container: CONTAINERS["bcftools"]
+    params:
+        prefix = output_dir + "/graphtyper/{fam}"
+    shell: """
+        echo chr{{1..22}} | tr ' ' '\n' | while read chrom; do if [[ ! -d {params.prefix}/${{chrom}} ]]; then continue; fi; find {params.prefix}/${{chrom}} -name "*.vcf.gz" | sort; done > {output.vcf_lst}
 
         bcftools concat --naive --file-list {output.vcf_lst} -Oz -o {output.vcf}
         tabix -p vcf {output.vcf}
@@ -127,7 +154,7 @@ rule graphtyper_filter:
         mem_mb=20000
     benchmark:
         "benchmarks/graphtyper_filter/{fam}.tsv"
-    conda: "../envs/vcflib.yaml"
+    container: CONTAINERS["vcflib"]
     shell: """
         vcffilter -f "( SVTYPE = BND & SVMODEL = AGGREGATED & QD > 20 & ( ABHet > 0.30 | ABHet < 0 ) & ( AC / NUM_MERGED_SVS ) < 10 & PASS_AC > 0 & PASS_ratio > 0.1 ) | ( SVTYPE = DEL & SVMODEL = AGGREGATED & QD > 12 & ( ABHet > 0.30 | ABHet < 0 ) & ( AC / NUM_MERGED_SVS ) < 25 & PASS_AC > 0 & PASS_ratio > 0.1 ) | ( SVTYPE = DUP & SVMODEL = AGGREGATED & QD > 5 & PASS_AC > 0 & ( AC / NUM_MERGED_SVS ) < 25 ) | ( SVTYPE = INS & SVMODEL = AGGREGATED & PASS_AC > 0 & ( AC / NUM_MERGED_SVS ) < 25 & PASS_ratio > 0.1 & ( ABHet > 0.25 | ABHet < 0 ) & MaxAAS > 4 ) | ( SVTYPE = INV & PASS_AC > 0 & ( AC / NUM_MERGED_SVS ) < 25 & PASS_ratio > 0.1 & ( ABHet > 0.25 | ABHet < 0 ) & MaxAAS > 4 )"  {input.vcf} | bgzip -c > {output.vcf}
         tabix -p vcf {output.vcf} 
@@ -155,7 +182,7 @@ rule smoove:
     params: 
         prefix = "{fam}",
         out_dir =  output_dir + "/smoove/{fam}"    
-    container: "docker://brentp/smoove"
+    container: CONTAINERS["smoove"]
     shell: """
         smoove call -x --name {params.prefix} -o {params.out_dir} --exclude {input.exclude_bed} --fasta  {input.ref} -p {threads} --genotype {input.bams}
     """
@@ -167,7 +194,7 @@ rule call_dnSV:
         output_dir + "/smoove/{fam}/{fam}-smoove.genotyped.vcf.gz"
     output: 
         output_dir + "/dnSV/{fam}.smoove.dnSV.vcf"
-    conda: "../envs/bcftools.yaml"
+    container: CONTAINERS["bcftools"]
     shell: """
         bcftools view -i 'GT[2]="het" && GT[1]="RR" && GT[0]="RR" ' -O v  {input} -o {output}
     """
@@ -201,7 +228,7 @@ rule joint_dnSV:
         ),
         stats = output_dir + "/joint_dnSV/{fam}.dnSV.stats",
         others = multiext(output_dir+ "/joint_dnSV/{fam}.dnSV.stats", "_CHR", "support")
-    conda: "../envs/survivor.yaml"
+    container: CONTAINERS["survivor"]
     shell: """
         SURVIVOR merge {input} 1000 2 0 0 0 50 {output.vcf}
         SURVIVOR stats {output.vcf} 50 -1 -1 {output.stats}

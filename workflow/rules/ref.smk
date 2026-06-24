@@ -19,7 +19,7 @@ rule genome_dict:
         genome_dict,
     # conda:
     #     "../envs/samtools.yaml"
-    singularity: "docker://euformatics/samtools:1.19.2"
+    container: CONTAINERS["samtools"]
     shell:
         "samtools dict {input} > {output} "
 
@@ -30,6 +30,6 @@ rule genome_faidx:
         genome_fai,
     # conda:
     #     "../envs/samtools.yaml"
-    singularity: "docker://euformatics/samtools:1.19.2"
+    container: CONTAINERS["samtools"]
     shell:
         "samtools faidx {input}  "

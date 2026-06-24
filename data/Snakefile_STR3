@@ -2,6 +2,8 @@ import glob
 import peds 
 import uuid
 
+CSVTK_CONTAINER = "docker://quay.io/biocontainers/csvtk:0.31.0--h9ee0642_0"
+
 # bam/SC501095.recal.bam
 bam_files = glob.glob("output/fixed-rg/*.bam", recursive=True)
 _,ids,_= glob_wildcards("{path}/{id,SC[0-9]+}.{any,.*}bam", bam_files)
@@ -274,8 +276,7 @@ rule merge_monstr:
     output: 
         mutation="output/merge_monstr/{caller}.all_mutations.tab",
         summary="output/merge_monstr/{caller}.locus_summary.tab"
-    conda:
-        "workflow/envs/csvtk.yaml"
+    container: CSVTK_CONTAINER
     resources:
         runtime="20h",
         mem_mb=40000 
@@ -307,8 +308,7 @@ rule monstr_filter:
 rule joint_STR: 
     input: expand(output_dir + "/monstr_filter/{caller}.filtered.tab", caller=['hipstr','gangstr'])
     output: output_dir + "/joint_STR/gangstr_hipstsr.final.tab"
-    conda:
-        "workflow/envs/csvtk.yaml"
+    container: CSVTK_CONTAINER
     shell: """
         csvtk join -t -f "chrom,pos,child,child_gt,mat_gt,pat_gt" -p {input} > {output}
     """

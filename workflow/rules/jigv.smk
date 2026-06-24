@@ -21,7 +21,7 @@ rule call_JIGV:
         output_dir +"/benchmark/call_JIGV/{fam}.tsv"
     params: 
         proband=lambda w: [person.id for person in families[w.fam] if families[w.fam].get_father(person) ][0]
-    singularity: "docker://chrisamiller/jigv:0.1.10"
+    container: CONTAINERS["jigv"]
     shell: """
         # jigv is at / in chrisamiller/jigv:0.1.10
         /jigv  \

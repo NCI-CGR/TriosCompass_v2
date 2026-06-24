@@ -22,7 +22,7 @@ rule vcf4phase:
     output:
         vcf=output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz",
         tbi=output_dir + "/phase_DNMs/{fam}/variants/DV.{chr}_{pos}.vcf.gz.tbi"
-    conda: "../envs/bcftools.yaml"
+    container: CONTAINERS["bcftools"]
     benchmark:
         output_dir +"/benchmark/vcf4phase/{fam}.{chr}_{pos}.tsv"
     params: 
@@ -44,7 +44,7 @@ rule phase_child:
     benchmark:
         output_dir +"/benchmark/phase_child/{fam}.{chr}_{pos}.tsv"
     threads: config["threads"]["phase_child"]
-    conda: "../envs/whatshap.yaml"
+    container: CONTAINERS["whatshap"]
     shell: """
         whatshap phase -o {output.vcf} --tag=PS --indels --reference={input.ref} --sample {params.id} {input.vcf} {input.bams}
     """
@@ -60,7 +60,7 @@ rule phase_trios:
     benchmark:
         output_dir +"/benchmark/phase_trios/{fam}.{chr}_{pos}.tsv"
     threads: config["threads"]["phase_trios"]
-    conda: "../envs/whatshap.yaml"
+    container: CONTAINERS["whatshap"]
     shell: """
         whatshap phase -o {output.vcf} --tag=PS --indels --ped {input.ped} --reference={input.ref} {input.vcf} {input.bams} 
     """

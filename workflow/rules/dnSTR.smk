@@ -19,8 +19,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
             args =  lambda w: config["dnSTR"]["hipstr"]["dumpstr_call_args"] if (w.caller=='hipstr') else "",
         benchmark:
             output_dir + "/benchmark/dumpstr_call/{caller}_{chunk}.tsv"
-        conda: "../envs/trtools.yaml"
-        # container: "docker://quay.io/biocontainers/trtools:latest"
+        container: CONTAINERS["trtools"]
         shell: """
             mkdir -p $(dirname {params.prefix})	
             dumpSTR \
@@ -47,8 +46,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
             multiext(output_dir + "/dumpstr_locus/{caller}_{chunk}", ".vcf", ".loclog.tab", ".samplog.tab")
         params:
             prefix = output_dir + "/dumpstr_locus/{caller}_{chunk}"
-        conda: "../envs/trtools.yaml"
-        # container: "docker://quay.io/biocontainers/trtools:latest"
+        container: CONTAINERS["trtools"]
         shell: """
             dumpSTR --min-locus-hwep 0.00001 --min-locus-callrate 0.8 \
                 --filter-regions {input.dup_reg} \
@@ -62,7 +60,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
         output: 
             gz= output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf.gz",
             tbi= output_dir + "/dumpstr_locus/{caller}_{chunk}.vcf.gz.tbi"
-        conda: "../envs/bcftools.yaml"
+        container: CONTAINERS["bcftools"]
         shell: """
             bcftools sort {input} | bgzip -c  > {output.gz}
             tabix -p vcf {output.gz}
@@ -76,7 +74,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
             multiext( output_dir + "/monstr/{caller}_{chunk}", ".all_mutations.tab", ".locus_summary.tab")
         benchmark:
             output_dir + "/benchmark/monstr/{caller}_{chunk}.tsv"
-        singularity: "docker://gymreklab/monstr"
+        container: CONTAINERS["monstr"]
         params:
             prefix=output_dir + "/monstr/{caller}_{chunk}",
             arg = lambda w: config["dnSTR"]["hipstr"]["monstr_filter"] if (w.caller=='hipstr') else " ",
@@ -107,7 +105,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
         output: 
             mutation=output_dir + "/merge_monstr/{caller}.all_mutations.tab",
             summary=output_dir + "/merge_monstr/{caller}.locus_summary.tab"
-        conda: "../envs/csvtk.yaml"
+        container: CONTAINERS["csvtk"]
         shell: """
             csvtk concat -E -t {input.mutation} | csvtk sort -t -k chrom:N -k pos:n -k child -E - | csvtk filter -t -f "poocase>1" > {output.mutation}
             csvtk concat -E -t {input.summary} | csvtk sort -t -k chrom:N -k pos:n  -E - | csvtk filter -t -f "total_mutations>0" > {output.summary}
@@ -129,7 +127,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
                 }
             ),
             log=output_dir + "/monstr_filter/{caller}.filtered.log"
-        singularity: "docker://gymreklab/monstr"
+        container: CONTAINERS["monstr"]
         shell: """
             python3 /STRDenovoTools/scripts/qc_denovos.py --all-mutations-file {input} \
                     --filtered-mutations-file {output.filtered} \
@@ -169,7 +167,7 @@ if config["dnSTR"]["hipstr"]["enable"]:
                     "File type": "txt"
                 }
             )
-        conda: "../envs/csvtk.yaml"
+        container: CONTAINERS["csvtk"]
         shell: """
             csvtk join -t --na 0 -L -f child <(csvtk csv2tab {input.csv}) <(csvtk summary -t -g child -f pos:countn  {input.tab} | csvtk rename -t -f 1,2 -n child,countn) > {output}
         """

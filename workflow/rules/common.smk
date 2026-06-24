@@ -1,6 +1,7 @@
 import glob
 from os import path
 
+import yaml
 from snakemake.utils import validate
 
 
@@ -20,6 +21,9 @@ qc_output = list()
 
 
 output_dir = config["output_dir"]
+
+with open(path.join(workflow.basedir, "envs", "containers.yaml")) as container_file:
+    CONTAINERS = yaml.safe_load(container_file)
 
 
 def get_bam_by_subj(wildcards):

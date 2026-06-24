@@ -2,12 +2,9 @@
 rule call_dnm_dv: 
     input: 
         vcf = output_dir +"/glnexus/{fam}.dv_combined.vcf.gz",
-        ped = config["ped_dir"]+"/{fam}.ped",
-        interval= config["call_dnm"]["interval"]
+        ped = config["ped_dir"]+"/{fam}.ped"
     output:
-        vcf= output_dir +"/slivar/DV_{fam}.dnm.vcf",
-        tmp = temp(output_dir +"/slivar/DV_{fam}.tmp.vcf.gz"),
-        gz = output_dir +"/slivar/DV_{fam}.dnm.vcf.gz"
+        vcf= output_dir +"/slivar/DV_{fam}.dnm.vcf"
     benchmark:
         output_dir +"/benchmark/slivar/DV_{fam}.tsv"
     params: 
@@ -19,7 +16,7 @@ rule call_dnm_dv:
         max_err=config["call_dnm"]["max_err"],
         min_PL=config["call_dnm"]["dv"]["min_PL"],
         AB=config["call_dnm"]["AB"],
-    conda: "../envs/slivar.yaml"
+    container: CONTAINERS["slivar"]
     shell: """
         
         slivar expr  \
@@ -49,10 +46,6 @@ rule call_dnm_dv:
                     && (mom.AD[1]/(mom.AD[0]+mom.AD[1])) < {params.max_err} \
                     && (dad.AD[1]/(dad.AD[0]+dad.AD[1])) < {params.max_err} \
                     && (mom.AD[0]+mom.AD[1]) >= {params.min_dp} && (mom.AD[0]+mom.AD[1]) < {params.max_dp} && (dad.AD[0]+dad.AD[1]) >= {params.min_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) && (dad.AD[0]+dad.AD[1]) < {params.max_dp}/(1+(variant.CHROM == 'chrX' ? 1 : 0)) "
-        bgzip -c {output.vcf} > {output.tmp}
-        tabix {output.tmp}
-        bcftools view -R {input.interval} {output.tmp} -O z -o {output.gz}
-        tabix {output.gz}
     """
 
     #     shell: """
@@ -88,12 +81,9 @@ rule call_dnm_dv:
 use rule  call_dnm_dv as call_dnm_gatk with:
     input: 
         vcf=output_dir+"/gatk_cgp/{fam}.cgp_norm.vcf.gz",
-        ped = config["ped_dir"]+"/{fam}.ped",
-        interval= config["call_dnm"]["interval"]
+        ped = config["ped_dir"]+"/{fam}.ped"
     output: 
-       vcf= output_dir +"/slivar/GATK_{fam}.dnm.vcf",
-       tmp = temp(output_dir +"/slivar/GATK_{fam}.tmp.vcf.gz"),
-       gz = output_dir +"/slivar/GATK_{fam}.dnm.vcf.gz"
+       vcf= output_dir +"/slivar/GATK_{fam}.dnm.vcf"
     params: 
         min_00_gq=config["call_dnm"]["hc"]["min_00_gq"], 
         min_01_gq=config["call_dnm"]["hc"]["min_01_gq"], 
@@ -105,6 +95,21 @@ use rule  call_dnm_dv as call_dnm_gatk with:
     benchmark:
         output_dir +"/benchmark/slivar/GATK_{fam}.tsv"
 
+rule subset_dnm_interval:
+    input:
+        vcf=output_dir +"/slivar/{caller}_{fam}.dnm.vcf",
+        interval=config["call_dnm"]["interval"]
+    output:
+        tmp=temp(output_dir +"/slivar/{caller}_{fam}.tmp.vcf.gz"),
+        gz=output_dir +"/slivar/{caller}_{fam}.dnm.vcf.gz"
+    container: CONTAINERS["bcftools"]
+    shell: """
+        bgzip -c {input.vcf} > {output.tmp}
+        tabix {output.tmp}
+        bcftools view -R {input.interval} {output.tmp} -O z -o {output.gz}
+        tabix {output.gz}
+    """
+
 rule merge_DV_GATK:
     input: 
         DV=output_dir +"/slivar/DV_{fam}.dnm.vcf.gz",
@@ -114,7 +119,7 @@ rule merge_DV_GATK:
         tbi=output_dir +"/GATK_DV/{fam}.merge.dnm.vcf.gz.tbi",
         both=output_dir +"/GATK_DV/D_and_G.{fam}.dnm.vcf.gz",
         one=output_dir +"/GATK_DV/D_or_G.{fam}.dnm.vcf.gz"
-    conda: "../envs/bcftools.yaml"
+    container: CONTAINERS["bcftools"]
     shell: """
         bcftools merge --force-samples --threads 2 -m none {input.DV} {input.GATK} -Oz -o {output.gz}
         tabix {output.gz}
@@ -139,7 +144,7 @@ rule dnm_vcf:
                 "Desc": "DNMs"
             }
         )
-    conda: "../envs/bcftools.yaml"
+    container: CONTAINERS["bcftools"]
     params: 
         proband = lambda w: CHILD_DICT[w.fam]
     shell: """
